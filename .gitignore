@@ -36,3 +36,12 @@ vignettes/*.pdf
 # Shiny token, see https://shiny.rstudio.com/articles/shinyapps.html
 rsconnect/
 .Rproj.user
+
+# Output Files
+index.html
+index_files/
+index.md
+main.html
+main_files/
+main.md
+README_files/
