@@ -20,7 +20,7 @@ First load the necessary packages for this exercise.
     attached_pkg_str <- paste0("Attached Packages: ",paste(names(si[["otherPkgs"]]), collapse=", "))
     cat(paste0(base_pkg_str,"\n",attached_pkg_str))
 
-    ## Base Packages: stats, graphics, grDevices, utils, datasets, base
+    ## Base Packages: stats, graphics, grDevices, utils, datasets, methods, base
     ## Attached Packages: purrr, leaflet, tidyr, randomForest, ggplot2, dplyr, knitr
 
 Exploration
@@ -141,9 +141,9 @@ Name
 CHARACTER
 </td>
 <td style="text-align:left;">
-Braund, Mr. Owen Harris | Cumings, Mrs. John Bradley (Florence Briggs
-Thayer) | Heikkinen, Miss. Laina | Futrelle, Mrs. Jacques Heath (Lily
-May Peel) | Allen, Mr. William Henry
+Braund, Mr. Owen Harris | Cumings, Mrs. John Bradley (Florence Briggs
+Thayer) | Heikkinen, Miss. Laina | Futrelle, Mrs. Jacques Heath (Lily
+May Peel) | Allen, Mr. William Henry
 </td>
 <td style="text-align:left;">
 100%
@@ -272,8 +272,8 @@ Based on the summary above, notice the following:
     First\_Name</span>.
 -   There are different types of <span
     class="hl yellow-text">Ticket</span> formats.
--   <span class="hl yellow-text">Age</span> has missing data to
-    be populated.
+-   <span class="hl yellow-text">Age</span> has missing data to be
+    populated.
 -   <span class="hl yellow-text">Cabin</span> data is sparse, and hence
     we may want to exclude this for the prediction model.
 
@@ -350,7 +350,7 @@ hence escape the disaster.
 
     income_plot
 
-<img src="README_files/figure-markdown_strict/exp_hypo1-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/README_files/figure-markdown_strict/exp_hypo1-1.png" style="display: block; margin: auto;" />
 Using the passenger class as a proxy for income, we find this claim to
 be <span class="hl green-text">TRUE</span>.
 
@@ -382,7 +382,7 @@ be <span class="hl green-text">TRUE</span>.
 
     fares_plot
 
-<img src="README_files/figure-markdown_strict/exp_hypo1_p2-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/README_files/figure-markdown_strict/exp_hypo1_p2-1.png" style="display: block; margin: auto;" />
 We also noticed this phenomenon in fares, where the higher amount an
 individual paid for the fares, the more likely he/she will survive the
 crash.
@@ -437,18 +437,18 @@ should expect the hypothesis to hold true.
 
     gender_plot
 
-<img src="README_files/figure-markdown_strict/exp_hypo2-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/README_files/figure-markdown_strict/exp_hypo2-1.png" style="display: block; margin: auto;" />
 
 As can be seen, almost every title has a mapping to the gender of the
 individual, suggesting that every title is associated with a gender. The
-only notable exception is "Dr", which is gender neutral. Hence, the
+only notable exception is “Dr”, which is gender neutral. Hence, the
 hypothesis is <span class="hl green-text">TRUE</span>.
 
 Hypothesis 3: Females and more esteemed individuals are more likely to
 survive than males.
 
 Prior to this analysis, we will group those individuals without
-"Mr","Mrs","Miss", or "Master" title as "Rare title" individuals. These
+“Mr”,“Mrs”,“Miss”, or “Master” title as “Rare title” individuals. These
 individuals, along with females, would have higher priority in
 onboarding the lifeboats, hence we assume that they are more likely to
 survive the crash.
@@ -493,10 +493,10 @@ survive the crash.
 
     title_plot
 
-<img src="README_files/figure-markdown_strict/exp_hypo3-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/README_files/figure-markdown_strict/exp_hypo3-1.png" style="display: block; margin: auto;" />
 
 As expected, females are more likely to survive than males, while
-"esteemed" titles increase the survival likelihood of both genders.
+“esteemed” titles increase the survival likelihood of both genders.
 Hence, the hypothesis is <span class="hl green-text">TRUE</span>.
 
 #### On Age
@@ -547,7 +547,7 @@ likely to survive.
 
     age_plot
 
-<img src="README_files/figure-markdown_strict/exp_hypo4-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/README_files/figure-markdown_strict/exp_hypo4-1.png" style="display: block; margin: auto;" />
 
 With the limited data set, we can see that younger individuals are more
 likely to survive. A possible explanation is probably because babies and
@@ -607,7 +607,7 @@ while individuals with same-age company are less likely to survive.
 
     company_plot
 
-<img src="README_files/figure-markdown_strict/exp_hypo5-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/README_files/figure-markdown_strict/exp_hypo5-1.png" style="display: block; margin: auto;" />
 
 As can be seen from the chart above, individuals with 1 to 2 children
 are more likely to survive than those without any children. It is
@@ -671,7 +671,7 @@ com_ticket_plot <- ggplot(com_ticket_set, aes(x = OtherCompany,
 com_ticket_plot
 ```
 
-<img src="README_files/figure-markdown_strict/exp_hypo6-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/README_files/figure-markdown_strict/exp_hypo6-1.png" style="display: block; margin: auto;" />
 
 A correlation of <b>36%</b> suggests that there is in fact some correlation between ticket IDs and the identity of the group. Hence, this hypothesis is <span class="hl green-text">TRUE</span>.
 
@@ -787,7 +787,7 @@ specified.
 
     cabinLet_plot
 
-<img src="README_files/figure-markdown_strict/exp_hypo7_p1-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/README_files/figure-markdown_strict/exp_hypo7_p1-1.png" style="display: block; margin: auto;" />
 
 From the chart, we can deduce that <span class="hl yellow-text">Cabins B
 to E</span> has a higher likelihood of survival compared to
@@ -862,7 +862,7 @@ play a role in determining whether a passenger survive.
 
     cabinNumber_plot
 
-<img src="README_files/figure-markdown_strict/exp_hypo7_p2-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/README_files/figure-markdown_strict/exp_hypo7_p2-1.png" style="display: block; margin: auto;" />
 
 It is pretty clear that those who stay in the odd rooms are more likely
 to survive than those in the even rooms.
@@ -912,14 +912,14 @@ to survive than those in the even rooms.
 
     cabinCount_plot
 
-<img src="README_files/figure-markdown_strict/exp_hypo7_p3-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/README_files/figure-markdown_strict/exp_hypo7_p3-1.png" style="display: block; margin: auto;" />
 
 Even though seems to be an inverse relationship between the survival
 likelihood and number of cabins specified, the sample size is too small
 to ensure statistical significance.
 
 In conclusion, cabin floors and cabin numbers can determine a
-passenger's survival likelihood, while there is too little data to
+passenger’s survival likelihood, while there is too little data to
 deduce a relationship in the number of cabins specified. Hence, the
 hypothesis is <span class="hl green-text">TRUE</span>.
 
@@ -982,10 +982,10 @@ Hypothesis 7: Port of embarkation should have no impact on survivalhood.
 
 <!--html_preserve-->
 
-<script type="application/json" data-for="htmlwidget-307e140e40335f3594af">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-37d596c9104e24af6b8a">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
 <!--/html_preserve-->
 <br> At first glance, there seems to be no plausible explanation why a
-passenger's port of embarkation will have an impact on the passenger's
+passenger’s port of embarkation will have an impact on the passenger’s
 survival likelihood.
 
     # Assessing the correlation between Embarkation and Passenger Class
@@ -1038,7 +1038,7 @@ survival likelihood.
 
     embark_pclass_plot
 
-<img src="README_files/figure-markdown_strict/exp_hypo8_p2-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/README_files/figure-markdown_strict/exp_hypo8_p2-1.png" style="display: block; margin: auto;" />
 
 However, by studying the demographics of the passengers who embarked at
 each port, we know that a higher proportion of Cherbough are
@@ -1078,13 +1078,13 @@ to predict the survival likelihood of an individual.
 <td>Sex</td>
 <td>Categorical</td>
 <td>Hypothesis 3</td>
-<td>'Unknown' Category Variable</td>
+<td>‘Unknown’ Category Variable</td>
 </tr>
 <tr class="even">
 <td>Title</td>
 <td>Categorical</td>
 <td>Hypothesis 3</td>
-<td>'Unknown' Category Variable</td>
+<td>‘Unknown’ Category Variable</td>
 </tr>
 <tr class="odd">
 <td>Age</td>
@@ -1108,19 +1108,19 @@ to predict the survival likelihood of an individual.
 <td>CabinFloor</td>
 <td>Categorical</td>
 <td>Hypothesis 6</td>
-<td>'Unknown' Category Variable</td>
+<td>‘Unknown’ Category Variable</td>
 </tr>
 <tr class="odd">
 <td>CabinNumber</td>
 <td>Categorical</td>
 <td>Hypothesis 6</td>
-<td>'Unknown' Category Variable</td>
+<td>‘Unknown’ Category Variable</td>
 </tr>
 <tr class="even">
 <td>Port of Embarkation</td>
 <td>Categorical</td>
 <td>Hypothesis 7</td>
-<td>'Unknown' Category Variable</td>
+<td>‘Unknown’ Category Variable</td>
 </tr>
 </tbody>
 </table>

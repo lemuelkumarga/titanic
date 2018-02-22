@@ -1,22 +1,8 @@
 ---
 title: "Estimating Survival Rate of Titanic Passengers"
 author: "Lemuel Kumarga"
-output:
-  html_document:
-    code_folding: hide
-    css:
-    - shared/css/defaults.css
-    - ../../../shared/css/definitions.css
-    - ../../../shared/css/general.css
-    - shared/css/Rmd.css
-    includes:
-      in_header: shared/html/fonts.html
-    self_contained: no
-    theme: cosmo
-    toc: yes
-    toc_depth: 4
-  md_document: default
 always_allow_html: yes
+knit: (function(inputFile, encoding) { source("shared/knit.R"); knitter(inputFile, encoding)})
 ---
 
 ```{r echo=FALSE, warning=FALSE, results='hide'}
