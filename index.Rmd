@@ -1,5 +1,5 @@
 ---
-title: "Title 1"
+title: "Estimating Survival Rate of Titanic Passengers"
 author: 'Lemuel Kumarga'
 output:
   html_document:
@@ -24,6 +24,8 @@ read_chunk("script.R")
   
 ```
 
+Problem description can be found <a href="https://www.kaggle.com/c/titanic" target="_blank">here</a>. 
+
 ## Preliminaries
 
 First load the necessary packages for this exercise.
@@ -35,3 +37,209 @@ base_pkg_str <- paste0("Base Packages: ",paste(si[["basePkgs"]], collapse=", "))
 attached_pkg_str <- paste0("Attached Packages: ",paste(names(si[["otherPkgs"]]), collapse=", "))
 cat(paste0(base_pkg_str,"\n",attached_pkg_str))
 ```
+
+
+## Exploration
+
+### About the Data
+
+We kick off by exploring the data that was provided:
+```{r}
+<<data_comp>>
+
+# Parse Output
+cols_sum_pp <- cols_summary
+colnames(cols_sum_pp) <- sapply(colnames(cols_sum_pp),
+                                function(.) { gsub('([[:upper:]])', ' \\1', .) })
+
+knitr::kable(cols_sum_pp,format="html")
+```
+<br>
+
+Based on the summary above, notice the following:
+
+* <span class="hl yellow-text">Names</span> are aggregated in the following format: <span class="hl green-text">Last_Name, Title 
+First_Name</span>.
+* There are different types of <span class="hl yellow-text">Ticket</span> formats.
+* <span class="hl yellow-text">Age</span> has missing data to be populated.
+* <span class="hl yellow-text">Cabin</span> data is sparse, and hence we may want to exclude this for the prediction model.
+
+### Preliminary Insights
+
+#### On Income
+
+<div class="st">Hypothesis 1: Higher income individuals are more likely to survive.</div>
+
+High-income individuals could pay more for seats in the lifeboats, and hence escape the disaster. 
+```{r exp_hypo1, fig.height=3, fig.width=10, fig.align="center"}
+
+```
+Using the passenger class as a proxy for income, we find this claim to be <span class="hl green-text">TRUE</span>.
+
+```{r exp_hypo1_p2, fig.height=3, fig.width=10, fig.align="center"}
+
+```
+We also noticed this phenomenon in fares, where the higher amount an individual paid for the fares, the more likely he/she will survive the crash.
+
+#### On Title
+
+<div class="st">Hypothesis 2: Gender information is embedded under the title of the individual.</div>
+
+Most titles are provided based on the gender on the individual, hence we should expect the hypothesis to hold true.
+
+```{r exp_hypo2, fig.height=2.6, fig.width=10, fig.align="center"}
+
+```
+
+As can be seen, almost every title has a mapping to the gender of the individual, suggesting that every title is associated with a gender. The only notable exception is "Dr", which is gender neutral. Hence, the hypothesis is <span class="hl green-text">TRUE</span>.
+
+<div class="st">Hypothesis 3: Females and more esteemed individuals are more likely to survive than males.</div>
+
+Prior to this analysis, we will group those individuals without "Mr","Mrs","Miss", or "Master" title as "Rare title" individuals. These individuals, along with females, would have higher priority in onboarding the lifeboats, hence we assume that they are more likely to survive the crash.
+
+```{r exp_hypo3, fig.height=3, fig.width=10, fig.align="center"}
+
+```
+
+As expected, females are more likely to survive than males, while "esteemed" titles increase the survival likelihood
+of both genders. Hence, the hypothesis is <span class="hl green-text">TRUE</span>.
+
+#### On Age
+
+<div class="st">Hypothesis 4: Individuals who are very young and very old are more likely to survive.</div>
+
+```{r exp_hypo4, fig.height=3, fig.width=10, fig.align="center"}
+
+```
+
+With the limited data set, we can see that younger individuals are more likely to survive. A possible explanation is probably because babies and toddlers occupy less space (and hence easier to find seats within the lifeboats). 
+
+However, older people, especially those more than 60 years old, are less likely to survive. This is probably due to their lack of agility in responding to the crash. 
+
+Hence, the premise is <span class="hl green-text">TRUE</span> for young children and <span class="hl red-text">FALSE</span> for older people.
+
+#### On Company
+
+<div class="st">Hypothesis 5: Individuals with children are more likely to survive, while individuals with same-age company are less likely to survive.</div>
+
+```{r exp_hypo5, fig.height=7, fig.width=7, fig.align="center"}
+
+```
+
+As can be seen from the chart above, individuals with 1 to 2 children are more likely to survive than those without any children. It is inconclusive to determine from the chart above, whether same-age company has an impact of survivalhood. Hence, this premise is <span class="hl yellow-text">TRUE TO A LIMITED EXTENT</span>.
+
+<!---
+
+<div class="st">Hypothesis 6: Groups are able to be identified based on their ticket IDs. </div>
+
+If this is true, we should expect to see some correlation between: 
+
+1. the number of companies with the individual, and
+2. the number of other individuals with the same ticket.
+
+```{r exp_hypo6, fig.height=5, fig.width=7, fig.align="center"}
+
+```
+
+A correlation of <b>36%</b> suggests that there is in fact some correlation between ticket IDs and the identity of the group. Hence, this hypothesis is <span class="hl green-text">TRUE</span>.
+
+-->
+
+#### On Cabin Positions
+
+<div class="st">Hypothesis 6: Cabin positions should have an impact of survivalhood, but only to a certain extent.</div>
+
+Cabins further away from the lifeboats will have a more difficult time surviving, hence we should assume that where passengers stay will have an impact on their survivalhood. However, the cabin positions can only determine survivalhood partially, given that passengers may not be at their cabins during the time of crash.
+
+A more detailed deck plan can be found <a href="https://www.encyclopedia-titanica.org/titanic-deckplans/b-deck.html" target="_blank">here</a>. As can be seen, the letter of the cabin represents the deck (floor) where the room is located. We also see that odd numbers correspond to one side of the Titanic, while even numbers correspond to the other.
+
+We will break down the cabin position into three constituents: the cabin floor, the cabin number (odd or even), and the number of cabins specified.
+
+```{r exp_hypo7}
+
+```
+
+##### Cabin Floors
+
+```{r exp_hypo7_p1, fig.height=5, fig.width=7, warning=FALSE, fig.align="center"}
+
+```
+
+From the chart, we can deduce that <span class="hl yellow-text">Cabins B to E</span> has a higher likelihood of survival compared to other/unspecified cabins, which suggests that the position of cabins play a role in determining whether a passenger survive.
+
+##### Cabin Numbers
+
+```{r exp_hypo7_p2, fig.height=3, fig.width=10, fig.align="center"}
+
+```
+
+It is pretty clear that those who stay in the odd rooms are more likely to survive than those in the even rooms.
+
+##### Cabins Specified
+
+```{r exp_hypo7_p3, fig.height=5, fig.width=7, fig.align="center"}
+
+```
+
+Even though seems to be an inverse relationship between the survival likelihood and number of cabins specified, the sample size is too small to ensure statistical significance.
+
+In conclusion, cabin floors and cabin numbers can determine a passenger's survival likelihood, while there is too little data to deduce a relationship in the number of cabins specified. Hence, the hypothesis is <span class="hl green-text">TRUE</span>.
+
+#### On Embakartion Ports
+
+<div class="st">Hypothesis 7: Port of embarkation should have no impact on survivalhood.</div>
+
+```{r exp_hypo8, fig.height = 3, fig.align="center"}
+
+```
+
+<br>
+At first glance, there seems to be no plausible explanation why a passenger's port of embarkation will have an impact on the passenger's survival likelihood.
+
+```{r exp_hypo8_p2, fig.height = 3, fig.width=10, fig.align="center"}
+
+```
+
+However, by studying the demographics of the passengers who embarked at each port, we know that a higher proportion of Cherbough are high-income. This explains the higher survival likelihood for those who embarked at Cherbough, and renders the hypothesis to be <span class="hl red-text">FALSE</span>.
+
+## Preparation
+
+Based on the above hypotheses, we will be adding the following features to predict the survival likelihood of an individual.
+
+Feature | Variable Type | Hypotheses Supporting the Feature  | Null Handling 
+- | - | - | -
+Pclass | Continuous | Hypothesis 1 | -1
+Fare | Continuous | Hypothesis 1 | -1
+Sex | Categorical | Hypothesis 3 | 'Unknown' Category Variable
+Title | Categorical | Hypothesis 3 | 'Unknown' Category Variable
+Age | Continuous | Hypothesis 4 | Regression
+SibSp | Continuous | Hypothesis 5 | -1
+Parch | Continuous | Hypothesis 5 | -1
+CabinFloor | Categorical | Hypothesis 6 | 'Unknown' Category Variable
+CabinNumber | Categorical | Hypothesis 6 | 'Unknown' Category Variable
+Port of Embarkation | Categorical | Hypothesis 7 | 'Unknown' Category Variable
+
+Below is an example of the cleansed data set for model ingestion.
+```{r}
+<<data_prep>>
+
+knitr::kable(head(cleaned_set),format="html")
+```
+
+## The <i>Random Forest</i> Model
+
+Listed below are the preliminary results from the initial run using the Random Forest model.
+
+```{r data_model}
+
+```
+
+
+```{r}
+<<data_model_err_anal>>
+  
+knitr::kable(head(err_out),format="html")
+
+```
+
+## Predictive Results
