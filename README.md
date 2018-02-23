@@ -51,6 +51,9 @@ load_or_install.packages(packages)
 
 data_dir <- "data/"
 
+# Load some helper functions
+source("shared/helper.R")
+
 si <- sessionInfo()
 base_pkg_str <- paste0("Base Packages: ",paste(si[["basePkgs"]], collapse=", "))
 attached_pkg_str <- paste0("Attached Packages: ",paste(names(si[["otherPkgs"]]), collapse=", "))
@@ -67,38 +70,48 @@ cat(paste0(base_pkg_str,"\n",attached_pkg_str))
 We kick off by exploring the data that was provided:
 
 ``` r
+# Provides high level information about a particular data frame
+# @input data: the data frame
+# @input null_fn: a function that takes in a value (like those in the cells)
+# and outputs true if value corresponds to the equivalent null value, false
+# otherwise. For example, we may want to consider 0 as nulls on some scenarios
+# but not on others.
+# @output A data frame showing
+# - Name of the Columns
+# - Type of Variables in Each Column
+# - Some Non-Null Examples of Each Column
+# - % of Values that are Non-Null in Each Column (% Filled)
 data_overview <- function(data,
                           null_fn = function(cname) { paste0(cname," == '' | is.na(",cname,")")}) {
-
+                  
                   cols_summary <- data.frame(ColumnNames = colnames(data))
                   cols_summary$Type <- lapply(training_set, class) %>%
-                                       toupper()
+                    toupper()
                   cols_summary$Examples <- lapply(cols_summary$ColumnNames,
                                                   function(cname) {
                                                     training_set %>%
-                                                    filter_(paste0("!(",null_fn(cname),")")) %>%
-                                                    `[[`(cname) %>%
-                                                    unique() -> filtered_set
+                                                      filter_(paste0("!(",null_fn(cname),")")) %>%
+                                                      `[[`(cname) %>%
+                                                      unique() -> filtered_set
                                                     filtered_set[1:min(5, length(filtered_set))] %>%
-                                                    paste(collapse=' | ')
+                                                      paste(collapse=' | ')
                                                   })
                   cols_summary$EmptyValues <- lapply(cols_summary$ColumnNames,
                                                      function(cname) {
-                                                        training_set %>%
-                                                        filter_(null_fn(cname)) %>%
-                                                        nrow()
+                                                       training_set %>%
+                                                         filter_(null_fn(cname)) %>%
+                                                         nrow()
                                                      })
                   cols_summary$PctFilled <- lapply(cols_summary$EmptyValues,
                                                    function(x) {
-                                                      ((nrow(training_set) - x) / nrow(training_set)) %>%
-                                                      `*`(100) %>% round(0) %>%
-                                                      paste0("%")
+                                                     ((nrow(training_set) - x) / nrow(training_set)) %>%
+                                                       `*`(100) %>% round(0) %>%
+                                                       paste0("%")
                                                    })
-
+                  
                   select(cols_summary, ColumnNames, Type, Examples, PctFilled)
-                }
-
-
+}
+  
 training_set <- read.csv(paste0(data_dir, "train.csv"))
 
 cols_summary <- data_overview(training_set)
@@ -1261,11 +1274,11 @@ map
 
 <!--html_preserve-->
 
-<div id="htmlwidget-b26bdbe75c28bc3739fd" class="leaflet html-widget" style="width:100%;height:288px;">
+<div id="htmlwidget-2637432bae6432170eab" class="leaflet html-widget" style="width:100%;height:288px;">
 
 </div>
 
-<script type="application/json" data-for="htmlwidget-b26bdbe75c28bc3739fd">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-2637432bae6432170eab">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
 
 <!--/html_preserve-->
 

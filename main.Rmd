@@ -10,6 +10,7 @@ packages <- c("knitr")
 tmp <- lapply(packages, library, character.only = TRUE)
 
 read_chunk("script.R")
+read_chunk("shared/helper.R")
   
 ```
 
@@ -34,6 +35,8 @@ cat(paste0(base_pkg_str,"\n",attached_pkg_str))
 
 We kick off by exploring the data that was provided:
 ```{r}
+<<data_overview>>
+  
 <<data_comp>>
 
 # Parse Output
