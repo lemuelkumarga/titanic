@@ -1,10 +1,10 @@
 <project>
   <folder>titanic</folder>
   <title>Estimating Survival Rate of Titanic Passengers</title>
-  <excerpt>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus pharetra dolor a aliquam tempus. Suspendisse nulla nisi, fringilla a rhoncus in, blandit eget tellus. In porttitor lorem ut risus pellentesque, id facilisis enim scelerisque. Curabitur quis nulla ligula. Curabitur ornare eros vel tincidunt imperdiet. Nam feugiat diam vel diam commodo, vel volutpat sapien porta. Mauris et consequat nulla, ac rhoncus lectus. Duis eu sapien leo. Phasellus ut eros risus. Nullam lorem turpis, luctus nec justo ut, varius dapibus velit. Duis sit amet lacinia ex, a dignissim ipsum.</excerpt>
+  <excerpt>Have you ever wondered how the Titanic sank, and what were its evacuation procedures? Using data of titanic passengers, this portfolio aims to understand the influencing factors behind a passenger's survival likehood.</excerpt>
   <algo>Random Forest</algo>
   <code>R</code>
-  <color>blue</color>
-  <data>https://www.kaggle.com/c/titanic</data>
-  <github>https://github.com/tjpalanca/kaggle-titanic.git</github>
+  <color></color>
+  <data>https://github.com/lemuelkumarga/titanic/tree/master/data</data>
+  <github>https://github.com/lemuelkumarga/titanic.git</github>
 </project>

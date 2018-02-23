@@ -14,7 +14,17 @@ read_chunk("shared/helper.R")
   
 ```
 
-Problem description can be found <a href="https://www.kaggle.com/c/titanic" target="_blank">here</a>. 
+## Problem Description
+
+Set for its maiden voyage in 1912, RMS Titanic was then considered unsinkable due to its robust structure. After picking up passengers in Southampton, Cherbourg and Queenstown, the ship set sail towards New York. It was on their way there that the Titanic met its calamitous fate, crashing into an Iceberg and rendering more than 50% of the passengers lost.
+
+There were many questions concerning the events leading to and during the disaster. Some of these include: Which part of the ship was most damaged? What was the evacuation process of the passengers? Using data containing the personal details and disaster outcomes (survival/lost) of passengers, we will aim to answer the following set of questions.
+
+<span class="color-1-text">FYI: This problem was posed as an introductory challenge in <a href="https://www.kaggle.com/c/titanic" target="_blank">Kaggle</a>. The passengers are divided into two sets, one used for training and the other for testing. The training sets contain both the personal details of passengers and their outcomes, while the testing set only contain the former. By developing a robust model through the training set, we hope to predict the survival likelihood of passengers in the testing set.</span>
+
+## Summary of Results
+
+To be completed.
 
 ## Preliminaries
 
@@ -28,7 +38,6 @@ attached_pkg_str <- paste0("Attached Packages: ",paste(names(si[["otherPkgs"]]),
 cat(paste0(base_pkg_str,"\n",attached_pkg_str))
 ```
 
-
 ## Exploration
 
 ### About the Data
@@ -39,26 +48,22 @@ We kick off by exploring the data that was provided:
   
 <<data_comp>>
 
-# Parse Output
-cols_sum_pp <- cols_summary
-colnames(cols_sum_pp) <- sapply(colnames(cols_sum_pp),
-                                function(.) { gsub('([[:upper:]])', ' \\1', .) })
-
-knitr::kable(cols_sum_pp,format="html")
+pander(cols_summary, caption="Titanic Passengers Data")
 ```
 <br>
 
 Based on the summary above, notice the following:
 
-* <span class="hl yellow-text">Names</span> are aggregated in the following format: <span class="hl green-text">Last_Name, Title 
+* <span class="hl color-1-text">Names</span> are aggregated in the following format: <span class="hl color-2-text">Last_Name, Title 
 First_Name</span>.
-* There are different types of <span class="hl yellow-text">Ticket</span> formats.
-* <span class="hl yellow-text">Age</span> has missing data to be populated.
-* <span class="hl yellow-text">Cabin</span> data is sparse, and hence we may want to exclude this for the prediction model.
+* <span class="hl color-1-text">Passenger class (Pclass) </span> levels are the equivalent of <span class="hl color-2-text">First Class (1), Business Class (2) and Economy Class (3)</span>. Hence, they could be used as an indicator of income level.
+* There are different types of <span class="hl color-1-text">Ticket</span> formats.
+* <span class="hl color-1-text">Age</span> has missing data to be populated.
+* <span class="hl color-1-text">Cabin</span> data is sparse, and hence we may want to exclude this for the prediction model.
 
 ### Preliminary Insights
 
-#### On Income
+#### On Income[/Passenger Class]
 
 <div class="st">Hypothesis 1: Higher income individuals are more likely to survive.</div>
 
@@ -215,7 +220,7 @@ Below is an example of the cleansed data set for model ingestion.
 ```{r}
 <<data_prep>>
 
-knitr::kable(head(cleaned_set),format="html")
+pander(head(cleaned_set))
 ```
 
 ## The <i>Random Forest</i> Model
@@ -230,7 +235,7 @@ Listed below are the preliminary results from the initial run using the Random F
 ```{r}
 <<data_model_err_anal>>
   
-knitr::kable(head(err_out),format="html")
+pander(head(err_out))
 
 ```
 

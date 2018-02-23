@@ -6,7 +6,7 @@
 source("shared/defaults.R")
 
 options(stringsAsFactors = FALSE)
-packages <- c("dplyr","ggplot2","randomForest","tidyr","leaflet","purrr","grDevices")
+packages <- c("dplyr","ggplot2","randomForest","tidyr","leaflet","purrr","grDevices","pander")
 load_or_install.packages(packages)
 
 data_dir <- "data/"

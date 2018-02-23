@@ -34,8 +34,34 @@ Estimating Survival Rate of Titanic Passengers
 ================
 Lemuel Kumarga
 
-Problem description can be found
-<a href="https://www.kaggle.com/c/titanic" target="_blank">here</a>.
+## Problem Description
+
+Set for its maiden voyage in 1912, RMS Titanic was then considered
+unsinkable due to its robust structure. After picking up passengers in
+Southampton, Cherbourg and Queenstown, the ship set sail towards New
+York. It was on their way there that the Titanic met its calamitous
+fate, crashing into an Iceberg and rendering more than 50% of the
+passengers lost.
+
+There were many questions concerning the events leading to and during
+the disaster. Some of these include: Which part of the ship was most
+damaged? What was the evacuation process of the passengers? Using data
+containing the personal details and disaster outcomes (survival/lost) of
+passengers, we will aim to answer the following set of questions.
+
+<span class="color-1-text">FYI: This problem was posed as an
+introductory challenge in
+<a href="https://www.kaggle.com/c/titanic" target="_blank">Kaggle</a>.
+The passengers are divided into two sets, one used for training and the
+other for testing. The training sets contain both the personal details
+of passengers and their outcomes, while the testing set only contain the
+former. By developing a robust model through the training set, we hope
+to predict the survival likelihood of passengers in the testing
+set.</span>
+
+## Summary of Results
+
+To be completed.
 
 ## Preliminaries
 
@@ -46,7 +72,7 @@ First load the necessary packages for this exercise.
 source("shared/defaults.R")
 
 options(stringsAsFactors = FALSE)
-packages <- c("dplyr","ggplot2","randomForest","tidyr","leaflet","purrr","grDevices")
+packages <- c("dplyr","ggplot2","randomForest","tidyr","leaflet","purrr","grDevices","pander")
 load_or_install.packages(packages)
 
 data_dir <- "data/"
@@ -61,7 +87,7 @@ cat(paste0(base_pkg_str,"\n",attached_pkg_str))
 ```
 
     ## Base Packages: stats, graphics, grDevices, utils, datasets, methods, base
-    ## Attached Packages: bindrcpp, purrr, leaflet, tidyr, randomForest, ggplot2, dplyr, knitr
+    ## Attached Packages: bindrcpp, purrr, leaflet, tidyr, randomForest, pander, ggplot2, dplyr, knitr
 
 ## Exploration
 
@@ -116,409 +142,45 @@ training_set <- read.csv(paste0(data_dir, "train.csv"))
 
 cols_summary <- data_overview(training_set)
 
-# Parse Output
-cols_sum_pp <- cols_summary
-colnames(cols_sum_pp) <- sapply(colnames(cols_sum_pp),
-                                function(.) { gsub('([[:upper:]])', ' \\1', .) })
-
-knitr::kable(cols_sum_pp,format="html")
+pander(cols_summary, caption="Titanic Passengers Data")
 ```
 
-<table>
-
-<thead>
-
-<tr>
-
-<th style="text-align:left;">
-
-Column Names
-
-</th>
-
-<th style="text-align:left;">
-
-Type
-
-</th>
-
-<th style="text-align:left;">
-
-Examples
-
-</th>
-
-<th style="text-align:left;">
-
-Pct Filled
-
-</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-<tr>
-
-<td style="text-align:left;">
-
-PassengerId
-
-</td>
-
-<td style="text-align:left;">
-
-INTEGER
-
-</td>
-
-<td style="text-align:left;">
-
-1 | 2 | 3 | 4 | 5
-
-</td>
-
-<td style="text-align:left;">
-
-100%
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-Survived
-
-</td>
-
-<td style="text-align:left;">
-
-INTEGER
-
-</td>
-
-<td style="text-align:left;">
-
-0 | 1
-
-</td>
-
-<td style="text-align:left;">
-
-100%
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-Pclass
-
-</td>
-
-<td style="text-align:left;">
-
-INTEGER
-
-</td>
-
-<td style="text-align:left;">
-
-3 | 1 | 2
-
-</td>
-
-<td style="text-align:left;">
-
-100%
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-Name
-
-</td>
-
-<td style="text-align:left;">
-
-CHARACTER
-
-</td>
-
-<td style="text-align:left;">
-
-Braund, Mr. Owen Harris | Cumings, Mrs. John Bradley (Florence Briggs
-Thayer) | Heikkinen, Miss. Laina | Futrelle, Mrs. Jacques Heath (Lily
-May Peel) | Allen, Mr. William Henry
-
-</td>
-
-<td style="text-align:left;">
-
-100%
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-Sex
-
-</td>
-
-<td style="text-align:left;">
-
-CHARACTER
-
-</td>
-
-<td style="text-align:left;">
-
-male | female
-
-</td>
-
-<td style="text-align:left;">
-
-100%
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-Age
-
-</td>
-
-<td style="text-align:left;">
-
-NUMERIC
-
-</td>
-
-<td style="text-align:left;">
-
-22 | 38 | 26 | 35 | 54
-
-</td>
-
-<td style="text-align:left;">
-
-80%
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-SibSp
-
-</td>
-
-<td style="text-align:left;">
-
-INTEGER
-
-</td>
-
-<td style="text-align:left;">
-
-1 | 0 | 3 | 4 | 2
-
-</td>
-
-<td style="text-align:left;">
-
-100%
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-Parch
-
-</td>
-
-<td style="text-align:left;">
-
-INTEGER
-
-</td>
-
-<td style="text-align:left;">
-
-0 | 1 | 2 | 5 | 3
-
-</td>
-
-<td style="text-align:left;">
-
-100%
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-Ticket
-
-</td>
-
-<td style="text-align:left;">
-
-CHARACTER
-
-</td>
-
-<td style="text-align:left;">
-
-A/5 21171 | PC 17599 | STON/O2. 3101282 | 113803 | 373450
-
-</td>
-
-<td style="text-align:left;">
-
-100%
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-Fare
-
-</td>
-
-<td style="text-align:left;">
-
-NUMERIC
-
-</td>
-
-<td style="text-align:left;">
-
-7.25 | 71.2833 | 7.925 | 53.1 | 8.05
-
-</td>
-
-<td style="text-align:left;">
-
-100%
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-Cabin
-
-</td>
-
-<td style="text-align:left;">
-
-CHARACTER
-
-</td>
-
-<td style="text-align:left;">
-
-C85 | C123 | E46 | G6 | C103
-
-</td>
-
-<td style="text-align:left;">
-
-23%
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-Embarked
-
-</td>
-
-<td style="text-align:left;">
-
-CHARACTER
-
-</td>
-
-<td style="text-align:left;">
-
-S | C | Q
-
-</td>
-
-<td style="text-align:left;">
-
-100%
-
-</td>
-
-</tr>
-
-</tbody>
-
-</table>
-
-<br>
+| ColumnNames | Type      | Examples                                                                                                                                                                         | PctFilled |
+| :---------- | :-------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------- |
+| PassengerId | INTEGER   | 1 | 2 | 3 | 4 | 5                                                                                                                                                                | 100%      |
+| Survived    | INTEGER   | 0 | 1                                                                                                                                                                            | 100%      |
+| Pclass      | INTEGER   | 3 | 1 | 2                                                                                                                                                                        | 100%      |
+| Name        | CHARACTER | Braund, Mr. Owen Harris | Cumings, Mrs. John Bradley (Florence Briggs Thayer) | Heikkinen, Miss. Laina | Futrelle, Mrs. Jacques Heath (Lily May Peel) | Allen, Mr. William Henry | 100%      |
+| Sex         | CHARACTER | male | female                                                                                                                                                                    | 100%      |
+| Age         | NUMERIC   | 22 | 38 | 26 | 35 | 54                                                                                                                                                           | 80%       |
+| SibSp       | INTEGER   | 1 | 0 | 3 | 4 | 2                                                                                                                                                                | 100%      |
+| Parch       | INTEGER   | 0 | 1 | 2 | 5 | 3                                                                                                                                                                | 100%      |
+| Ticket      | CHARACTER | A/5 21171 | PC 17599 | STON/O2. 3101282 | 113803 | 373450                                                                                                                        | 100%      |
+| Fare        | NUMERIC   | 7.25 | 71.2833 | 7.925 | 53.1 | 8.05                                                                                                                                             | 100%      |
+| Cabin       | CHARACTER | C85 | C123 | E46 | G6 | C103                                                                                                                                                     | 23%       |
+| Embarked    | CHARACTER | S | C | Q                                                                                                                                                                        | 100%      |
+
+Titanic Passengers Data <br>
 
 Based on the summary above, notice the following:
 
-  - <span class="hl yellow-text">Names</span> are aggregated in the
-    following format: <span class="hl green-text">Last\_Name, Title
+  - <span class="hl color-1-text">Names</span> are aggregated in the
+    following format: <span class="hl color-2-text">Last\_Name, Title
     First\_Name</span>.
+  - <span class="hl color-1-text">Passenger class (Pclass) </span>
+    levels are the equivalent of <span class="hl color-2-text">First
+    Class (1), Business Class (2) and Economy Class (3)</span>. Hence,
+    they could be used as an indicator of income level.
   - There are different types of
-    <span class="hl yellow-text">Ticket</span> formats.
-  - <span class="hl yellow-text">Age</span> has missing data to be
+    <span class="hl color-1-text">Ticket</span> formats.
+  - <span class="hl color-1-text">Age</span> has missing data to be
     populated.
-  - <span class="hl yellow-text">Cabin</span> data is sparse, and hence
+  - <span class="hl color-1-text">Cabin</span> data is sparse, and hence
     we may want to exclude this for the prediction model.
 
 ### Preliminary Insights
 
-#### On Income
+#### On Income\[/Passenger Class\]
 
 <div class="st">
 
@@ -1274,11 +936,11 @@ map
 
 <!--html_preserve-->
 
-<div id="htmlwidget-2637432bae6432170eab" class="leaflet html-widget" style="width:100%;height:288px;">
+<div id="htmlwidget-7fcc3fea0084a3bd0f8b" class="leaflet html-widget" style="width:100%;height:288px;">
 
 </div>
 
-<script type="application/json" data-for="htmlwidget-2637432bae6432170eab">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-7fcc3fea0084a3bd0f8b">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
 
 <!--/html_preserve-->
 
@@ -1431,510 +1093,28 @@ clean_data <- function(data,is_training = TRUE) {
 
 cleaned_set <- clean_data(training_set)
 
-knitr::kable(head(cleaned_set),format="html")
+pander(head(cleaned_set))
 ```
 
-<table>
-
-<thead>
-
-<tr>
-
-<th style="text-align:left;">
-
-Survived
-
-</th>
-
-<th style="text-align:right;">
-
-Pclass
-
-</th>
-
-<th style="text-align:right;">
-
-Fare
-
-</th>
-
-<th style="text-align:left;">
-
-Sex
-
-</th>
-
-<th style="text-align:left;">
-
-Title
-
-</th>
-
-<th style="text-align:right;">
-
-Age
-
-</th>
-
-<th style="text-align:right;">
-
-SibSp
-
-</th>
-
-<th style="text-align:right;">
-
-Parch
-
-</th>
-
-<th style="text-align:left;">
-
-CabinFloor
-
-</th>
-
-<th style="text-align:left;">
-
-CabinNumber
-
-</th>
-
-<th style="text-align:left;">
-
-Embarked
-
-</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-<tr>
-
-<td style="text-align:left;">
-
-0
-
-</td>
-
-<td style="text-align:right;">
-
-3
-
-</td>
-
-<td style="text-align:right;">
-
-7.2500
-
-</td>
-
-<td style="text-align:left;">
-
-male
-
-</td>
-
-<td style="text-align:left;">
-
-Mr
-
-</td>
-
-<td style="text-align:right;">
-
-22.0000
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-0
-
-</td>
-
-<td style="text-align:left;">
-
-Unknown
-
-</td>
-
-<td style="text-align:left;">
-
-Unknown
-
-</td>
-
-<td style="text-align:left;">
-
-S
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-71.2833
-
-</td>
-
-<td style="text-align:left;">
-
-female
-
-</td>
-
-<td style="text-align:left;">
-
-Mrs
-
-</td>
-
-<td style="text-align:right;">
-
-38.0000
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-0
-
-</td>
-
-<td style="text-align:left;">
-
-C
-
-</td>
-
-<td style="text-align:left;">
-
-Odd
-
-</td>
-
-<td style="text-align:left;">
-
-C
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-3
-
-</td>
-
-<td style="text-align:right;">
-
-7.9250
-
-</td>
-
-<td style="text-align:left;">
-
-female
-
-</td>
-
-<td style="text-align:left;">
-
-Miss
-
-</td>
-
-<td style="text-align:right;">
-
-26.0000
-
-</td>
-
-<td style="text-align:right;">
-
-0
-
-</td>
-
-<td style="text-align:right;">
-
-0
-
-</td>
-
-<td style="text-align:left;">
-
-Unknown
-
-</td>
-
-<td style="text-align:left;">
-
-Unknown
-
-</td>
-
-<td style="text-align:left;">
-
-S
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-53.1000
-
-</td>
-
-<td style="text-align:left;">
-
-female
-
-</td>
-
-<td style="text-align:left;">
-
-Mrs
-
-</td>
-
-<td style="text-align:right;">
-
-35.0000
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-0
-
-</td>
-
-<td style="text-align:left;">
-
-C
-
-</td>
-
-<td style="text-align:left;">
-
-Odd
-
-</td>
-
-<td style="text-align:left;">
-
-S
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-0
-
-</td>
-
-<td style="text-align:right;">
-
-3
-
-</td>
-
-<td style="text-align:right;">
-
-8.0500
-
-</td>
-
-<td style="text-align:left;">
-
-male
-
-</td>
-
-<td style="text-align:left;">
-
-Mr
-
-</td>
-
-<td style="text-align:right;">
-
-35.0000
-
-</td>
-
-<td style="text-align:right;">
-
-0
-
-</td>
-
-<td style="text-align:right;">
-
-0
-
-</td>
-
-<td style="text-align:left;">
-
-Unknown
-
-</td>
-
-<td style="text-align:left;">
-
-Unknown
-
-</td>
-
-<td style="text-align:left;">
-
-S
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-0
-
-</td>
-
-<td style="text-align:right;">
-
-3
-
-</td>
-
-<td style="text-align:right;">
-
-8.4583
-
-</td>
-
-<td style="text-align:left;">
-
-male
-
-</td>
-
-<td style="text-align:left;">
-
-Mr
-
-</td>
-
-<td style="text-align:right;">
-
-29.8705
-
-</td>
-
-<td style="text-align:right;">
-
-0
-
-</td>
-
-<td style="text-align:right;">
-
-0
-
-</td>
-
-<td style="text-align:left;">
-
-Unknown
-
-</td>
-
-<td style="text-align:left;">
-
-Unknown
-
-</td>
-
-<td style="text-align:left;">
-
-Q
-
-</td>
-
-</tr>
-
-</tbody>
-
-</table>
+| Survived | Pclass | Fare  | Sex    | Title |  Age  | SibSp | Parch |
+| :------- | :----: | :---: | :----- | :---- | :---: | :---: | :---: |
+| 0        |   3    | 7.25  | male   | Mr    |  22   |   1   |   0   |
+| 1        |   1    | 71.28 | female | Mrs   |  38   |   1   |   0   |
+| 1        |   3    | 7.925 | female | Miss  |  26   |   0   |   0   |
+| 1        |   1    | 53.1  | female | Mrs   |  35   |   1   |   0   |
+| 0        |   3    | 8.05  | male   | Mr    |  35   |   0   |   0   |
+| 0        |   3    | 8.458 | male   | Mr    | 29.87 |   0   |   0   |
+
+Table continues below
+
+| CabinFloor | CabinNumber | Embarked |
+| :--------- | :---------- | :------- |
+| Unknown    | Unknown     | S        |
+| C          | Odd         | C        |
+| Unknown    | Unknown     | S        |
+| C          | Odd         | S        |
+| Unknown    | Unknown     | S        |
+| Unknown    | Unknown     | Q        |
 
 ## The <i>Random Forest</i> Model
 
@@ -1986,551 +1166,27 @@ err_out <-  cleaned_set %>%
             mutate(p_y = p_y) %>%
             filter(Survived != p_y)
   
-knitr::kable(head(err_out),format="html")
+pander(head(err_out))
 ```
 
-<table>
-
-<thead>
-
-<tr>
-
-<th style="text-align:left;">
-
-Survived
-
-</th>
-
-<th style="text-align:right;">
-
-Pclass
-
-</th>
-
-<th style="text-align:right;">
-
-Fare
-
-</th>
-
-<th style="text-align:left;">
-
-Sex
-
-</th>
-
-<th style="text-align:left;">
-
-Title
-
-</th>
-
-<th style="text-align:right;">
-
-Age
-
-</th>
-
-<th style="text-align:right;">
-
-SibSp
-
-</th>
-
-<th style="text-align:right;">
-
-Parch
-
-</th>
-
-<th style="text-align:left;">
-
-CabinFloor
-
-</th>
-
-<th style="text-align:left;">
-
-CabinNumber
-
-</th>
-
-<th style="text-align:left;">
-
-Embarked
-
-</th>
-
-<th style="text-align:left;">
-
-p\_y
-
-</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-<tr>
-
-<td style="text-align:left;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:right;">
-
-13.0000
-
-</td>
-
-<td style="text-align:left;">
-
-male
-
-</td>
-
-<td style="text-align:left;">
-
-Mr
-
-</td>
-
-<td style="text-align:right;">
-
-32.99135
-
-</td>
-
-<td style="text-align:right;">
-
-0
-
-</td>
-
-<td style="text-align:right;">
-
-0
-
-</td>
-
-<td style="text-align:left;">
-
-Unknown
-
-</td>
-
-<td style="text-align:left;">
-
-Unknown
-
-</td>
-
-<td style="text-align:left;">
-
-S
-
-</td>
-
-<td style="text-align:left;">
-
-0
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-3
-
-</td>
-
-<td style="text-align:right;">
-
-31.3875
-
-</td>
-
-<td style="text-align:left;">
-
-female
-
-</td>
-
-<td style="text-align:left;">
-
-Mrs
-
-</td>
-
-<td style="text-align:right;">
-
-38.00000
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-5
-
-</td>
-
-<td style="text-align:left;">
-
-Unknown
-
-</td>
-
-<td style="text-align:left;">
-
-Unknown
-
-</td>
-
-<td style="text-align:left;">
-
-S
-
-</td>
-
-<td style="text-align:left;">
-
-0
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-3
-
-</td>
-
-<td style="text-align:right;">
-
-7.2292
-
-</td>
-
-<td style="text-align:left;">
-
-male
-
-</td>
-
-<td style="text-align:left;">
-
-Mr
-
-</td>
-
-<td style="text-align:right;">
-
-29.87050
-
-</td>
-
-<td style="text-align:right;">
-
-0
-
-</td>
-
-<td style="text-align:right;">
-
-0
-
-</td>
-
-<td style="text-align:left;">
-
-Unknown
-
-</td>
-
-<td style="text-align:left;">
-
-Unknown
-
-</td>
-
-<td style="text-align:left;">
-
-C
-
-</td>
-
-<td style="text-align:left;">
-
-0
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-0
-
-</td>
-
-<td style="text-align:right;">
-
-2
-
-</td>
-
-<td style="text-align:right;">
-
-21.0000
-
-</td>
-
-<td style="text-align:left;">
-
-female
-
-</td>
-
-<td style="text-align:left;">
-
-Mrs
-
-</td>
-
-<td style="text-align:right;">
-
-27.00000
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-0
-
-</td>
-
-<td style="text-align:left;">
-
-Unknown
-
-</td>
-
-<td style="text-align:left;">
-
-Unknown
-
-</td>
-
-<td style="text-align:left;">
-
-S
-
-</td>
-
-<td style="text-align:left;">
-
-1
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-35.5000
-
-</td>
-
-<td style="text-align:left;">
-
-male
-
-</td>
-
-<td style="text-align:left;">
-
-Mr
-
-</td>
-
-<td style="text-align:right;">
-
-41.47767
-
-</td>
-
-<td style="text-align:right;">
-
-0
-
-</td>
-
-<td style="text-align:right;">
-
-0
-
-</td>
-
-<td style="text-align:left;">
-
-C
-
-</td>
-
-<td style="text-align:left;">
-
-Even
-
-</td>
-
-<td style="text-align:left;">
-
-S
-
-</td>
-
-<td style="text-align:left;">
-
-0
-
-</td>
-
-</tr>
-
-<tr>
-
-<td style="text-align:left;">
-
-1
-
-</td>
-
-<td style="text-align:right;">
-
-3
-
-</td>
-
-<td style="text-align:right;">
-
-9.5000
-
-</td>
-
-<td style="text-align:left;">
-
-male
-
-</td>
-
-<td style="text-align:left;">
-
-Mr
-
-</td>
-
-<td style="text-align:right;">
-
-29.00000
-
-</td>
-
-<td style="text-align:right;">
-
-0
-
-</td>
-
-<td style="text-align:right;">
-
-0
-
-</td>
-
-<td style="text-align:left;">
-
-Unknown
-
-</td>
-
-<td style="text-align:left;">
-
-Unknown
-
-</td>
-
-<td style="text-align:left;">
-
-S
-
-</td>
-
-<td style="text-align:left;">
-
-0
-
-</td>
-
-</tr>
-
-</tbody>
-
-</table>
+| Survived | Pclass | Fare  | Sex    | Title |  Age  | SibSp | Parch |
+| :------- | :----: | :---: | :----- | :---- | :---: | :---: | :---: |
+| 1        |   2    |  13   | male   | Mr    | 32.99 |   0   |   0   |
+| 1        |   3    | 31.39 | female | Mrs   |  38   |   1   |   5   |
+| 1        |   3    | 7.229 | male   | Mr    | 29.87 |   0   |   0   |
+| 0        |   2    |  21   | female | Mrs   |  27   |   1   |   0   |
+| 1        |   1    | 35.5  | male   | Mr    | 41.48 |   0   |   0   |
+| 1        |   3    |  9.5  | male   | Mr    |  29   |   0   |   0   |
+
+Table continues below
+
+| CabinFloor | CabinNumber | Embarked | p\_y |
+| :--------- | :---------- | :------- | :--- |
+| Unknown    | Unknown     | S        | 0    |
+| Unknown    | Unknown     | S        | 0    |
+| Unknown    | Unknown     | C        | 0    |
+| Unknown    | Unknown     | S        | 1    |
+| C          | Even        | S        | 0    |
+| Unknown    | Unknown     | S        | 0    |
 
 ## Predictive Results
