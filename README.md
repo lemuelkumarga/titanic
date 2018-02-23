@@ -1,19 +1,47 @@
+## Package Requirements
+
+### Pandoc 2.1 
+- Need to reference googlefonts
+
+## Cloning the Repository
+
+Cloning the repository is not as straightforward due to the presence of git submodules.
+
+Please replicate the steps below in Terminal to ensure success.
+
+``` sh
+# Clone the repo as usual
+git clone https://github.com/lemuelkumarga/titanic
+
+# Initialize submodule
+cd titanic
+git submodule init
+git submodule update
+
+# When cloned, submodules are detached from the HEAD. We attempt to rectify this issue to prevent problems in git
+cd shared
+git checkout -b tmp
+git checkout master
+git merge tmp
+git branch -d tmp
+
+# Return to original folder if desired
+cd ../../
+```
+
 ---
-title: "Estimating Survival Rate of Titanic Passengers"
-author: "Lemuel Kumarga"
-always_allow_html: yes
-knit: (function(inputFile, encoding) { source("shared/knit.R"); knitter(inputFile, encoding)})
----
+Estimating Survival Rate of Titanic Passengers
+================
+Lemuel Kumarga
 
-
-
-Problem description can be found <a href="https://www.kaggle.com/c/titanic" target="_blank">here</a>. 
+Problem description can be found
+<a href="https://www.kaggle.com/c/titanic" target="_blank">here</a>.
 
 ## Preliminaries
 
 First load the necessary packages for this exercise.
 
-```r
+``` r
 # Load default settings for R Markdown -- see file for more details
 source("shared/defaults.R")
 
@@ -29,11 +57,8 @@ attached_pkg_str <- paste0("Attached Packages: ",paste(names(si[["otherPkgs"]]),
 cat(paste0(base_pkg_str,"\n",attached_pkg_str))
 ```
 
-```
-## Base Packages: stats, graphics, grDevices, utils, datasets, methods, base
-## Attached Packages: purrr, leaflet, tidyr, randomForest, ggplot2, dplyr, knitr
-```
-
+    ## Base Packages: stats, graphics, grDevices, utils, datasets, methods, base
+    ## Attached Packages: bindrcpp, purrr, leaflet, tidyr, randomForest, ggplot2, dplyr, knitr
 
 ## Exploration
 
@@ -41,7 +66,7 @@ cat(paste0(base_pkg_str,"\n",attached_pkg_str))
 
 We kick off by exploring the data that was provided:
 
-```r
+``` r
 data_overview <- function(data,
                           null_fn = function(cname) { paste0(cname," == '' | is.na(",cname,")")}) {
 
@@ -87,108 +112,411 @@ knitr::kable(cols_sum_pp,format="html")
 ```
 
 <table>
- <thead>
-  <tr>
-   <th style="text-align:left;">  Column Names </th>
-   <th style="text-align:left;">  Type </th>
-   <th style="text-align:left;">  Examples </th>
-   <th style="text-align:left;">  Pct Filled </th>
-  </tr>
- </thead>
+
+<thead>
+
+<tr>
+
+<th style="text-align:left;">
+
+Column Names
+
+</th>
+
+<th style="text-align:left;">
+
+Type
+
+</th>
+
+<th style="text-align:left;">
+
+Examples
+
+</th>
+
+<th style="text-align:left;">
+
+Pct Filled
+
+</th>
+
+</tr>
+
+</thead>
+
 <tbody>
-  <tr>
-   <td style="text-align:left;"> PassengerId </td>
-   <td style="text-align:left;"> INTEGER </td>
-   <td style="text-align:left;"> 1 | 2 | 3 | 4 | 5 </td>
-   <td style="text-align:left;"> 100% </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> Survived </td>
-   <td style="text-align:left;"> INTEGER </td>
-   <td style="text-align:left;"> 0 | 1 </td>
-   <td style="text-align:left;"> 100% </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> Pclass </td>
-   <td style="text-align:left;"> INTEGER </td>
-   <td style="text-align:left;"> 3 | 1 | 2 </td>
-   <td style="text-align:left;"> 100% </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> Name </td>
-   <td style="text-align:left;"> CHARACTER </td>
-   <td style="text-align:left;"> Braund, Mr. Owen Harris | Cumings, Mrs. John Bradley (Florence Briggs Thayer) | Heikkinen, Miss. Laina | Futrelle, Mrs. Jacques Heath (Lily May Peel) | Allen, Mr. William Henry </td>
-   <td style="text-align:left;"> 100% </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> Sex </td>
-   <td style="text-align:left;"> CHARACTER </td>
-   <td style="text-align:left;"> male | female </td>
-   <td style="text-align:left;"> 100% </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> Age </td>
-   <td style="text-align:left;"> NUMERIC </td>
-   <td style="text-align:left;"> 22 | 38 | 26 | 35 | 54 </td>
-   <td style="text-align:left;"> 80% </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> SibSp </td>
-   <td style="text-align:left;"> INTEGER </td>
-   <td style="text-align:left;"> 1 | 0 | 3 | 4 | 2 </td>
-   <td style="text-align:left;"> 100% </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> Parch </td>
-   <td style="text-align:left;"> INTEGER </td>
-   <td style="text-align:left;"> 0 | 1 | 2 | 5 | 3 </td>
-   <td style="text-align:left;"> 100% </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> Ticket </td>
-   <td style="text-align:left;"> CHARACTER </td>
-   <td style="text-align:left;"> A/5 21171 | PC 17599 | STON/O2. 3101282 | 113803 | 373450 </td>
-   <td style="text-align:left;"> 100% </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> Fare </td>
-   <td style="text-align:left;"> NUMERIC </td>
-   <td style="text-align:left;"> 7.25 | 71.2833 | 7.925 | 53.1 | 8.05 </td>
-   <td style="text-align:left;"> 100% </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> Cabin </td>
-   <td style="text-align:left;"> CHARACTER </td>
-   <td style="text-align:left;"> C85 | C123 | E46 | G6 | C103 </td>
-   <td style="text-align:left;"> 23% </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> Embarked </td>
-   <td style="text-align:left;"> CHARACTER </td>
-   <td style="text-align:left;"> S | C | Q </td>
-   <td style="text-align:left;"> 100% </td>
-  </tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+PassengerId
+
+</td>
+
+<td style="text-align:left;">
+
+INTEGER
+
+</td>
+
+<td style="text-align:left;">
+
+1 | 2 | 3 | 4 | 5
+
+</td>
+
+<td style="text-align:left;">
+
+100%
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+Survived
+
+</td>
+
+<td style="text-align:left;">
+
+INTEGER
+
+</td>
+
+<td style="text-align:left;">
+
+0 | 1
+
+</td>
+
+<td style="text-align:left;">
+
+100%
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+Pclass
+
+</td>
+
+<td style="text-align:left;">
+
+INTEGER
+
+</td>
+
+<td style="text-align:left;">
+
+3 | 1 | 2
+
+</td>
+
+<td style="text-align:left;">
+
+100%
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+Name
+
+</td>
+
+<td style="text-align:left;">
+
+CHARACTER
+
+</td>
+
+<td style="text-align:left;">
+
+Braund, Mr. Owen Harris | Cumings, Mrs. John Bradley (Florence Briggs
+Thayer) | Heikkinen, Miss. Laina | Futrelle, Mrs. Jacques Heath (Lily
+May Peel) | Allen, Mr. William Henry
+
+</td>
+
+<td style="text-align:left;">
+
+100%
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+Sex
+
+</td>
+
+<td style="text-align:left;">
+
+CHARACTER
+
+</td>
+
+<td style="text-align:left;">
+
+male | female
+
+</td>
+
+<td style="text-align:left;">
+
+100%
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+Age
+
+</td>
+
+<td style="text-align:left;">
+
+NUMERIC
+
+</td>
+
+<td style="text-align:left;">
+
+22 | 38 | 26 | 35 | 54
+
+</td>
+
+<td style="text-align:left;">
+
+80%
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+SibSp
+
+</td>
+
+<td style="text-align:left;">
+
+INTEGER
+
+</td>
+
+<td style="text-align:left;">
+
+1 | 0 | 3 | 4 | 2
+
+</td>
+
+<td style="text-align:left;">
+
+100%
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+Parch
+
+</td>
+
+<td style="text-align:left;">
+
+INTEGER
+
+</td>
+
+<td style="text-align:left;">
+
+0 | 1 | 2 | 5 | 3
+
+</td>
+
+<td style="text-align:left;">
+
+100%
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+Ticket
+
+</td>
+
+<td style="text-align:left;">
+
+CHARACTER
+
+</td>
+
+<td style="text-align:left;">
+
+A/5 21171 | PC 17599 | STON/O2. 3101282 | 113803 | 373450
+
+</td>
+
+<td style="text-align:left;">
+
+100%
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+Fare
+
+</td>
+
+<td style="text-align:left;">
+
+NUMERIC
+
+</td>
+
+<td style="text-align:left;">
+
+7.25 | 71.2833 | 7.925 | 53.1 | 8.05
+
+</td>
+
+<td style="text-align:left;">
+
+100%
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+Cabin
+
+</td>
+
+<td style="text-align:left;">
+
+CHARACTER
+
+</td>
+
+<td style="text-align:left;">
+
+C85 | C123 | E46 | G6 | C103
+
+</td>
+
+<td style="text-align:left;">
+
+23%
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+Embarked
+
+</td>
+
+<td style="text-align:left;">
+
+CHARACTER
+
+</td>
+
+<td style="text-align:left;">
+
+S | C | Q
+
+</td>
+
+<td style="text-align:left;">
+
+100%
+
+</td>
+
+</tr>
+
 </tbody>
+
 </table>
+
 <br>
 
 Based on the summary above, notice the following:
 
-* <span class="hl yellow-text">Names</span> are aggregated in the following format: <span class="hl green-text">Last_Name, Title 
-First_Name</span>.
-* There are different types of <span class="hl yellow-text">Ticket</span> formats.
-* <span class="hl yellow-text">Age</span> has missing data to be populated.
-* <span class="hl yellow-text">Cabin</span> data is sparse, and hence we may want to exclude this for the prediction model.
+  - <span class="hl yellow-text">Names</span> are aggregated in the
+    following format: <span class="hl green-text">Last\_Name, Title
+    First\_Name</span>.
+  - There are different types of
+    <span class="hl yellow-text">Ticket</span> formats.
+  - <span class="hl yellow-text">Age</span> has missing data to be
+    populated.
+  - <span class="hl yellow-text">Cabin</span> data is sparse, and hence
+    we may want to exclude this for the prediction model.
 
 ### Preliminary Insights
 
 #### On Income
 
-<div class="st">Hypothesis 1: Higher income individuals are more likely to survive.</div>
+<div class="st">
 
-High-income individuals could pay more for seats in the lifeboats, and hence escape the disaster. 
+Hypothesis 1: Higher income individuals are more likely to survive.
 
-```r
+</div>
+
+High-income individuals could pay more for seats in the lifeboats, and
+hence escape the disaster.
+
+``` r
 income_set <- training_set %>%
               group_by(Pclass) %>%
               summarise(CohortSize = n(),
@@ -254,11 +582,12 @@ income_plot <-  ggplot(income_set, aes(x=SurvivalRate,
 income_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/index_files/figure-html/exp_hypo1-1.png" style="display: block; margin: auto;" />
-Using the passenger class as a proxy for income, we find this claim to be <span class="hl green-text">TRUE</span>.
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo1-1.png" style="display: block; margin: auto;" />
+Using the passenger class as a proxy for income, we find this claim to
+be
+<span class="hl green-text">TRUE</span>.
 
-
-```r
+``` r
 appendFarePUnit <- function(dt) { dt %>%  mutate(Fare_P_Unit = Fare / (1 + SibSp + Parch)) }
 
 fares_set <- appendFarePUnit(training_set) %>%
@@ -288,17 +617,25 @@ fares_plot <- ggplot(fares_pdata, aes(x = FareMax,
 fares_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/index_files/figure-html/exp_hypo1_p2-1.png" style="display: block; margin: auto;" />
-We also noticed this phenomenon in fares, where the higher amount an individual paid for the fares, the more likely he/she will survive the crash.
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo1_p2-1.png" style="display: block; margin: auto;" />
+We also noticed this phenomenon in fares, where the higher amount an
+individual paid for the fares, the more likely he/she will survive the
+crash.
 
 #### On Title
 
-<div class="st">Hypothesis 2: Gender information is embedded under the title of the individual.</div>
+<div class="st">
 
-Most titles are provided based on the gender on the individual, hence we should expect the hypothesis to hold true.
+Hypothesis 2: Gender information is embedded under the title of the
+individual.
 
+</div>
 
-```r
+Most titles are provided based on the gender on the individual, hence we
+should expect the hypothesis to hold
+true.
+
+``` r
 prefix <- function(x) { unlist(strsplit(unlist(strsplit(x, ", "))[2],"\\. "))[1] }
 
 gender_set <- training_set %>%
@@ -342,16 +679,27 @@ gender_plot <- ggplot(gender_sex_totals, aes(x = Prefix,
 gender_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/index_files/figure-html/exp_hypo2-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo2-1.png" style="display: block; margin: auto;" />
 
-As can be seen, almost every title has a mapping to the gender of the individual, suggesting that every title is associated with a gender. The only notable exception is "Dr", which is gender neutral. Hence, the hypothesis is <span class="hl green-text">TRUE</span>.
+As can be seen, almost every title has a mapping to the gender of the
+individual, suggesting that every title is associated with a gender. The
+only notable exception is “Dr”, which is gender neutral. Hence, the
+hypothesis is <span class="hl green-text">TRUE</span>.
 
-<div class="st">Hypothesis 3: Females and more esteemed individuals are more likely to survive than males.</div>
+<div class="st">
 
-Prior to this analysis, we will group those individuals without "Mr","Mrs","Miss", or "Master" title as "Rare title" individuals. These individuals, along with females, would have higher priority in onboarding the lifeboats, hence we assume that they are more likely to survive the crash.
+Hypothesis 3: Females and more esteemed individuals are more likely to
+survive than males.
 
+</div>
 
-```r
+Prior to this analysis, we will group those individuals without
+“Mr”,“Mrs”,“Miss”, or “Master” title as “Rare title” individuals.
+These individuals, along with females, would have higher priority in
+onboarding the lifeboats, hence we assume that they are more likely to
+survive the crash.
+
+``` r
 appendTitle <- function(data) {
   data %>%
   mutate(Title = as.character(lapply(Name, prefix))) %>%
@@ -393,17 +741,22 @@ title_plot <- ggplot(title_set, aes(x=Title,
 title_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/index_files/figure-html/exp_hypo3-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo3-1.png" style="display: block; margin: auto;" />
 
-As expected, females are more likely to survive than males, while "esteemed" titles increase the survival likelihood
-of both genders. Hence, the hypothesis is <span class="hl green-text">TRUE</span>.
+As expected, females are more likely to survive than males, while
+“esteemed” titles increase the survival likelihood of both genders.
+Hence, the hypothesis is <span class="hl green-text">TRUE</span>.
 
 #### On Age
 
-<div class="st">Hypothesis 4: Individuals who are very young and very old are more likely to survive.</div>
+<div class="st">
 
+Hypothesis 4: Individuals who are very young and very old are more
+likely to survive.
 
-```r
+</div>
+
+``` r
 age_set <- training_set %>%
            select(Age, Survived) %>%
            filter(Age > 0)
@@ -448,20 +801,30 @@ age_plot <- ggplot(age_pdata, aes(x=AgeMin,
 age_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/index_files/figure-html/exp_hypo4-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo4-1.png" style="display: block; margin: auto;" />
 
-With the limited data set, we can see that younger individuals are more likely to survive. A possible explanation is probably because babies and toddlers occupy less space (and hence easier to find seats within the lifeboats). 
+With the limited data set, we can see that younger individuals are more
+likely to survive. A possible explanation is probably because babies and
+toddlers occupy less space (and hence easier to find seats within the
+lifeboats).
 
-However, older people, especially those more than 60 years old, are less likely to survive. This is probably due to their lack of agility in responding to the crash. 
+However, older people, especially those more than 60 years old, are less
+likely to survive. This is probably due to their lack of agility in
+responding to the crash.
 
-Hence, the premise is <span class="hl green-text">TRUE</span> for young children and <span class="hl red-text">FALSE</span> for older people.
+Hence, the premise is <span class="hl green-text">TRUE</span> for young
+children and <span class="hl red-text">FALSE</span> for older people.
 
 #### On Company
 
-<div class="st">Hypothesis 5: Individuals with children are more likely to survive, while individuals with same-age company are less likely to survive.</div>
+<div class="st">
 
+Hypothesis 5: Individuals with children are more likely to survive,
+while individuals with same-age company are less likely to survive.
 
-```r
+</div>
+
+``` r
 company_set <- training_set %>%
                 select(SibSp, Parch, Survived) %>%
                 group_by(SibSp, Parch) %>%
@@ -504,9 +867,13 @@ company_plot <- ggplot(company_set, aes(x = as.factor(Parch),
 company_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/index_files/figure-html/exp_hypo5-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo5-1.png" style="display: block; margin: auto;" />
 
-As can be seen from the chart above, individuals with 1 to 2 children are more likely to survive than those without any children. It is inconclusive to determine from the chart above, whether same-age company has an impact of survivalhood. Hence, this premise is <span class="hl yellow-text">TRUE TO A LIMITED EXTENT</span>.
+As can be seen from the chart above, individuals with 1 to 2 children
+are more likely to survive than those without any children. It is
+inconclusive to determine from the chart above, whether same-age company
+has an impact of survivalhood. Hence, this premise is
+<span class="hl yellow-text">TRUE TO A LIMITED EXTENT</span>.
 
 <!---
 
@@ -564,7 +931,7 @@ com_ticket_plot <- ggplot(com_ticket_set, aes(x = OtherCompany,
 com_ticket_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/index_files/figure-html/exp_hypo6-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo6-1.png" style="display: block; margin: auto;" />
 
 A correlation of <b>36%</b> suggests that there is in fact some correlation between ticket IDs and the identity of the group. Hence, this hypothesis is <span class="hl green-text">TRUE</span>.
 
@@ -572,16 +939,30 @@ A correlation of <b>36%</b> suggests that there is in fact some correlation betw
 
 #### On Cabin Positions
 
-<div class="st">Hypothesis 6: Cabin positions should have an impact of survivalhood, but only to a certain extent.</div>
+<div class="st">
 
-Cabins further away from the lifeboats will have a more difficult time surviving, hence we should assume that where passengers stay will have an impact on their survivalhood. However, the cabin positions can only determine survivalhood partially, given that passengers may not be at their cabins during the time of crash.
+Hypothesis 6: Cabin positions should have an impact of survivalhood, but
+only to a certain extent.
 
-A more detailed deck plan can be found <a href="https://www.encyclopedia-titanica.org/titanic-deckplans/b-deck.html" target="_blank">here</a>. As can be seen, the letter of the cabin represents the deck (floor) where the room is located. We also see that odd numbers correspond to one side of the Titanic, while even numbers correspond to the other.
+</div>
 
-We will break down the cabin position into three constituents: the cabin floor, the cabin number (odd or even), and the number of cabins specified.
+Cabins further away from the lifeboats will have a more difficult time
+surviving, hence we should assume that where passengers stay will have
+an impact on their survivalhood. However, the cabin positions can only
+determine survivalhood partially, given that passengers may not be at
+their cabins during the time of crash.
 
+A more detailed deck plan can be found
+<a href="https://www.encyclopedia-titanica.org/titanic-deckplans/b-deck.html" target="_blank">here</a>.
+As can be seen, the letter of the cabin represents the deck (floor)
+where the room is located. We also see that odd numbers correspond to
+one side of the Titanic, while even numbers correspond to the other.
 
-```r
+We will break down the cabin position into three constituents: the cabin
+floor, the cabin number (odd or even), and the number of cabins
+specified.
+
+``` r
 getCabinFloor <- function(x) {
 
   if (x == "") { return("NA") }
@@ -631,8 +1012,7 @@ cabin_set <- appendCabinInfo(training_set) %>%
 
 ##### Cabin Floors
 
-
-```r
+``` r
 cabinLet_set <- cabin_set %>%
                 group_by(CabinFloor) %>%
                 summarise(CohortSize = n(),
@@ -676,14 +1056,16 @@ cabinLet_plot <- ggplot(cabinLet_set, aes(x=as.factor(CabinFloor),
 cabinLet_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/index_files/figure-html/exp_hypo7_p1-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo7_p1-1.png" style="display: block; margin: auto;" />
 
-From the chart, we can deduce that <span class="hl yellow-text">Cabins B to E</span> has a higher likelihood of survival compared to other/unspecified cabins, which suggests that the position of cabins play a role in determining whether a passenger survive.
+From the chart, we can deduce that <span class="hl yellow-text">Cabins B
+to E</span> has a higher likelihood of survival compared to
+other/unspecified cabins, which suggests that the position of cabins
+play a role in determining whether a passenger survive.
 
 ##### Cabin Numbers
 
-
-```r
+``` r
 cabinNumber_set <- cabin_set %>%
                    group_by(CabinNumber) %>%
                     summarise(CohortSize = n(),
@@ -751,14 +1133,14 @@ cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
 cabinNumber_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/index_files/figure-html/exp_hypo7_p2-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo7_p2-1.png" style="display: block; margin: auto;" />
 
-It is pretty clear that those who stay in the odd rooms are more likely to survive than those in the even rooms.
+It is pretty clear that those who stay in the odd rooms are more likely
+to survive than those in the even rooms.
 
 ##### Cabins Specified
 
-
-```r
+``` r
 cabinCount_set <- cabin_set %>%
                   group_by(CabinCount) %>%
                   summarise(CohortSize = n(),
@@ -803,18 +1185,26 @@ cabinCount_plot <- ggplot(cabinCount_set, aes(x=as.factor(CabinCount),
 cabinCount_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/index_files/figure-html/exp_hypo7_p3-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo7_p3-1.png" style="display: block; margin: auto;" />
 
-Even though seems to be an inverse relationship between the survival likelihood and number of cabins specified, the sample size is too small to ensure statistical significance.
+Even though seems to be an inverse relationship between the survival
+likelihood and number of cabins specified, the sample size is too small
+to ensure statistical significance.
 
-In conclusion, cabin floors and cabin numbers can determine a passenger's survival likelihood, while there is too little data to deduce a relationship in the number of cabins specified. Hence, the hypothesis is <span class="hl green-text">TRUE</span>.
+In conclusion, cabin floors and cabin numbers can determine a
+passenger’s survival likelihood, while there is too little data to
+deduce a relationship in the number of cabins specified. Hence, the
+hypothesis is <span class="hl green-text">TRUE</span>.
 
 #### On Embakartion Ports
 
-<div class="st">Hypothesis 7: Port of embarkation should have no impact on survivalhood.</div>
+<div class="st">
 
+Hypothesis 7: Port of embarkation should have no impact on survivalhood.
 
-```r
+</div>
+
+``` r
 embark_set <- training_set %>%
               filter(Embarked != "") %>%
               group_by(Embarked) %>%
@@ -869,14 +1259,21 @@ pwalk(
 map
 ```
 
-<!--html_preserve--><div id="htmlwidget-bbaa22da91dea6a5abc4" style="width:100%;height:288px;" class="leaflet html-widget"></div>
-<script type="application/json" data-for="htmlwidget-bbaa22da91dea6a5abc4">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script><!--/html_preserve-->
+<!--html_preserve-->
 
-<br>
-At first glance, there seems to be no plausible explanation why a passenger's port of embarkation will have an impact on the passenger's survival likelihood.
+<div id="htmlwidget-b26bdbe75c28bc3739fd" class="leaflet html-widget" style="width:100%;height:288px;">
 
+</div>
 
-```r
+<script type="application/json" data-for="htmlwidget-b26bdbe75c28bc3739fd">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
+
+<!--/html_preserve-->
+
+<br> At first glance, there seems to be no plausible explanation why a
+passenger’s port of embarkation will have an impact on the passenger’s
+survival likelihood.
+
+``` r
 # Assessing the correlation between Embarkation and Passenger Class
 
 embark_pclass <- training_set %>%
@@ -928,30 +1325,36 @@ embark_pclass_plot <- ggplot(embark_pclass, aes(x=as.factor(Embarked),
 embark_pclass_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Portfolio/content/portfolios/titanic/index_files/figure-html/exp_hypo8_p2-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo8_p2-1.png" style="display: block; margin: auto;" />
 
-However, by studying the demographics of the passengers who embarked at each port, we know that a higher proportion of Cherbough are high-income. This explains the higher survival likelihood for those who embarked at Cherbough, and renders the hypothesis to be <span class="hl red-text">FALSE</span>.
+However, by studying the demographics of the passengers who embarked at
+each port, we know that a higher proportion of Cherbough are
+high-income. This explains the higher survival likelihood for those who
+embarked at Cherbough, and renders the hypothesis to be
+<span class="hl red-text">FALSE</span>.
 
 ## Preparation
 
-Based on the above hypotheses, we will be adding the following features to predict the survival likelihood of an individual.
+Based on the above hypotheses, we will be adding the following features
+to predict the survival likelihood of an
+individual.
 
-Feature | Variable Type | Hypotheses Supporting the Feature  | Null Handling 
-- | - | - | -
-Pclass | Continuous | Hypothesis 1 | -1
-Fare | Continuous | Hypothesis 1 | -1
-Sex | Categorical | Hypothesis 3 | 'Unknown' Category Variable
-Title | Categorical | Hypothesis 3 | 'Unknown' Category Variable
-Age | Continuous | Hypothesis 4 | Regression
-SibSp | Continuous | Hypothesis 5 | -1
-Parch | Continuous | Hypothesis 5 | -1
-CabinFloor | Categorical | Hypothesis 6 | 'Unknown' Category Variable
-CabinNumber | Categorical | Hypothesis 6 | 'Unknown' Category Variable
-Port of Embarkation | Categorical | Hypothesis 7 | 'Unknown' Category Variable
+| Feature             | Variable Type | Hypotheses Supporting the Feature | Null Handling               |
+| ------------------- | ------------- | --------------------------------- | --------------------------- |
+| Pclass              | Continuous    | Hypothesis 1                      | \-1                         |
+| Fare                | Continuous    | Hypothesis 1                      | \-1                         |
+| Sex                 | Categorical   | Hypothesis 3                      | ‘Unknown’ Category Variable |
+| Title               | Categorical   | Hypothesis 3                      | ‘Unknown’ Category Variable |
+| Age                 | Continuous    | Hypothesis 4                      | Regression                  |
+| SibSp               | Continuous    | Hypothesis 5                      | \-1                         |
+| Parch               | Continuous    | Hypothesis 5                      | \-1                         |
+| CabinFloor          | Categorical   | Hypothesis 6                      | ‘Unknown’ Category Variable |
+| CabinNumber         | Categorical   | Hypothesis 6                      | ‘Unknown’ Category Variable |
+| Port of Embarkation | Categorical   | Hypothesis 7                      | ‘Unknown’ Category Variable |
 
 Below is an example of the cleansed data set for model ingestion.
 
-```r
+``` r
 ### Create Age as Regression Parameters
 age_data <- training_set %>%
             appendTitle() %>%
@@ -1019,109 +1422,513 @@ knitr::kable(head(cleaned_set),format="html")
 ```
 
 <table>
- <thead>
-  <tr>
-   <th style="text-align:left;"> Survived </th>
-   <th style="text-align:right;"> Pclass </th>
-   <th style="text-align:right;"> Fare </th>
-   <th style="text-align:left;"> Sex </th>
-   <th style="text-align:left;"> Title </th>
-   <th style="text-align:right;"> Age </th>
-   <th style="text-align:right;"> SibSp </th>
-   <th style="text-align:right;"> Parch </th>
-   <th style="text-align:left;"> CabinFloor </th>
-   <th style="text-align:left;"> CabinNumber </th>
-   <th style="text-align:left;"> Embarked </th>
-  </tr>
- </thead>
+
+<thead>
+
+<tr>
+
+<th style="text-align:left;">
+
+Survived
+
+</th>
+
+<th style="text-align:right;">
+
+Pclass
+
+</th>
+
+<th style="text-align:right;">
+
+Fare
+
+</th>
+
+<th style="text-align:left;">
+
+Sex
+
+</th>
+
+<th style="text-align:left;">
+
+Title
+
+</th>
+
+<th style="text-align:right;">
+
+Age
+
+</th>
+
+<th style="text-align:right;">
+
+SibSp
+
+</th>
+
+<th style="text-align:right;">
+
+Parch
+
+</th>
+
+<th style="text-align:left;">
+
+CabinFloor
+
+</th>
+
+<th style="text-align:left;">
+
+CabinNumber
+
+</th>
+
+<th style="text-align:left;">
+
+Embarked
+
+</th>
+
+</tr>
+
+</thead>
+
 <tbody>
-  <tr>
-   <td style="text-align:left;"> 0 </td>
-   <td style="text-align:right;"> 3 </td>
-   <td style="text-align:right;"> 7.2500 </td>
-   <td style="text-align:left;"> male </td>
-   <td style="text-align:left;"> Mr </td>
-   <td style="text-align:right;"> 22.0000 </td>
-   <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:left;"> Unknown </td>
-   <td style="text-align:left;"> Unknown </td>
-   <td style="text-align:left;"> S </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> 1 </td>
-   <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 71.2833 </td>
-   <td style="text-align:left;"> female </td>
-   <td style="text-align:left;"> Mrs </td>
-   <td style="text-align:right;"> 38.0000 </td>
-   <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:left;"> C </td>
-   <td style="text-align:left;"> Odd </td>
-   <td style="text-align:left;"> C </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> 1 </td>
-   <td style="text-align:right;"> 3 </td>
-   <td style="text-align:right;"> 7.9250 </td>
-   <td style="text-align:left;"> female </td>
-   <td style="text-align:left;"> Miss </td>
-   <td style="text-align:right;"> 26.0000 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:left;"> Unknown </td>
-   <td style="text-align:left;"> Unknown </td>
-   <td style="text-align:left;"> S </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> 1 </td>
-   <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 53.1000 </td>
-   <td style="text-align:left;"> female </td>
-   <td style="text-align:left;"> Mrs </td>
-   <td style="text-align:right;"> 35.0000 </td>
-   <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:left;"> C </td>
-   <td style="text-align:left;"> Odd </td>
-   <td style="text-align:left;"> S </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> 0 </td>
-   <td style="text-align:right;"> 3 </td>
-   <td style="text-align:right;"> 8.0500 </td>
-   <td style="text-align:left;"> male </td>
-   <td style="text-align:left;"> Mr </td>
-   <td style="text-align:right;"> 35.0000 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:left;"> Unknown </td>
-   <td style="text-align:left;"> Unknown </td>
-   <td style="text-align:left;"> S </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> 0 </td>
-   <td style="text-align:right;"> 3 </td>
-   <td style="text-align:right;"> 8.4583 </td>
-   <td style="text-align:left;"> male </td>
-   <td style="text-align:left;"> Mr </td>
-   <td style="text-align:right;"> 29.8705 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:left;"> Unknown </td>
-   <td style="text-align:left;"> Unknown </td>
-   <td style="text-align:left;"> Q </td>
-  </tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+0
+
+</td>
+
+<td style="text-align:right;">
+
+3
+
+</td>
+
+<td style="text-align:right;">
+
+7.2500
+
+</td>
+
+<td style="text-align:left;">
+
+male
+
+</td>
+
+<td style="text-align:left;">
+
+Mr
+
+</td>
+
+<td style="text-align:right;">
+
+22.0000
+
+</td>
+
+<td style="text-align:right;">
+
+1
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+<td style="text-align:left;">
+
+Unknown
+
+</td>
+
+<td style="text-align:left;">
+
+Unknown
+
+</td>
+
+<td style="text-align:left;">
+
+S
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1
+
+</td>
+
+<td style="text-align:right;">
+
+1
+
+</td>
+
+<td style="text-align:right;">
+
+71.2833
+
+</td>
+
+<td style="text-align:left;">
+
+female
+
+</td>
+
+<td style="text-align:left;">
+
+Mrs
+
+</td>
+
+<td style="text-align:right;">
+
+38.0000
+
+</td>
+
+<td style="text-align:right;">
+
+1
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+<td style="text-align:left;">
+
+C
+
+</td>
+
+<td style="text-align:left;">
+
+Odd
+
+</td>
+
+<td style="text-align:left;">
+
+C
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1
+
+</td>
+
+<td style="text-align:right;">
+
+3
+
+</td>
+
+<td style="text-align:right;">
+
+7.9250
+
+</td>
+
+<td style="text-align:left;">
+
+female
+
+</td>
+
+<td style="text-align:left;">
+
+Miss
+
+</td>
+
+<td style="text-align:right;">
+
+26.0000
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+<td style="text-align:left;">
+
+Unknown
+
+</td>
+
+<td style="text-align:left;">
+
+Unknown
+
+</td>
+
+<td style="text-align:left;">
+
+S
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1
+
+</td>
+
+<td style="text-align:right;">
+
+1
+
+</td>
+
+<td style="text-align:right;">
+
+53.1000
+
+</td>
+
+<td style="text-align:left;">
+
+female
+
+</td>
+
+<td style="text-align:left;">
+
+Mrs
+
+</td>
+
+<td style="text-align:right;">
+
+35.0000
+
+</td>
+
+<td style="text-align:right;">
+
+1
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+<td style="text-align:left;">
+
+C
+
+</td>
+
+<td style="text-align:left;">
+
+Odd
+
+</td>
+
+<td style="text-align:left;">
+
+S
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+0
+
+</td>
+
+<td style="text-align:right;">
+
+3
+
+</td>
+
+<td style="text-align:right;">
+
+8.0500
+
+</td>
+
+<td style="text-align:left;">
+
+male
+
+</td>
+
+<td style="text-align:left;">
+
+Mr
+
+</td>
+
+<td style="text-align:right;">
+
+35.0000
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+<td style="text-align:left;">
+
+Unknown
+
+</td>
+
+<td style="text-align:left;">
+
+Unknown
+
+</td>
+
+<td style="text-align:left;">
+
+S
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+0
+
+</td>
+
+<td style="text-align:right;">
+
+3
+
+</td>
+
+<td style="text-align:right;">
+
+8.4583
+
+</td>
+
+<td style="text-align:left;">
+
+male
+
+</td>
+
+<td style="text-align:left;">
+
+Mr
+
+</td>
+
+<td style="text-align:right;">
+
+29.8705
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+<td style="text-align:left;">
+
+Unknown
+
+</td>
+
+<td style="text-align:left;">
+
+Unknown
+
+</td>
+
+<td style="text-align:left;">
+
+Q
+
+</td>
+
+</tr>
+
 </tbody>
+
 </table>
 
 ## The <i>Random Forest</i> Model
 
-Listed below are the preliminary results from the initial run using the Random Forest model.
+Listed below are the preliminary results from the initial run using the
+Random Forest model.
 
-
-```r
+``` r
 set.seed(1)
 rf_model <- randomForest(Survived ~ .,
                          data = cleaned_set,
@@ -1131,42 +1938,36 @@ rf_model <- randomForest(Survived ~ .,
 rf_model
 ```
 
-```
-## 
-## Call:
-##  randomForest(formula = Survived ~ ., data = cleaned_set, importance = TRUE,      ntree = 2000) 
-##                Type of random forest: classification
-##                      Number of trees: 2000
-## No. of variables tried at each split: 3
-## 
-##         OOB estimate of  error rate: 16.84%
-## Confusion matrix:
-##     0   1 class.error
-## 0 492  57   0.1038251
-## 1  93 249   0.2719298
-```
+    ## 
+    ## Call:
+    ##  randomForest(formula = Survived ~ ., data = cleaned_set, importance = TRUE,      ntree = 2000) 
+    ##                Type of random forest: classification
+    ##                      Number of trees: 2000
+    ## No. of variables tried at each split: 3
+    ## 
+    ##         OOB estimate of  error rate: 16.84%
+    ## Confusion matrix:
+    ##     0   1 class.error
+    ## 0 492  57   0.1038251
+    ## 1  93 249   0.2719298
 
-```r
+``` r
 importance(rf_model)
 ```
 
-```
-##                    0          1 MeanDecreaseAccuracy MeanDecreaseGini
-## Pclass      47.21663 47.4942132             69.39251         28.07819
-## Fare        43.19055 43.9893907             66.67144         58.87971
-## Sex         42.24730 36.8114966             42.57382         50.52881
-## Title       54.59914 57.1290385             60.72891         77.20460
-## Age         34.58641 39.4252418             53.95813         52.61366
-## SibSp       44.09189  0.8302836             42.35741         18.13917
-## Parch       11.04993  9.5437824             15.49590         10.00568
-## CabinFloor  24.50409  6.9765507             27.03299         21.64158
-## CabinNumber 17.25665 14.8254202             23.33504         12.55936
-## Embarked    17.95344 29.6962125             35.40686         10.48846
-```
+    ##                    0          1 MeanDecreaseAccuracy MeanDecreaseGini
+    ## Pclass      47.21663 47.4942132             69.39251         28.07819
+    ## Fare        43.19055 43.9893907             66.67144         58.87971
+    ## Sex         42.24730 36.8114966             42.57382         50.52881
+    ## Title       54.59914 57.1290385             60.72891         77.20460
+    ## Age         34.58641 39.4252418             53.95813         52.61366
+    ## SibSp       44.09189  0.8302836             42.35741         18.13917
+    ## Parch       11.04993  9.5437824             15.49590         10.00568
+    ## CabinFloor  24.50409  6.9765507             27.03299         21.64158
+    ## CabinNumber 17.25665 14.8254202             23.33504         12.55936
+    ## Embarked    17.95344 29.6962125             35.40686         10.48846
 
-
-
-```r
+``` r
 p_y <- predict(rf_model, newdata = cleaned_set %>% select(-Survived))
 err_out <-  cleaned_set %>%
             mutate(p_y = p_y) %>%
@@ -1176,108 +1977,547 @@ knitr::kable(head(err_out),format="html")
 ```
 
 <table>
- <thead>
-  <tr>
-   <th style="text-align:left;"> Survived </th>
-   <th style="text-align:right;"> Pclass </th>
-   <th style="text-align:right;"> Fare </th>
-   <th style="text-align:left;"> Sex </th>
-   <th style="text-align:left;"> Title </th>
-   <th style="text-align:right;"> Age </th>
-   <th style="text-align:right;"> SibSp </th>
-   <th style="text-align:right;"> Parch </th>
-   <th style="text-align:left;"> CabinFloor </th>
-   <th style="text-align:left;"> CabinNumber </th>
-   <th style="text-align:left;"> Embarked </th>
-   <th style="text-align:left;"> p_y </th>
-  </tr>
- </thead>
+
+<thead>
+
+<tr>
+
+<th style="text-align:left;">
+
+Survived
+
+</th>
+
+<th style="text-align:right;">
+
+Pclass
+
+</th>
+
+<th style="text-align:right;">
+
+Fare
+
+</th>
+
+<th style="text-align:left;">
+
+Sex
+
+</th>
+
+<th style="text-align:left;">
+
+Title
+
+</th>
+
+<th style="text-align:right;">
+
+Age
+
+</th>
+
+<th style="text-align:right;">
+
+SibSp
+
+</th>
+
+<th style="text-align:right;">
+
+Parch
+
+</th>
+
+<th style="text-align:left;">
+
+CabinFloor
+
+</th>
+
+<th style="text-align:left;">
+
+CabinNumber
+
+</th>
+
+<th style="text-align:left;">
+
+Embarked
+
+</th>
+
+<th style="text-align:left;">
+
+p\_y
+
+</th>
+
+</tr>
+
+</thead>
+
 <tbody>
-  <tr>
-   <td style="text-align:left;"> 1 </td>
-   <td style="text-align:right;"> 2 </td>
-   <td style="text-align:right;"> 13.0000 </td>
-   <td style="text-align:left;"> male </td>
-   <td style="text-align:left;"> Mr </td>
-   <td style="text-align:right;"> 32.99135 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:left;"> Unknown </td>
-   <td style="text-align:left;"> Unknown </td>
-   <td style="text-align:left;"> S </td>
-   <td style="text-align:left;"> 0 </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> 1 </td>
-   <td style="text-align:right;"> 3 </td>
-   <td style="text-align:right;"> 31.3875 </td>
-   <td style="text-align:left;"> female </td>
-   <td style="text-align:left;"> Mrs </td>
-   <td style="text-align:right;"> 38.00000 </td>
-   <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 5 </td>
-   <td style="text-align:left;"> Unknown </td>
-   <td style="text-align:left;"> Unknown </td>
-   <td style="text-align:left;"> S </td>
-   <td style="text-align:left;"> 0 </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> 1 </td>
-   <td style="text-align:right;"> 3 </td>
-   <td style="text-align:right;"> 7.2292 </td>
-   <td style="text-align:left;"> male </td>
-   <td style="text-align:left;"> Mr </td>
-   <td style="text-align:right;"> 29.87050 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:left;"> Unknown </td>
-   <td style="text-align:left;"> Unknown </td>
-   <td style="text-align:left;"> C </td>
-   <td style="text-align:left;"> 0 </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> 0 </td>
-   <td style="text-align:right;"> 2 </td>
-   <td style="text-align:right;"> 21.0000 </td>
-   <td style="text-align:left;"> female </td>
-   <td style="text-align:left;"> Mrs </td>
-   <td style="text-align:right;"> 27.00000 </td>
-   <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:left;"> Unknown </td>
-   <td style="text-align:left;"> Unknown </td>
-   <td style="text-align:left;"> S </td>
-   <td style="text-align:left;"> 1 </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> 1 </td>
-   <td style="text-align:right;"> 1 </td>
-   <td style="text-align:right;"> 35.5000 </td>
-   <td style="text-align:left;"> male </td>
-   <td style="text-align:left;"> Mr </td>
-   <td style="text-align:right;"> 41.47767 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:left;"> C </td>
-   <td style="text-align:left;"> Even </td>
-   <td style="text-align:left;"> S </td>
-   <td style="text-align:left;"> 0 </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> 1 </td>
-   <td style="text-align:right;"> 3 </td>
-   <td style="text-align:right;"> 9.5000 </td>
-   <td style="text-align:left;"> male </td>
-   <td style="text-align:left;"> Mr </td>
-   <td style="text-align:right;"> 29.00000 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:right;"> 0 </td>
-   <td style="text-align:left;"> Unknown </td>
-   <td style="text-align:left;"> Unknown </td>
-   <td style="text-align:left;"> S </td>
-   <td style="text-align:left;"> 0 </td>
-  </tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1
+
+</td>
+
+<td style="text-align:right;">
+
+2
+
+</td>
+
+<td style="text-align:right;">
+
+13.0000
+
+</td>
+
+<td style="text-align:left;">
+
+male
+
+</td>
+
+<td style="text-align:left;">
+
+Mr
+
+</td>
+
+<td style="text-align:right;">
+
+32.99135
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+<td style="text-align:left;">
+
+Unknown
+
+</td>
+
+<td style="text-align:left;">
+
+Unknown
+
+</td>
+
+<td style="text-align:left;">
+
+S
+
+</td>
+
+<td style="text-align:left;">
+
+0
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1
+
+</td>
+
+<td style="text-align:right;">
+
+3
+
+</td>
+
+<td style="text-align:right;">
+
+31.3875
+
+</td>
+
+<td style="text-align:left;">
+
+female
+
+</td>
+
+<td style="text-align:left;">
+
+Mrs
+
+</td>
+
+<td style="text-align:right;">
+
+38.00000
+
+</td>
+
+<td style="text-align:right;">
+
+1
+
+</td>
+
+<td style="text-align:right;">
+
+5
+
+</td>
+
+<td style="text-align:left;">
+
+Unknown
+
+</td>
+
+<td style="text-align:left;">
+
+Unknown
+
+</td>
+
+<td style="text-align:left;">
+
+S
+
+</td>
+
+<td style="text-align:left;">
+
+0
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1
+
+</td>
+
+<td style="text-align:right;">
+
+3
+
+</td>
+
+<td style="text-align:right;">
+
+7.2292
+
+</td>
+
+<td style="text-align:left;">
+
+male
+
+</td>
+
+<td style="text-align:left;">
+
+Mr
+
+</td>
+
+<td style="text-align:right;">
+
+29.87050
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+<td style="text-align:left;">
+
+Unknown
+
+</td>
+
+<td style="text-align:left;">
+
+Unknown
+
+</td>
+
+<td style="text-align:left;">
+
+C
+
+</td>
+
+<td style="text-align:left;">
+
+0
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+0
+
+</td>
+
+<td style="text-align:right;">
+
+2
+
+</td>
+
+<td style="text-align:right;">
+
+21.0000
+
+</td>
+
+<td style="text-align:left;">
+
+female
+
+</td>
+
+<td style="text-align:left;">
+
+Mrs
+
+</td>
+
+<td style="text-align:right;">
+
+27.00000
+
+</td>
+
+<td style="text-align:right;">
+
+1
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+<td style="text-align:left;">
+
+Unknown
+
+</td>
+
+<td style="text-align:left;">
+
+Unknown
+
+</td>
+
+<td style="text-align:left;">
+
+S
+
+</td>
+
+<td style="text-align:left;">
+
+1
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1
+
+</td>
+
+<td style="text-align:right;">
+
+1
+
+</td>
+
+<td style="text-align:right;">
+
+35.5000
+
+</td>
+
+<td style="text-align:left;">
+
+male
+
+</td>
+
+<td style="text-align:left;">
+
+Mr
+
+</td>
+
+<td style="text-align:right;">
+
+41.47767
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+<td style="text-align:left;">
+
+C
+
+</td>
+
+<td style="text-align:left;">
+
+Even
+
+</td>
+
+<td style="text-align:left;">
+
+S
+
+</td>
+
+<td style="text-align:left;">
+
+0
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1
+
+</td>
+
+<td style="text-align:right;">
+
+3
+
+</td>
+
+<td style="text-align:right;">
+
+9.5000
+
+</td>
+
+<td style="text-align:left;">
+
+male
+
+</td>
+
+<td style="text-align:left;">
+
+Mr
+
+</td>
+
+<td style="text-align:right;">
+
+29.00000
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+<td style="text-align:left;">
+
+Unknown
+
+</td>
+
+<td style="text-align:left;">
+
+Unknown
+
+</td>
+
+<td style="text-align:left;">
+
+S
+
+</td>
+
+<td style="text-align:left;">
+
+0
+
+</td>
+
+</tr>
+
 </tbody>
+
 </table>
 
 ## Predictive Results
