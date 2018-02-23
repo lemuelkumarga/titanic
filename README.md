@@ -120,7 +120,7 @@ data_overview <- function(data,
                                                       `[[`(cname) %>%
                                                       unique() -> filtered_set
                                                     filtered_set[1:min(5, length(filtered_set))] %>%
-                                                      paste(collapse=' | ')
+                                                      paste(collapse=' // ')
                                                   })
                   cols_summary$EmptyValues <- lapply(cols_summary$ColumnNames,
                                                      function(cname) {
@@ -145,20 +145,20 @@ cols_summary <- data_overview(training_set)
 pander(cols_summary, caption="Titanic Passengers Data")
 ```
 
-| ColumnNames | Type      | Examples                                                                                                                                                                         | PctFilled |
-| :---------- | :-------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------- |
-| PassengerId | INTEGER   | 1 | 2 | 3 | 4 | 5                                                                                                                                                                | 100%      |
-| Survived    | INTEGER   | 0 | 1                                                                                                                                                                            | 100%      |
-| Pclass      | INTEGER   | 3 | 1 | 2                                                                                                                                                                        | 100%      |
-| Name        | CHARACTER | Braund, Mr. Owen Harris | Cumings, Mrs. John Bradley (Florence Briggs Thayer) | Heikkinen, Miss. Laina | Futrelle, Mrs. Jacques Heath (Lily May Peel) | Allen, Mr. William Henry | 100%      |
-| Sex         | CHARACTER | male | female                                                                                                                                                                    | 100%      |
-| Age         | NUMERIC   | 22 | 38 | 26 | 35 | 54                                                                                                                                                           | 80%       |
-| SibSp       | INTEGER   | 1 | 0 | 3 | 4 | 2                                                                                                                                                                | 100%      |
-| Parch       | INTEGER   | 0 | 1 | 2 | 5 | 3                                                                                                                                                                | 100%      |
-| Ticket      | CHARACTER | A/5 21171 | PC 17599 | STON/O2. 3101282 | 113803 | 373450                                                                                                                        | 100%      |
-| Fare        | NUMERIC   | 7.25 | 71.2833 | 7.925 | 53.1 | 8.05                                                                                                                                             | 100%      |
-| Cabin       | CHARACTER | C85 | C123 | E46 | G6 | C103                                                                                                                                                     | 23%       |
-| Embarked    | CHARACTER | S | C | Q                                                                                                                                                                        | 100%      |
+| ColumnNames | Type      | Examples                                                                                                                                                                             | PctFilled |
+| :---------- | :-------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------- |
+| PassengerId | INTEGER   | 1 // 2 // 3 // 4 // 5                                                                                                                                                                | 100%      |
+| Survived    | INTEGER   | 0 // 1                                                                                                                                                                               | 100%      |
+| Pclass      | INTEGER   | 3 // 1 // 2                                                                                                                                                                          | 100%      |
+| Name        | CHARACTER | Braund, Mr. Owen Harris // Cumings, Mrs. John Bradley (Florence Briggs Thayer) // Heikkinen, Miss. Laina // Futrelle, Mrs. Jacques Heath (Lily May Peel) // Allen, Mr. William Henry | 100%      |
+| Sex         | CHARACTER | male // female                                                                                                                                                                       | 100%      |
+| Age         | NUMERIC   | 22 // 38 // 26 // 35 // 54                                                                                                                                                           | 80%       |
+| SibSp       | INTEGER   | 1 // 0 // 3 // 4 // 2                                                                                                                                                                | 100%      |
+| Parch       | INTEGER   | 0 // 1 // 2 // 5 // 3                                                                                                                                                                | 100%      |
+| Ticket      | CHARACTER | A/5 21171 // PC 17599 // STON/O2. 3101282 // 113803 // 373450                                                                                                                        | 100%      |
+| Fare        | NUMERIC   | 7.25 // 71.2833 // 7.925 // 53.1 // 8.05                                                                                                                                             | 100%      |
+| Cabin       | CHARACTER | C85 // C123 // E46 // G6 // C103                                                                                                                                                     | 23%       |
+| Embarked    | CHARACTER | S // C // Q                                                                                                                                                                          | 100%      |
 
 Titanic Passengers Data <br>
 
@@ -936,11 +936,11 @@ map
 
 <!--html_preserve-->
 
-<div id="htmlwidget-09be10653ae0e9bd3fa9" class="leaflet html-widget" style="width:100%;height:288px;">
+<div id="htmlwidget-5deb0ed978e9bf203869" class="leaflet html-widget" style="width:100%;height:288px;">
 
 </div>
 
-<script type="application/json" data-for="htmlwidget-09be10653ae0e9bd3fa9">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-5deb0ed978e9bf203869">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
 
 <!--/html_preserve-->
 
