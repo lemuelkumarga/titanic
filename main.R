@@ -103,7 +103,7 @@ appendFarePUnit <- function(dt) { dt %>%  mutate(Fare_P_Unit = Fare / (1 + SibSp
 fares_set <- appendFarePUnit(training_set) %>%
              select(Fare_P_Unit, Pclass, Survived)
 
-rows_p_fare_bin <- 80
+rows_p_fare_bin <- 100
 fares_pdata <- fares_set %>%
                arrange(Fare_P_Unit) %>%
                mutate(Group = as.integer((row_number() - 1) / rows_p_fare_bin)+1) %>%
