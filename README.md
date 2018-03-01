@@ -88,7 +88,7 @@ cat(paste0(base_pkg_str,"\n",attached_pkg_str))
 ```
 
     ## Base Packages: stats, graphics, grDevices, utils, datasets, methods, base
-    ## Attached Packages: bindrcpp, purrr, leaflet, tidyr, randomForest, pander, ggplot2, dplyr, knitr
+    ## Attached Packages: purrr, leaflet, tidyr, randomForest, pander, ggplot2, dplyr, knitr
 
 ## Exploration
 
@@ -258,7 +258,7 @@ income_plot <-  ggplot(income_set, aes(x=SurvivalRate,
 income_plot
 ```
 
-<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_income-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_income-1.png" style="display: block; margin: auto;" />
 The chart above shows that the more premium the class, the more likely
 the passengers were to survive. One potential reason explaining this
 insight could be that 1st class passengers were the first in line to
@@ -293,7 +293,7 @@ fares_plot <- ggplot(fares_pdata, aes(x = FareMax,
 fares_plot
 ```
 
-<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_fare-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_fare-1.png" style="display: block; margin: auto;" />
 Similarly, we also noticed this phenomenon in fares, where the higher
 amount an individual paid for the fares, the more likely he/she will
 survive the crash.
@@ -354,7 +354,7 @@ gender_plot <- ggplot(gender_sex_totals, aes(x = Prefix,
 gender_plot
 ```
 
-<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_titles-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_titles-1.png" style="display: block; margin: auto;" />
 
 Other than <span class="hl color-1-text">Mr, Miss, Mrs and
 Master</span>, all other titles are not presumed by many passengers. To
@@ -406,7 +406,7 @@ title_plot <- ggplot(title_set, aes(x=Title,
 title_plot
 ```
 
-<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_title_gender-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_title_gender-1.png" style="display: block; margin: auto;" />
 
 <span class="hl">All</span> females, regardless of their titles, have
 higher survival likelihoods than males. In addition, having a title
@@ -468,7 +468,7 @@ age_plot <- ggplot(age_pdata, aes(x=AgeMin,
 age_plot
 ```
 
-<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_age-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_age-1.png" style="display: block; margin: auto;" />
 
 With the limited data set, we can see that younger individuals are more
 likely to survive. A possible explanation is probably because babies and
@@ -479,127 +479,101 @@ However, older people, especially those more than 60 years old, are less
 likely to survive. This is probably due to their lack of agility in
 responding to the crash.
 
-#### On Company
-
 <div class="st">
 
-Hypothesis 5: Individuals with children are more likely to survive,
-while individuals with same-age company are less likely to survive.
+Insight 4: An individual is more likely to survive if he/she has other
+family members with him/her.
 
 </div>
 
-``` r
-company_set <- training_set %>%
-                select(SibSp, Parch, Survived) %>%
-                group_by(SibSp, Parch) %>%
-                summarise(CohortSize = n(),
-                          SurvivalRate = sum(Survived)/n())
+Typically, we would expect that the more family members there is in
+Titanic, the less likely an individual will survive. This is because
+individuals would likely go into lifeboats with their family members,
+making it harder to find space in the lifeboats.
 
-company_plot <- ggplot(company_set, aes(x = as.factor(Parch),
-                                        y = as.factor(SibSp),
-                                        fill = SurvivalRate,
-                                        alpha = CohortSize)) +
-                theme_lk() + 
-                  ########### LEGENDS ###########
-                  scale_fill_gradientn(name = "Survival Likelihood",
-                                       colours=c(as.character(get_color("red")),
-                                                 as.character(get_color("red")),
-                                                 as.character(get_color("yellow")),
-                                                 as.character(get_color("green")),
-                                                 as.character(get_color("green"))),
-                                       values = c(0.0,0.4,0.5,0.6,1.0),
-                                       guide = "none") +
-                  scale_alpha_continuous(limits = c(0,25),
-                                         name = "Cohort Size",
-                                         guide = guide_legend(
-                                           nrow = 1,
-                                           override.aes=list(fill=ltxt_color)
-                                         )) +
-                  ########### X-AXIS ###########
-                  xlab("# of Different-Age Company (e.g. Children / Parents)") +
-                  scale_x_discrete(expand = c(0, 0)) +
-                  ########### Y-AXIS ###########
-                  ylab("# of Same-Age Company (e.g. Spouse / Siblings)") +
-                  ########### ELEMENTS ###########
-                geom_tile(colour = bg_color, size = 7) +
-                geom_text(aes(label = paste0(round(SurvivalRate*100),"%")),
-                          color = "white",
-                          alpha = 1,
-                          size = 5,
+However, contrary to expectations, the data shows that the larger the
+family size (individual + siblings/spouses + parent/children), the more
+likely an individual is likely to
+survive:
+
+``` r
+# Group by Family Size and calculate Survival Rates for Different Subsets of Passengers
+company_set <- training_set %>%
+               mutate(Size = Parch + SibSp + 1,
+                      isAdult = is.na(Age) | Age > 8,
+                      isAdultNoChild = isAdult & Parch == 0,
+                      isFemaleNoChild = isAdultNoChild & Sex == "female") %>%
+               group_by(Size) %>%
+               summarise(CohortSize = n(),
+                         SurvivalRate = sum(Survived)/CohortSize,
+                         Adults = sum(isAdult),
+                         SurvivalRateAdults = sum(isAdult & Survived)/Adults,
+                         AdultsNoChild = sum(isAdultNoChild),
+                         SurvivalRateAdultsNoChild = sum(isAdultNoChild & Survived)/AdultsNoChild,
+                         FemaleNoChild = sum(isFemaleNoChild),
+                         SurvivalRateFemaleNoChild = sum(isFemaleNoChild & Survived)/FemaleNoChild)
+
+# Normalize the survival rates with respect to baseline (Size = 0)
+for (c_name in c("SurvivalRateAdults",
+                 "SurvivalRateAdultsNoChild",
+                 "SurvivalRateFemaleNoChild")) {
+  company_set[,c_name] <- company_set[,c_name] / as.double(company_set[1,c_name]) * as.double(company_set[1,"SurvivalRate"])
+}
+
+# Calculate attribution statistics
+company_set$AttrChild <- company_set$SurvivalRate - company_set$SurvivalRateAdults
+company_set$AttrParents <- company_set$SurvivalRateAdults - company_set$SurvivalRateAdultsNoChild
+company_set$AttrHusband <- company_set$SurvivalRateAdultsNoChild - company_set$SurvivalRateFemaleNoChild
+company_set$Baseline <- company_set$SurvivalRate - company_set$AttrChild - company_set$AttrParents - company_set$AttrHusband
+
+# Only analyze cohort size until 3 due to small sample sizes afterwards
+company_stack <- company_set %>% 
+                filter(Size <= 3) %>% 
+                select(Size, Baseline, AttrHusband, AttrParents, AttrChild, SurvivalRate) %>%
+                gather_("Attribution","Value",setdiff(names(.),c("Size","SurvivalRate"))) %>%
+                mutate(Value = sapply(Value, function(x) { max(x,0) }))
+
+# Reorder factor levels
+company_stack$Attribution <- factor(company_stack$Attribution, levels = rev(unique(company_stack$Attribution)))
+
+
+company_plot <- ggplot(company_stack, aes(x= Size, y= Value)) + 
+                theme_lk() +
+                scale_x_continuous(name="Family Size",
+                                   expand = c(0.05,0),
+                                   labels = function(i) { round(i) },
+                                   breaks = 1:3) +
+                scale_y_continuous(name="Survival Likelihood",
+                                   expand = c(0,0),
+                                   labels = scales::percent) +
+                coord_cartesian(ylim=c(0.2,0.65)) +
+                scale_fill_manual(name="Attribution", 
+                                  labels=c("Baseline"="Baseline", 
+                                           "AttrHusband"="Husband",
+                                           "AttrParents"="Parental",
+                                           "AttrChild"="Child"),
+                                  values=c("Baseline"=alpha(txt_color,0.2),
+                                           "AttrHusband"=alpha(get_color(1),0.8),
+                                           "AttrParents"=alpha(get_color(2),0.8),
+                                           "AttrChild"=alpha(get_color(3),0.8)),
+                                  guide=guide_legend(reverse=T)) +
+                geom_area(aes(fill = Attribution), position = 'stack') + 
+                geom_text(data=unique(company_stack %>% select(Size, SurvivalRate)),
+                          aes(x=Size, y=SurvivalRate+0.03, label=paste0(round(SurvivalRate*100),"%")),
+                          color=txt_color,
+                          size=5,
                           family = def_font)
 
-company_plot
+company_plot 
 ```
 
-<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo5-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_company-1.png" style="display: block; margin: auto;" />
 
 As can be seen from the chart above, individuals with 1 to 2 children
 are more likely to survive than those without any children. It is
 inconclusive to determine from the chart above, whether same-age company
 has an impact of survivalhood. Hence, this premise is
 <span class="hl yellow-text">TRUE TO A LIMITED EXTENT</span>.
-
-<!---
-
-<div class="st">Hypothesis 6: Groups are able to be identified based on their ticket IDs. </div>
-
-If this is true, we should expect to see some correlation between: 
-
-1. the number of companies with the individual, and
-2. the number of other individuals with the same ticket.
-
-
-```r
-cleanTickets <- function(x) { toupper(gsub("[[:punct:]]|[[:space:]]","",x)) }
-
-com_ticket_set <- training_set %>%
-                  mutate(TicketParsed = sapply(Ticket, cleanTickets))
-
-ticket_sum_set <- com_ticket_set %>%
-                  group_by(TicketParsed) %>%
-                  summarise(Size = n())
-
-com_ticket_set <- com_ticket_set %>%
-                  left_join(ticket_sum_set, by=c("TicketParsed")) %>%
-                  mutate( OtherCompany = SibSp + Parch,
-                          OtherTickets = Size - 1) %>%
-                  group_by(OtherCompany, OtherTickets) %>%
-                  summarise(CohortSize = n())
-com_ticket_cor <- cor(com_ticket_set$OtherCompany, com_ticket_set$OtherTickets)
-
-com_ticket_plot <- ggplot(com_ticket_set, aes(x = OtherCompany,
-                                              y = OtherTickets,
-                                              alpha = CohortSize)) +
-                  theme_lk() + 
-                  ########### LEGENDS ###########
-                  scale_alpha_continuous(name = "Cohort Size",
-                                         limits = c(0,50),
-                                         guide = guide_legend(
-                                           nrow = 1,
-                                           override.aes=list(fill=ltxt_color)
-                                         )) +
-                  ########### X-AXIS ###########
-                  xlab("# Company") +
-                  scale_x_continuous(labels = scales::comma) +
-                  ########### Y-AXIS ###########
-                  ylab("# Other Individuals with Same Ticket") +
-                  ########### ELEMENTS ###########
-                  geom_tile(fill = get_color(1)) +
-                  geom_text(label = paste0("'Correlation'~rho~': ",round(com_ticket_cor*100),"%'"),
-                            data = data.frame(1),
-                            x = 10,y = 6, hjust = 1,
-                            family = def_font, size = 5,
-                            alpha = 1, color = txt_color,
-                            parse=TRUE)
-
-com_ticket_plot
-```
-
-<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo6-1.png" style="display: block; margin: auto;" />
-
-A correlation of <b>36%</b> suggests that there is in fact some correlation between ticket IDs and the identity of the group. Hence, this hypothesis is <span class="hl green-text">TRUE</span>.
-
--->
 
 #### On Cabin Positions
 
@@ -720,7 +694,7 @@ cabinLet_plot <- ggplot(cabinLet_set, aes(x=as.factor(CabinFloor),
 cabinLet_plot
 ```
 
-<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo7_p1-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_hypo7_p1-1.png" style="display: block; margin: auto;" />
 
 From the chart, we can deduce that <span class="hl yellow-text">Cabins B
 to E</span> has a higher likelihood of survival compared to
@@ -797,7 +771,7 @@ cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
 cabinNumber_plot
 ```
 
-<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo7_p2-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_hypo7_p2-1.png" style="display: block; margin: auto;" />
 
 It is pretty clear that those who stay in the odd rooms are more likely
 to survive than those in the even rooms.
@@ -849,7 +823,7 @@ cabinCount_plot <- ggplot(cabinCount_set, aes(x=as.factor(CabinCount),
 cabinCount_plot
 ```
 
-<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo7_p3-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_hypo7_p3-1.png" style="display: block; margin: auto;" />
 
 Even though seems to be an inverse relationship between the survival
 likelihood and number of cabins specified, the sample size is too small
@@ -925,11 +899,11 @@ map
 
 <!--html_preserve-->
 
-<div id="htmlwidget-df6e0b66f031986a3d8d" class="leaflet html-widget" style="width:100%;height:288px;">
+<div id="htmlwidget-b0951758aa8aecbb6900" class="leaflet html-widget" style="width:100%;height:288px;">
 
 </div>
 
-<script type="application/json" data-for="htmlwidget-df6e0b66f031986a3d8d">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-b0951758aa8aecbb6900">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
 
 <!--/html_preserve-->
 
@@ -989,7 +963,7 @@ embark_pclass_plot <- ggplot(embark_pclass, aes(x=as.factor(Embarked),
 embark_pclass_plot
 ```
 
-<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo8_p2-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_hypo8_p2-1.png" style="display: block; margin: auto;" />
 
 However, by studying the demographics of the passengers who embarked at
 each port, we know that a higher proportion of Cherbough are

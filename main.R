@@ -214,7 +214,7 @@ title_plot
 
 ## ---- end-of-exp_title_gender
 
-########## INSIGHT 3 : AGE AND SURVIVALHOOD ####################
+# * INSIGHT 3 : AGE AND SURVIVALHOOD ----
 
 ## ---- exp_age
 
@@ -263,82 +263,11 @@ age_plot
 
 ## ---- end-of-exp_age
 
-########## INSIGHT 4 : COMPANY AND SURVIVALHOOD ####################
+# * INSIGHT 4 : COMPANY AND SURVIVALHOOD ----
 
-lastName <- function (x) { unlist(strsplit(x, ", "))[1] } 
+## ---- exp_company
 
-# First we will attempt to identify who are children and who are the parents
-# This is useful since a parent who brings a child can have different outcomes
-# with a child who has parents onboard.
-company_set <- training_set %>%
-               mutate(Title = as.character(lapply(Name,prefix)),
-                      LastName = as.character(lapply(Name,lastName)),
-                      Parents = 0,
-                      Children = 0, Dependents = 0)
-
-for (i in 1:nrow(company_set)) {
-  
-  current_row = company_set[i,]
-  
-  if(current_row$Parch > 0) {
-    
-    is_child = NA
-    # We attempt to get other family members by assuming that
-    # other family members have the same last name AND
-    # no of relationships across family members remain the same
-    # for ex, a mother may have two children = 2 Parch
-    # but the son has 1 mother and 1 sibiling = 1 Parch + 1 SibSp
-    relatives <- company_set[company_set$LastName == current_row$LastName & company_set$SibSp + company_set$Parch == current_row$SibSp + current_row$Parch,] %>%
-                 arrange(desc(Age))
-    company_set[i,"Dependents"] <-  nrow(relatives %>%
-                          filter((!is.na(Age) & Age <= 15)))
-
-    # We use the following identifiers to determine if the person is a child of someone else or not
-    # 1 - Ignoring intergenerational families, you can't have more than two parents
-    if (current_row$Parch > 2) {
-      is_child = FALSE
-    # 2 - Mrs means passenger is married, which makes it more likely that she is a mother
-    } else if (current_row$Title == "Mrs") {
-      is_child = FALSE
-    # 3 - Based on the data, master usually indicates children 
-    } else if (current_row$Title == "Master") {
-      is_child = TRUE
-    # 4 - if she's a female there is someone else with a Mrs in the family, then she is likely to be a child
-    } else if (current_row$Sex == "female" & nrow(relatives[relatives$Title == "Mrs",]) > 0) {
-      is_child = TRUE
-    # 5 - no age, hard to assume, consider as adult
-    } else if (is.na(current_row$Age)) {
-      is_child = FALSE
-    # 6 - We assume that the earliest time for adults to have children is 15 years old
-    } else if (current_row$Age < 15) {
-      is_child = TRUE
-    # 7 - If there is someone in their family 15 years older than them, then we assume that someone is the parent
-    } else if (relatives[1,"Age"] - current_row$Age >= 15) {
-      is_child = TRUE
-    }
-    
-    if (is.na(is_child)) {
-      company_set[i,"Parents"] = current_row$Parch / 2.
-      company_set[i,"Children"] = current_row$Parch / 2.
-    } else if (is_child) {
-      company_set[i,"Parents"] = current_row$Parch
-    } else {
-      company_set[i,"Children"] = current_row$Parch
-    }
-    
-  }
-}
-
-company_set2 <- company_set %>%
-                filter(is.na(Age) | Age > 8) %>%
-               group_by(Dependents) %>%
-                summarise(CohortSize = n(),
-                          SurvivalRate = sum(Survived)/n())
-
-
-## ---- exp_hypo5
-
-# Group by Family Size and calculate Survival Rates for Different Categories of Groups
+# Group by Family Size and calculate Survival Rates for Different Subsets of Passengers
 company_set <- training_set %>%
                mutate(Size = Parch + SibSp + 1,
                       isAdult = is.na(Age) | Age > 8,
@@ -355,7 +284,9 @@ company_set <- training_set %>%
                          SurvivalRateFemaleNoChild = sum(isFemaleNoChild & Survived)/FemaleNoChild)
 
 # Normalize the survival rates with respect to baseline (Size = 0)
-for (c_name in c("SurvivalRateAdults","SurvivalRateAdultsNoChild","SurvivalRateFemaleNoChild")) {
+for (c_name in c("SurvivalRateAdults",
+                 "SurvivalRateAdultsNoChild",
+                 "SurvivalRateFemaleNoChild")) {
   company_set[,c_name] <- company_set[,c_name] / as.double(company_set[1,c_name]) * as.double(company_set[1,"SurvivalRate"])
 }
 
@@ -365,7 +296,7 @@ company_set$AttrParents <- company_set$SurvivalRateAdults - company_set$Survival
 company_set$AttrHusband <- company_set$SurvivalRateAdultsNoChild - company_set$SurvivalRateFemaleNoChild
 company_set$Baseline <- company_set$SurvivalRate - company_set$AttrChild - company_set$AttrParents - company_set$AttrHusband
 
-# Only analyze cohort size until 3 due to small sample sizes
+# Only analyze cohort size until 3 due to small sample sizes afterwards
 company_stack <- company_set %>% 
                 filter(Size <= 3) %>% 
                 select(Size, Baseline, AttrHusband, AttrParents, AttrChild, SurvivalRate) %>%
@@ -376,50 +307,36 @@ company_stack <- company_set %>%
 company_stack$Attribution <- factor(company_stack$Attribution, levels = rev(unique(company_stack$Attribution)))
 
 
-company_plot <- ggplot(company_stack, aes(x= Size, y= Value, fill = Attribution)) + 
+company_plot <- ggplot(company_stack, aes(x= Size, y= Value)) + 
                 theme_lk() +
-                guides(fill = guide_legend(reverse=T)) + 
-                geom_area(position = 'stack')
+                scale_x_continuous(name="Family Size",
+                                   expand = c(0.05,0),
+                                   labels = function(i) { round(i) },
+                                   breaks = 1:3) +
+                scale_y_continuous(name="Survival Likelihood",
+                                   expand = c(0,0),
+                                   labels = scales::percent) +
+                coord_cartesian(ylim=c(0.2,0.65)) +
+                scale_fill_manual(name="Attribution", 
+                                  labels=c("Baseline"="Baseline", 
+                                           "AttrHusband"="Husband",
+                                           "AttrParents"="Parental",
+                                           "AttrChild"="Child"),
+                                  values=c("Baseline"=alpha(txt_color,0.2),
+                                           "AttrHusband"=alpha(get_color(1),0.8),
+                                           "AttrParents"=alpha(get_color(2),0.8),
+                                           "AttrChild"=alpha(get_color(3),0.8)),
+                                  guide=guide_legend(reverse=T)) +
+                geom_area(aes(fill = Attribution), position = 'stack') + 
+                geom_text(data=unique(company_stack %>% select(Size, SurvivalRate)),
+                          aes(x=Size, y=SurvivalRate+0.03, label=paste0(round(SurvivalRate*100),"%")),
+                          color=txt_color,
+                          size=5,
+                          family = def_font)
 
 company_plot 
 
-p + geom_area(aes(colour = PR_Cat, fill= PR_Cat), position = 'stack')  
-company_plot <- ggplot(company_set, aes(x = as.factor(Parch),
-                                        y = as.factor(SibSp),
-                                        fill = SurvivalRate,
-                                        alpha = CohortSize)) +
-                theme_lk() + 
-                  ########### LEGENDS ###########
-                  scale_fill_gradientn(name = "Survival Likelihood",
-                                       colours=c(as.character(get_color("red")),
-                                                 as.character(get_color("red")),
-                                                 as.character(get_color("yellow")),
-                                                 as.character(get_color("green")),
-                                                 as.character(get_color("green"))),
-                                       values = c(0.0,0.4,0.5,0.6,1.0),
-                                       guide = "none") +
-                  scale_alpha_continuous(limits = c(0,25),
-                                         name = "Cohort Size",
-                                         guide = guide_legend(
-                                           nrow = 1,
-                                           override.aes=list(fill=ltxt_color)
-                                         )) +
-                  ########### X-AXIS ###########
-                  xlab("# of Different-Age Company (e.g. Children / Parents)") +
-                  scale_x_discrete(expand = c(0, 0)) +
-                  ########### Y-AXIS ###########
-                  ylab("# of Same-Age Company (e.g. Spouse / Siblings)") +
-                  ########### ELEMENTS ###########
-                geom_tile(colour = bg_color, size = 7) +
-                geom_text(aes(label = paste0(round(SurvivalRate*100),"%")),
-                          color = "white",
-                          alpha = 1,
-                          size = 5,
-                          family = def_font)
-
-company_plot
-
-## ---- end-of-exp_hypo5
+## ---- end-of-exp_company
 
 ########## HYPOTHESIS 6 : COMPANY AND TICKETS ####################
 

@@ -106,32 +106,17 @@ With the limited data set, we can see that younger individuals are more likely t
 
 However, older people, especially those more than 60 years old, are less likely to survive. This is probably due to their lack of agility in responding to the crash. 
 
-#### On Company
+<div class="st">Insight 4: An individual is more likely to survive if he/she has other family members with him/her.</div>
 
-<div class="st">Hypothesis 5: Individuals with children are more likely to survive, while individuals with same-age company are less likely to survive.</div>
+Typically, we would expect that the more family members there is in Titanic, the less likely an individual will survive. This is because individuals would likely go into lifeboats with their family members, making it harder to find space in the lifeboats.
 
-```{r exp_hypo5, fig.height=7, fig.width=7, fig.align="center"}
+However, contrary to expectations, the data shows that the larger the family size (individual + siblings/spouses + parent/children), the more likely an individual is likely to survive:
+
+```{r exp_company, fig.height=4, fig.width=10, fig.align="center"}
 
 ```
 
 As can be seen from the chart above, individuals with 1 to 2 children are more likely to survive than those without any children. It is inconclusive to determine from the chart above, whether same-age company has an impact of survivalhood. Hence, this premise is <span class="hl yellow-text">TRUE TO A LIMITED EXTENT</span>.
-
-<!---
-
-<div class="st">Hypothesis 6: Groups are able to be identified based on their ticket IDs. </div>
-
-If this is true, we should expect to see some correlation between: 
-
-1. the number of companies with the individual, and
-2. the number of other individuals with the same ticket.
-
-```{r exp_hypo6, fig.height=5, fig.width=7, fig.align="center"}
-
-```
-
-A correlation of <b>36%</b> suggests that there is in fact some correlation between ticket IDs and the identity of the group. Hence, this hypothesis is <span class="hl green-text">TRUE</span>.
-
--->
 
 #### On Cabin Positions
 
