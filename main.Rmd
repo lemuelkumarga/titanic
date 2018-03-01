@@ -18,7 +18,7 @@ read_chunk("shared/helper.R")
 
 Set for its maiden voyage in 1912, RMS Titanic was then considered unsinkable due to its robust structure. After picking up passengers in Southampton, Cherbourg and Queenstown, the ship set sail towards New York. It was on their way there that the Titanic met its calamitous fate, crashing into an Iceberg and rendering more than 50% of the passengers lost.
 
-There were many questions concerning the events leading to and during the disaster. Some of these include: Which part of the ship was most damaged? What was the evacuation process of the passengers? Using data containing the personal details and disaster outcomes (survival/lost) of passengers, we will aim to answer the following set of questions.
+There were many questions concerning the events leading to and during the disaster. Some of these include: Which part of the ship was most damaged? What was the evacuation process of the passengers? Using data containing the personal details and disaster outcomes (survival/lost) of passengers, we aim to <b>discover the various factors affecting the survival likelihood of passengers.</b> 
 
 <span class="color-1-text">FYI: This problem was posed as an introductory challenge in <a href="https://www.kaggle.com/c/titanic" target="_blank">Kaggle</a>. The passengers are divided into two sets, one used for training and the other for testing. The training sets contain both the personal details of passengers and their outcomes, while the testing set only contain the former. By developing a robust model through the training set, we hope to predict the survival likelihood of passengers in the testing set.</span>
 
@@ -48,11 +48,11 @@ We kick off by exploring the data that was provided:
   
 <<data_comp>>
 
-pander(cols_summary, caption="Titanic Passengers Data")
+pander(cols_summary, caption='Titanic Passengers Data - For more info, please visit <a href="https://www.kaggle.com/c/titanic/data" target="_blank">Kaggle</a>')
 ```
 <br>
 
-Based on the summary above, notice the following:
+Based on the above table, notice the following:
 
 * <span class="hl color-1-text">Names</span> are aggregated in the following format: <span class="hl color-2-text">Last_Name, Title 
 First_Name</span>.
@@ -63,57 +63,48 @@ First_Name</span>.
 
 ### Preliminary Insights
 
-#### On Income[/Passenger Class]
+<div class="st">Insight 1: Wealthy individuals are more likely to survive.</div>
 
-<div class="st">Hypothesis 1: Higher income individuals are more likely to survive.</div>
-
-High-income individuals could pay more for seats in the lifeboats, and hence escape the disaster. 
-```{r exp_hypo1, fig.height=3, fig.width=10, fig.align="center"}
+Using passenger class as a proxy for wealth, we calculated the survival likelihood (% of passengers survived) for each class.
+```{r exp_income, fig.height=3, fig.width=10, fig.align="center"}
 
 ```
-Using the passenger class as a proxy for income, we find this claim to be <span class="hl green-text">TRUE</span>.
+The chart above shows that the more premium the class, the more likely the passengers were to survive. One potential reason explaining this insight could be that 1st class passengers were the first in line to access the lifeboats, while 3rd class passengers were left to fend for themselves.
 
-```{r exp_hypo1_p2, fig.height=3, fig.width=10, fig.align="center"}
+```{r exp_fare, fig.height=3, fig.width=10, fig.align="center"}
 
 ```
-We also noticed this phenomenon in fares, where the higher amount an individual paid for the fares, the more likely he/she will survive the crash.
+Similarly, we also noticed this phenomenon in fares, where the higher amount an individual paid for the fares, the more likely he/she will survive the crash.
 
-#### On Title
+<div class="st">Insight 2: Females and more esteemed individuals are more likely to survive than males.</div>
 
-<div class="st">Hypothesis 2: Gender information is embedded under the title of the individual.</div>
+The data provides us with a list of titles under the <span class="color-1-text">Name</span> column. Each title is associated with a gender (with the exception of one), as shown below:
 
-Most titles are provided based on the gender on the individual, hence we should expect the hypothesis to hold true.
-
-```{r exp_hypo2, fig.height=2.6, fig.width=10, fig.align="center"}
+```{r exp_titles, fig.height=2.6, fig.width=10, fig.align="center"}
 
 ```
 
-As can be seen, almost every title has a mapping to the gender of the individual, suggesting that every title is associated with a gender. The only notable exception is "Dr", which is gender neutral. Hence, the hypothesis is <span class="hl green-text">TRUE</span>.
+Other than <span class="hl color-1-text">Mr, Miss, Mrs and Master</span>, all other titles are not presumed by many passengers. To navigate the small sample size, we group all of these other titles under <span class="hl color-2-text">Rare Title</span>.
 
-<div class="st">Hypothesis 3: Females and more esteemed individuals are more likely to survive than males.</div>
+Using the following modifications, we can then assess the survival likelihood of each title and gender:
 
-Prior to this analysis, we will group those individuals without "Mr","Mrs","Miss", or "Master" title as "Rare title" individuals. These individuals, along with females, would have higher priority in onboarding the lifeboats, hence we assume that they are more likely to survive the crash.
-
-```{r exp_hypo3, fig.height=3, fig.width=10, fig.align="center"}
+```{r exp_title_gender, fig.height=3, fig.width=10, fig.align="center"}
 
 ```
 
-As expected, females are more likely to survive than males, while "esteemed" titles increase the survival likelihood
-of both genders. Hence, the hypothesis is <span class="hl green-text">TRUE</span>.
+<span class="hl">All</span> females, regardless of their titles, have higher survival likelihoods than males. In addition, having a title other than Mrs, Miss or Mr, elevates the survival likelihood of the individual. One reason explaining this insight could be that females and esteemed individuals were given early access to escape the Titanic. 
 
-#### On Age
+<div class="st">Insight 3: The younger the passenger, the more likely he/she will survive.</div>
 
-<div class="st">Hypothesis 4: Individuals who are very young and very old are more likely to survive.</div>
+The chart below shows how survival likelihood changes according to age.
 
-```{r exp_hypo4, fig.height=3, fig.width=10, fig.align="center"}
+```{r exp_age, fig.height=3, fig.width=10, fig.align="center"}
 
 ```
 
 With the limited data set, we can see that younger individuals are more likely to survive. A possible explanation is probably because babies and toddlers occupy less space (and hence easier to find seats within the lifeboats). 
 
 However, older people, especially those more than 60 years old, are less likely to survive. This is probably due to their lack of agility in responding to the crash. 
-
-Hence, the premise is <span class="hl green-text">TRUE</span> for young children and <span class="hl red-text">FALSE</span> for older people.
 
 #### On Company
 

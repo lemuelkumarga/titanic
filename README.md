@@ -47,7 +47,8 @@ There were many questions concerning the events leading to and during
 the disaster. Some of these include: Which part of the ship was most
 damaged? What was the evacuation process of the passengers? Using data
 containing the personal details and disaster outcomes (survival/lost) of
-passengers, we will aim to answer the following set of questions.
+passengers, we aim to <b>discover the various factors affecting the
+survival likelihood of passengers.</b>
 
 <span class="color-1-text">FYI: This problem was posed as an
 introductory challenge in
@@ -87,7 +88,7 @@ cat(paste0(base_pkg_str,"\n",attached_pkg_str))
 ```
 
     ## Base Packages: stats, graphics, grDevices, utils, datasets, methods, base
-    ## Attached Packages: purrr, leaflet, tidyr, randomForest, pander, ggplot2, dplyr, knitr
+    ## Attached Packages: bindrcpp, purrr, leaflet, tidyr, randomForest, pander, ggplot2, dplyr, knitr
 
 ## Exploration
 
@@ -142,7 +143,7 @@ training_set <- read.csv(paste0(data_dir, "train.csv"))
 
 cols_summary <- data_overview(training_set)
 
-pander(cols_summary, caption="Titanic Passengers Data")
+pander(cols_summary, caption='Titanic Passengers Data - For more info, please visit <a href="https://www.kaggle.com/c/titanic/data" target="_blank">Kaggle</a>')
 ```
 
 | ColumnNames | Type      | Examples                                                                                                                                                                             | PctFilled |
@@ -160,9 +161,11 @@ pander(cols_summary, caption="Titanic Passengers Data")
 | Cabin       | CHARACTER | C85 // C123 // E46 // G6 // C103                                                                                                                                                     | 23%       |
 | Embarked    | CHARACTER | S // C // Q                                                                                                                                                                          | 100%      |
 
-Titanic Passengers Data <br>
+Titanic Passengers Data - For more info, please visit
+<a href="https://www.kaggle.com/c/titanic/data" target="_blank">Kaggle</a>
+<br>
 
-Based on the summary above, notice the following:
+Based on the above table, notice the following:
 
   - <span class="hl color-1-text">Names</span> are aggregated in the
     following format: <span class="hl color-2-text">Last\_Name, Title
@@ -180,16 +183,14 @@ Based on the summary above, notice the following:
 
 ### Preliminary Insights
 
-#### On Income\[/Passenger Class\]
-
 <div class="st">
 
-Hypothesis 1: Higher income individuals are more likely to survive.
+Insight 1: Wealthy individuals are more likely to survive.
 
 </div>
 
-High-income individuals could pay more for seats in the lifeboats, and
-hence escape the disaster.
+Using passenger class as a proxy for wealth, we calculated the survival
+likelihood (% of passengers survived) for each class.
 
 ``` r
 income_set <- training_set %>%
@@ -257,33 +258,33 @@ income_plot <-  ggplot(income_set, aes(x=SurvivalRate,
 income_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_hypo1-1.png" style="display: block; margin: auto;" />
-Using the passenger class as a proxy for income, we find this claim to
-be
-<span class="hl green-text">TRUE</span>.
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_income-1.png" style="display: block; margin: auto;" />
+The chart above shows that the more premium the class, the more likely
+the passengers were to survive. One potential reason explaining this
+insight could be that 1st class passengers were the first in line to
+access the lifeboats, while 3rd class passengers were left to fend for
+themselves.
 
 ``` r
-appendFarePUnit <- function(dt) { dt %>%  mutate(Fare_P_Unit = Fare / (1 + SibSp + Parch)) }
-
-fares_set <- appendFarePUnit(training_set) %>%
-             select(Fare_P_Unit, Pclass, Survived)
+fares_set <- training_set %>% 
+             select(Fare, Pclass, Survived)
 
 rows_p_fare_bin <- 100
 fares_pdata <- fares_set %>%
-               arrange(Fare_P_Unit) %>%
+               arrange(Fare) %>%
                mutate(Group = as.integer((row_number() - 1) / rows_p_fare_bin)+1) %>%
                group_by(Group) %>%
-               summarise(FareMax = min(Fare_P_Unit),
+               summarise(FareMax = min(Fare),
                          Survived = sum(Survived),
                          CohortSize = n()) %>%
                mutate(SurvivalRate = Survived / CohortSize)
-fares_pdata <- rbind(fares_pdata, c(0,0,0,0,0), c(max(fares_pdata$Group)+1,max(fares_set$Fare_P_Unit),0,0,0)) %>%
+fares_pdata <- rbind(fares_pdata, c(0,0,0,0,0), c(max(fares_pdata$Group)+1,max(fares_set$Fare),0,0,0)) %>%
                arrange(Group)
 
 fares_plot <- ggplot(fares_pdata, aes(x = FareMax,
                                       y = SurvivalRate)) +
               theme_lk() +
-              xlab("Fares / Head") +
+              xlab("Passenger Fares") +
               scale_x_continuous(labels = scales::dollar) +
               ylab("Survival Likelihood") +
               scale_y_continuous(labels = scales::percent) +
@@ -292,23 +293,22 @@ fares_plot <- ggplot(fares_pdata, aes(x = FareMax,
 fares_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_hypo1_p2-1.png" style="display: block; margin: auto;" />
-We also noticed this phenomenon in fares, where the higher amount an
-individual paid for the fares, the more likely he/she will survive the
-crash.
-
-#### On Title
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_fare-1.png" style="display: block; margin: auto;" />
+Similarly, we also noticed this phenomenon in fares, where the higher
+amount an individual paid for the fares, the more likely he/she will
+survive the crash.
 
 <div class="st">
 
-Hypothesis 2: Gender information is embedded under the title of the
-individual.
+Insight 2: Females and more esteemed individuals are more likely to
+survive than males.
 
 </div>
 
-Most titles are provided based on the gender on the individual, hence we
-should expect the hypothesis to hold
-true.
+The data provides us with a list of titles under the
+<span class="color-1-text">Name</span> column. Each title is associated
+with a gender (with the exception of one), as shown
+below:
 
 ``` r
 prefix <- function(x) { unlist(strsplit(unlist(strsplit(x, ", "))[2],"\\. "))[1] }
@@ -354,25 +354,15 @@ gender_plot <- ggplot(gender_sex_totals, aes(x = Prefix,
 gender_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_hypo2-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_titles-1.png" style="display: block; margin: auto;" />
 
-As can be seen, almost every title has a mapping to the gender of the
-individual, suggesting that every title is associated with a gender. The
-only notable exception is “Dr”, which is gender neutral. Hence, the
-hypothesis is <span class="hl green-text">TRUE</span>.
+Other than <span class="hl color-1-text">Mr, Miss, Mrs and
+Master</span>, all other titles are not presumed by many passengers. To
+navigate the small sample size, we group all of these other titles under
+<span class="hl color-2-text">Rare Title</span>.
 
-<div class="st">
-
-Hypothesis 3: Females and more esteemed individuals are more likely to
-survive than males.
-
-</div>
-
-Prior to this analysis, we will group those individuals without
-“Mr”,“Mrs”,“Miss”, or “Master” title as “Rare title” individuals.
-These individuals, along with females, would have higher priority in
-onboarding the lifeboats, hence we assume that they are more likely to
-survive the crash.
+Using the following modifications, we can then assess the survival
+likelihood of each title and gender:
 
 ``` r
 appendTitle <- function(data) {
@@ -416,20 +406,22 @@ title_plot <- ggplot(title_set, aes(x=Title,
 title_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_hypo3-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_title_gender-1.png" style="display: block; margin: auto;" />
 
-As expected, females are more likely to survive than males, while
-“esteemed” titles increase the survival likelihood of both genders.
-Hence, the hypothesis is <span class="hl green-text">TRUE</span>.
-
-#### On Age
+<span class="hl">All</span> females, regardless of their titles, have
+higher survival likelihoods than males. In addition, having a title
+other than Mrs, Miss or Mr, elevates the survival likelihood of the
+individual. One reason explaining this insight could be that females and
+esteemed individuals were given early access to escape the Titanic.
 
 <div class="st">
 
-Hypothesis 4: Individuals who are very young and very old are more
-likely to survive.
+Insight 3: The younger the passenger, the more likely he/she will
+survive.
 
 </div>
+
+The chart below shows how survival likelihood changes according to age.
 
 ``` r
 age_set <- training_set %>%
@@ -476,7 +468,7 @@ age_plot <- ggplot(age_pdata, aes(x=AgeMin,
 age_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_hypo4-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_age-1.png" style="display: block; margin: auto;" />
 
 With the limited data set, we can see that younger individuals are more
 likely to survive. A possible explanation is probably because babies and
@@ -486,9 +478,6 @@ lifeboats).
 However, older people, especially those more than 60 years old, are less
 likely to survive. This is probably due to their lack of agility in
 responding to the crash.
-
-Hence, the premise is <span class="hl green-text">TRUE</span> for young
-children and <span class="hl red-text">FALSE</span> for older people.
 
 #### On Company
 
@@ -542,7 +531,7 @@ company_plot <- ggplot(company_set, aes(x = as.factor(Parch),
 company_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_hypo5-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo5-1.png" style="display: block; margin: auto;" />
 
 As can be seen from the chart above, individuals with 1 to 2 children
 are more likely to survive than those without any children. It is
@@ -606,7 +595,7 @@ com_ticket_plot <- ggplot(com_ticket_set, aes(x = OtherCompany,
 com_ticket_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_hypo6-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo6-1.png" style="display: block; margin: auto;" />
 
 A correlation of <b>36%</b> suggests that there is in fact some correlation between ticket IDs and the identity of the group. Hence, this hypothesis is <span class="hl green-text">TRUE</span>.
 
@@ -731,7 +720,7 @@ cabinLet_plot <- ggplot(cabinLet_set, aes(x=as.factor(CabinFloor),
 cabinLet_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_hypo7_p1-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo7_p1-1.png" style="display: block; margin: auto;" />
 
 From the chart, we can deduce that <span class="hl yellow-text">Cabins B
 to E</span> has a higher likelihood of survival compared to
@@ -808,7 +797,7 @@ cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
 cabinNumber_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_hypo7_p2-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo7_p2-1.png" style="display: block; margin: auto;" />
 
 It is pretty clear that those who stay in the odd rooms are more likely
 to survive than those in the even rooms.
@@ -860,7 +849,7 @@ cabinCount_plot <- ggplot(cabinCount_set, aes(x=as.factor(CabinCount),
 cabinCount_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_hypo7_p3-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo7_p3-1.png" style="display: block; margin: auto;" />
 
 Even though seems to be an inverse relationship between the survival
 likelihood and number of cabins specified, the sample size is too small
@@ -936,11 +925,11 @@ map
 
 <!--html_preserve-->
 
-<div id="htmlwidget-6631757ab591d87abc3b" class="leaflet html-widget" style="width:100%;height:288px;">
+<div id="htmlwidget-df6e0b66f031986a3d8d" class="leaflet html-widget" style="width:100%;height:288px;">
 
 </div>
 
-<script type="application/json" data-for="htmlwidget-6631757ab591d87abc3b">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-df6e0b66f031986a3d8d">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
 
 <!--/html_preserve-->
 
@@ -1000,7 +989,7 @@ embark_pclass_plot <- ggplot(embark_pclass, aes(x=as.factor(Embarked),
 embark_pclass_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_hypo8_p2-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_hypo8_p2-1.png" style="display: block; margin: auto;" />
 
 However, by studying the demographics of the passengers who embarked at
 each port, we know that a higher proportion of Cherbough are

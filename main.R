@@ -27,8 +27,8 @@ cols_summary <- data_overview(training_set)
 
 ## ---- end-of-data_comp
 
-# * Hypothesis: High Income, High Survivalhood ----
-## ---- exp_hypo1
+# * INSIGHT 1: High Income, High Survivalhood ----
+## ---- exp_income
 
 income_set <- training_set %>%
               group_by(Pclass) %>%
@@ -93,42 +93,39 @@ income_plot <-  ggplot(income_set, aes(x=SurvivalRate,
                           family=def_font)
 
 income_plot
-## ---- end-of-exp_hypo1
+## ---- end-of-exp_income
 
-# * Hypothesis: High Fares, High Income, High Survivalhood ----
-## ---- exp_hypo1_p2
+## ---- exp_fare
 
-appendFarePUnit <- function(dt) { dt %>%  mutate(Fare_P_Unit = Fare / (1 + SibSp + Parch)) }
-
-fares_set <- appendFarePUnit(training_set) %>%
-             select(Fare_P_Unit, Pclass, Survived)
+fares_set <- training_set %>% 
+             select(Fare, Pclass, Survived)
 
 rows_p_fare_bin <- 100
 fares_pdata <- fares_set %>%
-               arrange(Fare_P_Unit) %>%
+               arrange(Fare) %>%
                mutate(Group = as.integer((row_number() - 1) / rows_p_fare_bin)+1) %>%
                group_by(Group) %>%
-               summarise(FareMax = min(Fare_P_Unit),
+               summarise(FareMax = min(Fare),
                          Survived = sum(Survived),
                          CohortSize = n()) %>%
                mutate(SurvivalRate = Survived / CohortSize)
-fares_pdata <- rbind(fares_pdata, c(0,0,0,0,0), c(max(fares_pdata$Group)+1,max(fares_set$Fare_P_Unit),0,0,0)) %>%
+fares_pdata <- rbind(fares_pdata, c(0,0,0,0,0), c(max(fares_pdata$Group)+1,max(fares_set$Fare),0,0,0)) %>%
                arrange(Group)
 
 fares_plot <- ggplot(fares_pdata, aes(x = FareMax,
                                       y = SurvivalRate)) +
               theme_lk() +
-              xlab("Fares / Head") +
+              xlab("Passenger Fares") +
               scale_x_continuous(labels = scales::dollar) +
               ylab("Survival Likelihood") +
               scale_y_continuous(labels = scales::percent) +
               geom_step(color = get_color(1))
 
 fares_plot
-## ---- end-of-exp_hypo1_p2
+## ---- end-of-exp_fare
 
-# * Hypothesis: Gender and Title ----
-## ---- exp_hypo2
+# * INSIGHT 2:  Gender and Title ----
+## ---- exp_titles
 prefix <- function(x) { unlist(strsplit(unlist(strsplit(x, ", "))[2],"\\. "))[1] }
 
 gender_set <- training_set %>%
@@ -171,10 +168,9 @@ gender_plot <- ggplot(gender_sex_totals, aes(x = Prefix,
 
 gender_plot
 
-## ---- end-of-exp_hypo2
+## ---- end-of-exp_titles
 
-# * Hypothesis: Title and Survivalhood ----
-## ---- exp_hypo3
+## ---- exp_title_gender
 
 appendTitle <- function(data) {
   data %>%
@@ -216,11 +212,11 @@ title_plot <- ggplot(title_set, aes(x=Title,
 
 title_plot
 
-## ---- end-of-exp_hypo3
+## ---- end-of-exp_title_gender
 
-########## HYPOTHESIS 4 : AGE AND SURVIVALHOOD ####################
+########## INSIGHT 3 : AGE AND SURVIVALHOOD ####################
 
-## ---- exp_hypo4
+## ---- exp_age
 
 age_set <- training_set %>%
            select(Age, Survived) %>%
@@ -265,18 +261,129 @@ age_plot <- ggplot(age_pdata, aes(x=AgeMin,
 
 age_plot
 
-## ---- end-of-exp_hypo4
+## ---- end-of-exp_age
 
-########## HYPOTHESIS 5 : COMPANY AND SURVIVALHOOD ####################
+########## INSIGHT 4 : COMPANY AND SURVIVALHOOD ####################
 
-## ---- exp_hypo5
+lastName <- function (x) { unlist(strsplit(x, ", "))[1] } 
 
+# First we will attempt to identify who are children and who are the parents
+# This is useful since a parent who brings a child can have different outcomes
+# with a child who has parents onboard.
 company_set <- training_set %>%
-                select(SibSp, Parch, Survived) %>%
-                group_by(SibSp, Parch) %>%
+               mutate(Title = as.character(lapply(Name,prefix)),
+                      LastName = as.character(lapply(Name,lastName)),
+                      Parents = 0,
+                      Children = 0, Dependents = 0)
+
+for (i in 1:nrow(company_set)) {
+  
+  current_row = company_set[i,]
+  
+  if(current_row$Parch > 0) {
+    
+    is_child = NA
+    # We attempt to get other family members by assuming that
+    # other family members have the same last name AND
+    # no of relationships across family members remain the same
+    # for ex, a mother may have two children = 2 Parch
+    # but the son has 1 mother and 1 sibiling = 1 Parch + 1 SibSp
+    relatives <- company_set[company_set$LastName == current_row$LastName & company_set$SibSp + company_set$Parch == current_row$SibSp + current_row$Parch,] %>%
+                 arrange(desc(Age))
+    company_set[i,"Dependents"] <-  nrow(relatives %>%
+                          filter((!is.na(Age) & Age <= 15)))
+
+    # We use the following identifiers to determine if the person is a child of someone else or not
+    # 1 - Ignoring intergenerational families, you can't have more than two parents
+    if (current_row$Parch > 2) {
+      is_child = FALSE
+    # 2 - Mrs means passenger is married, which makes it more likely that she is a mother
+    } else if (current_row$Title == "Mrs") {
+      is_child = FALSE
+    # 3 - Based on the data, master usually indicates children 
+    } else if (current_row$Title == "Master") {
+      is_child = TRUE
+    # 4 - if she's a female there is someone else with a Mrs in the family, then she is likely to be a child
+    } else if (current_row$Sex == "female" & nrow(relatives[relatives$Title == "Mrs",]) > 0) {
+      is_child = TRUE
+    # 5 - no age, hard to assume, consider as adult
+    } else if (is.na(current_row$Age)) {
+      is_child = FALSE
+    # 6 - We assume that the earliest time for adults to have children is 15 years old
+    } else if (current_row$Age < 15) {
+      is_child = TRUE
+    # 7 - If there is someone in their family 15 years older than them, then we assume that someone is the parent
+    } else if (relatives[1,"Age"] - current_row$Age >= 15) {
+      is_child = TRUE
+    }
+    
+    if (is.na(is_child)) {
+      company_set[i,"Parents"] = current_row$Parch / 2.
+      company_set[i,"Children"] = current_row$Parch / 2.
+    } else if (is_child) {
+      company_set[i,"Parents"] = current_row$Parch
+    } else {
+      company_set[i,"Children"] = current_row$Parch
+    }
+    
+  }
+}
+
+company_set2 <- company_set %>%
+                filter(is.na(Age) | Age > 8) %>%
+               group_by(Dependents) %>%
                 summarise(CohortSize = n(),
                           SurvivalRate = sum(Survived)/n())
 
+
+## ---- exp_hypo5
+
+# Group by Family Size and calculate Survival Rates for Different Categories of Groups
+company_set <- training_set %>%
+               mutate(Size = Parch + SibSp + 1,
+                      isAdult = is.na(Age) | Age > 8,
+                      isAdultNoChild = isAdult & Parch == 0,
+                      isFemaleNoChild = isAdultNoChild & Sex == "female") %>%
+               group_by(Size) %>%
+               summarise(CohortSize = n(),
+                         SurvivalRate = sum(Survived)/CohortSize,
+                         Adults = sum(isAdult),
+                         SurvivalRateAdults = sum(isAdult & Survived)/Adults,
+                         AdultsNoChild = sum(isAdultNoChild),
+                         SurvivalRateAdultsNoChild = sum(isAdultNoChild & Survived)/AdultsNoChild,
+                         FemaleNoChild = sum(isFemaleNoChild),
+                         SurvivalRateFemaleNoChild = sum(isFemaleNoChild & Survived)/FemaleNoChild)
+
+# Normalize the survival rates with respect to baseline (Size = 0)
+for (c_name in c("SurvivalRateAdults","SurvivalRateAdultsNoChild","SurvivalRateFemaleNoChild")) {
+  company_set[,c_name] <- company_set[,c_name] / as.double(company_set[1,c_name]) * as.double(company_set[1,"SurvivalRate"])
+}
+
+# Calculate attribution statistics
+company_set$AttrChild <- company_set$SurvivalRate - company_set$SurvivalRateAdults
+company_set$AttrParents <- company_set$SurvivalRateAdults - company_set$SurvivalRateAdultsNoChild
+company_set$AttrHusband <- company_set$SurvivalRateAdultsNoChild - company_set$SurvivalRateFemaleNoChild
+company_set$Baseline <- company_set$SurvivalRate - company_set$AttrChild - company_set$AttrParents - company_set$AttrHusband
+
+# Only analyze cohort size until 3 due to small sample sizes
+company_stack <- company_set %>% 
+                filter(Size <= 3) %>% 
+                select(Size, Baseline, AttrHusband, AttrParents, AttrChild, SurvivalRate) %>%
+                gather_("Attribution","Value",setdiff(names(.),c("Size","SurvivalRate"))) %>%
+                mutate(Value = sapply(Value, function(x) { max(x,0) }))
+
+# Reorder factor levels
+company_stack$Attribution <- factor(company_stack$Attribution, levels = rev(unique(company_stack$Attribution)))
+
+
+company_plot <- ggplot(company_stack, aes(x= Size, y= Value, fill = Attribution)) + 
+                theme_lk() +
+                guides(fill = guide_legend(reverse=T)) + 
+                geom_area(position = 'stack')
+
+company_plot 
+
+p + geom_area(aes(colour = PR_Cat, fill= PR_Cat), position = 'stack')  
 company_plot <- ggplot(company_set, aes(x = as.factor(Parch),
                                         y = as.factor(SibSp),
                                         fill = SurvivalRate,
