@@ -270,7 +270,7 @@ age_plot
 # Group by Family Size and calculate Survival Rates for Different Subsets of Passengers
 company_set <- training_set %>%
                mutate(Size = Parch + SibSp + 1,
-                      isAdult = is.na(Age) | Age > 8,
+                      isAdult = is.na(Age) | Age > 12,
                       isAdultNoChild = isAdult & Parch == 0,
                       isFemaleNoChild = isAdultNoChild & Sex == "female") %>%
                group_by(Size) %>%
