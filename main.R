@@ -658,12 +658,14 @@ embark_pclass_plot
 
 # * PREPARING THE DATA ----
 
-## ---- model_age_vars
+## ---- model_age_append
 appendConfirmedAdult <- function(data) {
     data %>%
     mutate(ConfirmedAdult = ifelse(Parch > 2, 1, 0))
 }
+## ---- end-of-model_age_append
 
+## ---- model_age_vars
 age_data <- training_set %>%
             appendTitle() %>%
             appendFamilySize() %>%
@@ -761,12 +763,14 @@ cleaned_set <- clean_data(training_set)
 
 # * MODELING SURVIVAL LIKELIHOOD ----
 
-## ---- model_construct
+## ---- model_randomize
 set.seed(1) 
 shuffled_set <- training_set[sample(nrow(training_set)),]
 training_grp <- shuffled_set[1:floor(0.80 *nrow(shuffled_set)),]
 testing_grp <- shuffled_set[floor(0.80 *nrow(shuffled_set) + 1):nrow(shuffled_set),]
+## ---- end-of-model_randomize
 
+## ---- model_construct
 set.seed(1) 
 rf_model <- randomForest(Survived ~ .,
                          data = clean_data(training_grp),

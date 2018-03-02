@@ -198,7 +198,10 @@ FamilySize | Continuous | Insight 4
 #### Populating Age
 Before using the raw data as an input to the model, we have to ensure that the data is in a well-defined state. One of the first things we have to do is to populate any unidentified <span class="hl">Age</span> values.
 
-```{r model_age_vars}
+```{r, echo=FALSE}
+<<model_age_append>>
+
+<<model_age_vars>>
 ```
 
 We will use the following variables as predictors of Age:
@@ -215,7 +218,10 @@ We will use ANOVA regression to predict Age based on the factors above. ANOVA re
 
 Listed below is the summary of the ANOVA regression.
 
-```{r model_age_anova}
+```{r}
+<<model_age_append>>
+
+<<model_age_anova>>
 ```
 
 Due to our careful selection of variables, all of the coefficients are statistically significant under a 5% significance level. This suggests that the variables are all good predictors of Age.
@@ -228,13 +234,14 @@ Other than age, we also need some kind of sanity checks to ensure that all data 
 
 After resolving the missing data, we can now create a process that takes in the raw data and output a cleaned data for model consumption.
 
-```{r model_cleanse}
-```
-
 Below is an example of the data after cleansing:
 
 ```{r}
+
+<<model_cleanse>>
+  
 pander(head(cleaned_set))
+
 ```
 
 
@@ -244,13 +251,13 @@ Prior to constructing the random forest model, we need to split the training set
 
 In order to do so, let us first shuffle the training data and split the dataset in a 80%-20% partition. The larger partition will then be used to construct a random forest model.
 
-```{r model_construct}
+```{r model_randomize}
 
 ```
 
 Listed below is a summary of the Random Forest model.
 
-```{r}
+```{r model_construct}
 
 rf_model
 
