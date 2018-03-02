@@ -206,13 +206,13 @@ Before using the raw data as an input to the model, we have to ensure that the d
 
 We will use the following variables as predictors of Age:
 
-* <span class="hl color-1-text">Pclass</span>: 1st class members (`r round(age_by[['Pclass']][[1]])` years old on average) are generally older than 2nd (`r round(age_by[['Pclass']][[2]])`) or 3rd (`r round(age_by[['Pclass']][[3]])`) class members.
+* <span class="hl">Pclass</span>: 1st class members (`r round(age_by[['Pclass']][[1]])` years old on average) are generally older than 2nd (`r round(age_by[['Pclass']][[2]])`) or 3rd (`r round(age_by[['Pclass']][[3]])`) class members.
 
-* <span class="hl color-1-text">Title</span>: Masters (`r round(age_by[['Title']][['Master']])` years old on average) and Miss-es (`r round(age_by[['Title']][['Miss']])`) tend to be younger than Mr (`r round(age_by[['Title']][['Mr']])`) and Mrs (`r round(age_by[['Title']][['Mrs']])`).
+* <span class="hl">Title</span>: Masters (`r round(age_by[['Title']][['Master']])` years old on average) and Miss-es (`r round(age_by[['Title']][['Miss']])`) tend to be younger than Mr (`r round(age_by[['Title']][['Mr']])`) and Mrs (`r round(age_by[['Title']][['Mrs']])`).
 
-* <span class="hl color-1-text">ConfirmedAdult</span>: This is a new category created just to predict the age. Assuming that there are negligible intergenerational families in Titanic (i.e. an individual having both parents and children), we know that having more than 2 parent-children relationships strongly implies an individual is a parent (since a child can have a maximum of 2 parent relationships). Such individuals are what we tag as ConfirmedAdults. These passengers are `r round(age_by[['ConfirmedAdult']][['1']] - age_by[['ConfirmedAdult']][['0']])` years older on average than the rest of the passengers.
+* <span class="hl">ConfirmedAdult</span>: This is a new category created just to predict the age. Assuming that there are negligible intergenerational families in Titanic (i.e. an individual having both parents and children), we know that having more than 2 parent-children relationships strongly implies an individual is a parent (since a child can have a maximum of 2 parent relationships). Such individuals are what we tag as ConfirmedAdults. These passengers are `r round(age_by[['ConfirmedAdult']][['1']] - age_by[['ConfirmedAdult']][['0']])` years older on average than the rest of the passengers.
 
-* <span class="hl color-1-text">FamilySize</span>: Based on Insight 4, we know that a larger family size implies a higher probability of being a child (or in other words, a younger age). In fact, the correlation between age and family size is modest at `r round(cor(age_data$FamilySize, age_data$Age)*100)`%.
+* <span class="hl">FamilySize</span>: Based on Insight 4, we know that a larger family size implies a higher probability of being a child (or in other words, a younger age). In fact, the correlation between age and family size is modest at `r round(cor(age_data$FamilySize, age_data$Age)*100)`%.
 
 We will use ANOVA regression to predict Age based on the factors above. ANOVA regression is similar to a linear regression, with the added capability of regressing over categorical variables. 
 
@@ -261,9 +261,9 @@ Listed below is a summary of the Random Forest model.
 
 We will use three different indicators to test the accuracy of the model:
 
-1. OOO: The accuracy calculated internally within the model,
-2. 20% Testing Group: The accuracy when used to predict the remaining 20% of the data not used in calibration,
-3. Kaggle's Testing Set: The accuracy when used to predict the test set provided by Kaggle.
+1. <span class="hl">OOO</span>: The accuracy calculated internally within the model,
+2. <span class="hl">20% Testing Group</span>: The accuracy when used to predict the remaining 20% of the data not used in calibration,
+3. <span class="hl">Kaggle's Testing Set</span>: The accuracy when used to predict the test set provided by Kaggle.
 
 ```{r }
 ooo_str <- paste0("Based on OOO: ",round((1 - median(rf_model$err.rate[,1]))*100,1),"% Accuracy Rate")

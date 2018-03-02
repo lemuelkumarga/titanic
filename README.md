@@ -861,11 +861,11 @@ map
 
 <!--html_preserve-->
 
-<div id="htmlwidget-1a69e4bc75abb1970a8f" class="leaflet html-widget" style="width:100%;height:288px;">
+<div id="htmlwidget-3d35c353a7c3e7786fd2" class="leaflet html-widget" style="width:100%;height:288px;">
 
 </div>
 
-<script type="application/json" data-for="htmlwidget-1a69e4bc75abb1970a8f">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-3d35c353a7c3e7786fd2">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
 
 <!--/html_preserve-->
 
@@ -976,28 +976,27 @@ values.
 
 We will use the following variables as predictors of Age:
 
-  - <span class="hl color-1-text">Pclass</span>: 1st class members (38
-    years old on average) are generally older than 2nd (30) or 3rd (25)
-    class members.
+  - <span class="hl">Pclass</span>: 1st class members (38 years old on
+    average) are generally older than 2nd (30) or 3rd (25) class
+    members.
 
-  - <span class="hl color-1-text">Title</span>: Masters (5 years old on
-    average) and Miss-es (22) tend to be younger than Mr (32) and Mrs
-    (36).
+  - <span class="hl">Title</span>: Masters (5 years old on average) and
+    Miss-es (22) tend to be younger than Mr (32) and Mrs (36).
 
-  - <span class="hl color-1-text">ConfirmedAdult</span>: This is a new
-    category created just to predict the age. Assuming that there are
-    negligible intergenerational families in Titanic (i.e. an individual
-    having both parents and children), we know that having more than 2
+  - <span class="hl">ConfirmedAdult</span>: This is a new category
+    created just to predict the age. Assuming that there are negligible
+    intergenerational families in Titanic (i.e. an individual having
+    both parents and children), we know that having more than 2
     parent-children relationships strongly implies an individual is a
     parent (since a child can have a maximum of 2 parent relationships).
     Such individuals are what we tag as ConfirmedAdults. These
     passengers are 9 years older on average than the rest of the
     passengers.
 
-  - <span class="hl color-1-text">FamilySize</span>: Based on Insight 4,
-    we know that a larger family size implies a higher probability of
-    being a child (or in other words, a younger age). In fact, the
-    correlation between age and family size is modest at -30%.
+  - <span class="hl">FamilySize</span>: Based on Insight 4, we know that
+    a larger family size implies a higher probability of being a child
+    (or in other words, a younger age). In fact, the correlation between
+    age and family size is modest at -30%.
 
 We will use ANOVA regression to predict Age based on the factors above.
 ANOVA regression is similar to a linear regression, with the added
@@ -1184,11 +1183,12 @@ rf_model
 We will use three different indicators to test the accuracy of the
 model:
 
-1.  OOO: The accuracy calculated internally within the model,
-2.  20% Testing Group: The accuracy when used to predict the remaining
-    20% of the data not used in calibration,
-3.  Kaggle’s Testing Set: The accuracy when used to predict the test set
-    provided by
+1.  <span class="hl">OOO</span>: The accuracy calculated internally
+    within the model,
+2.  <span class="hl">20% Testing Group</span>: The accuracy when used to
+    predict the remaining 20% of the data not used in calibration,
+3.  <span class="hl">Kaggle’s Testing Set</span>: The accuracy when used
+    to predict the test set provided by
 Kaggle.
 
 <!-- end list -->
