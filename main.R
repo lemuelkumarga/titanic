@@ -777,6 +777,8 @@ rf_model <- randomForest(Survived ~ .,
                          importance=TRUE,
                          ntree=2000)
 
+rf_model
+
 ## ---- end-of-model_construct
 
 ## ---- model_internal_test
