@@ -10,6 +10,7 @@ packages <- c("dplyr","ggplot2","randomForest","tidyr","leaflet","purrr","grDevi
 load_or_install.packages(packages)
 
 data_dir <- "data/"
+output_dir <- "output/"
 
 # Load some helper functions
 source("shared/helper.R")
@@ -267,9 +268,15 @@ age_plot
 
 ## ---- exp_company
 
+appendFamilySize <- function(data) {
+    data %>%
+    mutate(FamilySize = Parch + SibSp + 1)
+}
+
 # Group by Family Size and calculate Survival Rates for Different Subsets of Passengers
 company_set <- training_set %>%
-               mutate(Size = Parch + SibSp + 1,
+               appendFamilySize() %>%
+               mutate(Size = FamilySize,
                       isAdult = is.na(Age) | Age > 12,
                       isAdultNoChild = isAdult & Parch == 0,
                       isFemaleNoChild = isAdultNoChild & Sex == "female") %>%
@@ -338,59 +345,9 @@ company_plot
 
 ## ---- end-of-exp_company
 
-########## HYPOTHESIS 6 : COMPANY AND TICKETS ####################
+# * INSIGHT 5 : CABIN AND SURVIVALHOOD ----
 
-## ---- exp_hypo6
-
-cleanTickets <- function(x) { toupper(gsub("[[:punct:]]|[[:space:]]","",x)) }
-
-com_ticket_set <- training_set %>%
-                  mutate(TicketParsed = sapply(Ticket, cleanTickets))
-
-ticket_sum_set <- com_ticket_set %>%
-                  group_by(TicketParsed) %>%
-                  summarise(Size = n())
-
-com_ticket_set <- com_ticket_set %>%
-                  left_join(ticket_sum_set, by=c("TicketParsed")) %>%
-                  mutate( OtherCompany = SibSp + Parch,
-                          OtherTickets = Size - 1) %>%
-                  group_by(OtherCompany, OtherTickets) %>%
-                  summarise(CohortSize = n())
-com_ticket_cor <- cor(com_ticket_set$OtherCompany, com_ticket_set$OtherTickets)
-
-com_ticket_plot <- ggplot(com_ticket_set, aes(x = OtherCompany,
-                                              y = OtherTickets,
-                                              alpha = CohortSize)) +
-                  theme_lk() + 
-                  ########### LEGENDS ###########
-                  scale_alpha_continuous(name = "Cohort Size",
-                                         limits = c(0,50),
-                                         guide = guide_legend(
-                                           nrow = 1,
-                                           override.aes=list(fill=ltxt_color)
-                                         )) +
-                  ########### X-AXIS ###########
-                  xlab("# Company") +
-                  scale_x_continuous(labels = scales::comma) +
-                  ########### Y-AXIS ###########
-                  ylab("# Other Individuals with Same Ticket") +
-                  ########### ELEMENTS ###########
-                  geom_tile(fill = get_color(1)) +
-                  geom_text(label = paste0("'Correlation'~rho~': ",round(com_ticket_cor*100),"%'"),
-                            data = data.frame(1),
-                            x = 10,y = 6, hjust = 1,
-                            family = def_font, size = 5,
-                            alpha = 1, color = txt_color,
-                            parse=TRUE)
-
-com_ticket_plot
-
-## ---- end-of-exp_hypo6
-
-########## HYPOTHESIS 7 : CABIN ####################
-
-## ---- exp_hypo7
+## ---- exp_cabin_decompose
 
 getCabinFloor <- function(x) {
 
@@ -438,9 +395,9 @@ appendCabinInfo <- function(data) {
 cabin_set <- appendCabinInfo(training_set) %>%
              select(CabinFloor,CabinNumber,CabinCount, Survived)
 
-## ---- end-of-exp_hypo7
+## ---- end-of-exp_cabin_decompose
 
-## ---- exp_hypo7_p1
+## ---- exp_cabin_floors
 
 cabinLet_set <- cabin_set %>%
                 group_by(CabinFloor) %>%
@@ -452,7 +409,6 @@ cabinLet_plot <- ggplot(cabinLet_set, aes(x=as.factor(CabinFloor),
                                           alpha = CohortSize,
                                           fill = SurvivalRate)) +
                   theme_lk() + 
-                    ########### LEGENDS ###########
                   scale_alpha_continuous(name = "Cohort Size",
                                          limits = c(0,30),
                                          guide = guide_legend(
@@ -466,17 +422,14 @@ cabinLet_plot <- ggplot(cabinLet_set, aes(x=as.factor(CabinFloor),
                                                  as.character(get_color("green"))),
                                        values = c(0.0,0.4,0.5,0.6,1.0),
                                        guide = "none") +
-                    ########### X-AXIS ###########
                     xlab("Cabin Floor") +
-                    ########### Y-AXIS ###########
                     ylab("Survival Likelihood") +
                     scale_y_continuous(labels = scales::percent,
                                        # Make Sure Bar and X-Axis Stick Together
                                        expand = c(0,0),
                                        limits =c(0,1)) +
-                    ########### ELEMENTS ###########
-                  # Actual Data
-                  geom_bar(stat="identity") +
+                    # Actual Data
+                    geom_bar(stat="identity") +
                     geom_text(aes(y = SurvivalRate - 0.08,
                                   label=paste0(round(SurvivalRate*100),"%")),
                               color = "#FFFFFF", alpha = 1,
@@ -484,9 +437,9 @@ cabinLet_plot <- ggplot(cabinLet_set, aes(x=as.factor(CabinFloor),
 
 cabinLet_plot
 
-## ---- end-of-exp_hypo7_p1
+## ---- end-of-exp_cabin_floors
 
-## ---- exp_hypo7_p2
+## ---- exp_cabin_number
 
 cabinNumber_set <- cabin_set %>%
                    group_by(CabinNumber) %>%
@@ -499,44 +452,41 @@ cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
                                                 color=CabinNumber,
                                                 size=CohortSize)) +
                     theme_lk() +
-                    ########### LEGENDS ###########
-                      theme(plot.margin = unit(c(0,0,0,-40),'pt')) +
-                        # Legends
-                        theme(
-                          legend.position = c(0.5,0.2),
-                          legend.box.just = c(0.5,0.5),
-                          legend.justification = c(0.5,0.5)
-                        ) +
-                      scale_color_manual(name = "Room Type",
-                                         values = get_color(),
-                                         guide = guide_legend(order = 1,
-                                                              direction = "vertical",
-                                                              override.aes=list(size=5),
-                                                              ncol= 2)) +
-                      scale_size_continuous(name = "Cohort Size",
-                                            range = c(5,20),
-                                            guide = guide_legend(order = 2)) +
-                      ########### X-AXIS ###########
+                    theme(plot.margin = unit(c(0,0,0,-40),'pt')) +
+                    # Legends
+                    theme(
+                      legend.position = c(0.5,0.2),
+                      legend.box.just = c(0.5,0.5),
+                      legend.justification = c(0.5,0.5)
+                    ) +
+                    scale_color_manual(name = "Room Type",
+                                       values = get_color(),
+                                       guide = guide_legend(order = 1,
+                                                            direction = "vertical",
+                                                            override.aes=list(size=5),
+                                                            ncol= 2)) +
+                    scale_size_continuous(name = "Cohort Size",
+                                          range = c(5,20),
+                                          guide = guide_legend(order = 2)) +
                     theme(
                       axis.line.x = element_line(colour=NA),
                       axis.ticks.x = element_line(colour=NA),
                       axis.title.x = element_text(colour=NA),
                       axis.text.x = element_text(colour=NA)
                     ) +
-                      # Add X Axis Line
-                      geom_segment(aes(x=0.25, xend=0.8, y=0, yend=0),
-                                   size = 0.5,
-                                   color=ltxt_color,
-                                   arrow = arrow(length = unit(10,"pt"),
-                                                 type = "closed")) +
-                      geom_text(label = "Survival Likelihood",
-                                x = 0.8,
-                                y = 0.02,
-                                family = def_font,
-                                color = ltxt_color,
-                                size = 5,
-                                hjust = 1) +
-                      ########### Y-AXIS ###########
+                    # Add X Axis Line
+                    geom_segment(aes(x=0.25, xend=0.8, y=0, yend=0),
+                                 size = 0.5,
+                                 color=ltxt_color,
+                                 arrow = arrow(length = unit(10,"pt"),
+                                               type = "closed")) +
+                    geom_text(label = "Survival Likelihood",
+                              x = 0.8,
+                              y = 0.02,
+                              family = def_font,
+                              color = ltxt_color,
+                              size = 5,
+                              hjust = 1) +
                     theme(
                       # Y-Axis
                       axis.line.y = element_line(colour=NA),
@@ -544,19 +494,18 @@ cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
                       axis.title.y = element_text(colour=NA),
                       axis.text.y = element_text(colour=NA)) +
                       scale_y_continuous(limits=c(-0.12, 0.05)) +
-                      ########### ELEMENTS ###########
                     geom_point(alpha=0.5) +
-                      geom_text(aes(y = -0.03, label=paste0(round(SurvivalRate*100,0),"%")),
-                                size=4,
-                                color=txt_color,
-                                family=def_font)
+                    geom_text(aes(y = -0.03, label=paste0(round(SurvivalRate*100,0),"%")),
+                              size=4,
+                              color=txt_color,
+                              family=def_font)
 
 
 cabinNumber_plot
 
-## ---- end-of-exp_hypo7_p2
+## ---- end-of-exp_cabin_number
 
-## ---- exp_hypo7_p3
+## ---- exp_cabin_specified
 cabinCount_set <- cabin_set %>%
                   group_by(CabinCount) %>%
                   summarise(CohortSize = n(),
@@ -567,43 +516,39 @@ cabinCount_plot <- ggplot(cabinCount_set, aes(x=as.factor(CabinCount),
                                               alpha = CohortSize,
                                               fill = SurvivalRate)) +
                    theme_lk() +
-                    ########### LEGENDS ###########
-                    scale_alpha_continuous(name = "Cohort Size",
-                                           limits = c(0,50),
-                                           guide = guide_legend(
-                                             nrow = 1,
-                                             override.aes=list(fill=ltxt_color)
-                                           )) +
-                    scale_fill_gradientn(colours=c(as.character(get_color("red")),
-                                                   as.character(get_color("red")),
-                                                   as.character(get_color("yellow")),
-                                                   as.character(get_color("green")),
-                                                   as.character(get_color("green"))),
-                                         values = c(0.0,0.3,0.4,0.50,1.),
-                                         guide = "none") +
-                    ########### X-AXIS ###########
-                    xlab("# Cabins Specified") +
-                    ########### Y-AXIS ###########
-                    ylab("Survival Likelihood") +
-                    scale_y_continuous(labels = scales::percent,
-                                       # Make Sure Bar and X-Axis Stick Together
-                                       expand = c(0,0),
-                                       limits =c(0,1)) +
-                    ########### ELEMENTS ###########
-                  # Actual Data
-                  geom_bar(stat="identity",
-                           width = 0.7) +
-                  geom_text(aes(y = SurvivalRate - 0.1,
-                                label=paste0("Cohort\nSize:\n",CohortSize)),
-                            color = "#FFFFFF", alpha = 1,
-                            family=def_font,size=4)
+                   scale_alpha_continuous(name = "Cohort Size",
+                                          limits = c(0,50),
+                                          guide = guide_legend(
+                                          nrow = 1,
+                                          override.aes=list(fill=ltxt_color)
+                                         )) +
+                   scale_fill_gradientn(colours=c(as.character(get_color("red")),
+                                                 as.character(get_color("red")),
+                                                 as.character(get_color("yellow")),
+                                                 as.character(get_color("green")),
+                                                 as.character(get_color("green"))),
+                                       values = c(0.0,0.3,0.4,0.50,1.),
+                                       guide = "none") +
+                   xlab("# Cabins Specified") +
+                   ylab("Survival Likelihood") +
+                   scale_y_continuous(labels = scales::percent,
+                                      # Make Sure Bar and X-Axis Stick Together
+                                      expand = c(0,0),
+                                      limits =c(0,1)) +
+                   # Actual Data
+                   geom_bar(stat="identity",
+                            width = 0.7) +
+                   geom_text(aes(y = SurvivalRate - 0.1,
+                                 label=paste0("Cohort\nSize:\n",CohortSize)),
+                             color = "#FFFFFF", alpha = 1,
+                             family=def_font,size=4)
 
 cabinCount_plot
-## ---- end-of-exp_hypo7_p3
+## ---- end-of-exp_cabin_specified
 
-########## HYPOTHESIS 8 : EMBARKATION PORTS ####################
+# * INSIGHT 6 : EMBARKATION PORTS ----
 
-## ---- exp_hypo8
+## ---- exp_port
 
 embark_set <- training_set %>%
               filter(Embarked != "") %>%
@@ -658,9 +603,9 @@ pwalk(
 
 map
 
-## ---- end-of-exp_hypo8
+## ---- end-of-exp_port
 
-## ---- exp_hypo8_p2
+## ---- exp_port_income
 
 # Assessing the correlation between Embarkation and Passenger Class
 
@@ -681,93 +626,120 @@ embark_pclass_plot <- ggplot(embark_pclass, aes(x=as.factor(Embarked),
                                                 y=PctEmbarked,
                                                 fill = as.factor(Pclass))) +
                       theme_lk() + 
-                  ########### LEGENDS ###########
-                  scale_fill_manual(name = "Passenger Class",
-                     labels = c("1"="1 (High-Income)","2"="2 (Medium-Income)","3"="3 (Low-Income)"),
-                     values = c("1"=get_color("green"),
-                                "2"=alpha(get_color("yellow"),0.2),
-                                "3"=alpha(get_color("red"),0.2)),
-                     guide = guide_legend(reverse = TRUE)) +
-                  ########### X-AXIS ###########
-                  xlab("Port of Embarkation") +
-                  scale_x_discrete(labels=c("S"="Southampton",
-                                            "C"="Cherbough",
-                                            "Q"="Queenstown")) +
-                  ########### Y-AXIS ###########
-                  ylab("Survival Likelihood") +
-                  scale_y_continuous(labels = scales::percent,
-                                     # Make Sure Bar and X-Axis Stick Together
-                                     expand = c(0,0),
-                                     limits =c(0,1)) +
-                  ########### FLIP TO HORIZONTAL BAR CHART ###########
-                  coord_flip() +
-                  ########### ELEMENTS ###########
-                  # Actual Data
-                  geom_bar(stat="identity") +
-                  geom_text(aes(label=paste0(round(PctEmbarked*100),"%"),
-                                y = PctEmbarked + 0.05),
-                            data = embark_pclass %>% filter(Pclass == 1),
-                            color = get_color("green"),
-                            family = def_font, size = 5)
+                      scale_fill_manual(name = "Passenger Class",
+                         labels = c("1"="1 (High-Income)","2"="2 (Medium-Income)","3"="3 (Low-Income)"),
+                         values = c("1"=get_color("green"),
+                                    "2"=alpha(get_color("yellow"),0.2),
+                                    "3"=alpha(get_color("red"),0.2)),
+                         guide = guide_legend(reverse = TRUE)) +
+                      xlab("Port of Embarkation") +
+                      scale_x_discrete(labels=c("S"="Southampton",
+                                                "C"="Cherbough",
+                                                "Q"="Queenstown")) +
+                      ylab("Survival Likelihood") +
+                      scale_y_continuous(labels = scales::percent,
+                                         # Make Sure Bar and X-Axis Stick Together
+                                         expand = c(0,0),
+                                         limits =c(0,1)) +
+                      coord_flip() +
+                      # Actual Data
+                      geom_bar(stat="identity") +
+                      geom_text(aes(label=paste0(round(PctEmbarked*100),"%"),
+                                    y = PctEmbarked + 0.05),
+                                data = embark_pclass %>% filter(Pclass == 1),
+                                color = get_color("green"),
+                                family = def_font, size = 5)
 
 embark_pclass_plot
 
-## ---- end-of-exp_hypo8_p2
+## ---- end-of-exp_port_income
 
-####################################################
-#
-# 3 - Data Preparation
-#
-###################################################
+# DATA MODELING ### ----
 
-## ---- data_prep
+# * PREPARING THE DATA ----
 
-### Create Age as Regression Parameters
+## ---- model_age_vars
+appendConfirmedAdult <- function(data) {
+    data %>%
+    mutate(ConfirmedAdult = ifelse(Parch > 2, 1, 0))
+}
+
 age_data <- training_set %>%
             appendTitle() %>%
+            appendFamilySize() %>%
+            appendConfirmedAdult() %>%
             filter(Age > 0)
-age_m <- lm(Age ~ Title + SibSp + Parch + factor(Pclass), data = age_data)
+
+age_by <- list()
+for (i in c('Pclass','Title','ConfirmedAdult','FamilySize')) {
+  tmp <- age_data %>% 
+         group_by_at(vars(i)) %>%
+         summarise(Age = mean(Age))
+  age_by[[i]] <- unlist(tmp$Age)
+  names(age_by[[i]]) <- unlist(tmp[,i])
+}
+
+## ---- end-of-model_age_vars
+
+## ---- model_age_anova
+
+age_model <- function(data) {
+  
+  age_data <- data %>%
+              appendTitle() %>%
+              appendFamilySize() %>%
+              appendConfirmedAdult() %>%
+              filter(Age > 0)
+  
+  model <- lm(Age ~ Pclass +
+                    Title + 
+                    ConfirmedAdult +
+                    FamilySize,
+              data = age_data)
+  
+  model
+}
+
+summary(age_model(training_set))
+
+## ---- end-of-model_age_anova
+
+## ---- model_cleanse
 
 clean_data <- function(data,is_training = TRUE) {
   output <- appendTitle(data) %>%
-            appendCabinInfo()
+            appendFamilySize() %>%
+            appendConfirmedAdult()
+  
+  age_m <- age_model(output)
 
   # Populate Age
   output <- output %>%
             mutate(AgePredict = predict.lm(age_m, output),
                    Age = ifelse(is.na(Age),AgePredict,Age))
 
-  # Create Null Handler
-  null_handler <- function(is_categorical = TRUE) {
-    paste0('ifelse(is.na(x) | x %in% c("","NA"),', ifelse(is_categorical,'"Unknown"','-1'),',x)')
-
-  }
-
-  # Specify Features
+  # Populate Others: Names represent columns, value is TRUE if column is categorical,
+  # false otherwise
   features <- c("Pclass"=FALSE,
                 "Fare"=FALSE,
                 "Sex"=TRUE,
                 "Title"=TRUE,
                 "Age"=FALSE,
-                "SibSp"=FALSE,
-                "Parch"=FALSE,
-                "CabinFloor"=TRUE,
-                "CabinNumber"=TRUE,
-                "Embarked"=TRUE)
+                "FamilySize"=FALSE)
+  null_handler <- function(is_categorical = TRUE) {
+    paste0('ifelse(is.na(x) | x %in% c("","NA"),', ifelse(is_categorical,'"Unknown"','-1'),',x)')
+  }
   mutate_fn <- sapply(1:length(features), function(x) {
-                paste0("sapply(",names(features[x]),", function(x) { ",null_handler(features[x])," })")
-              })
-
+    paste0("sapply(",names(features[x]),", function(x) { ",null_handler(features[x])," })")
+  })
   output <- output %>%
             mutate_(
               .dots= setNames(mutate_fn, names(features))
             )
-
+  
   # Specify factors for different features
   output$Sex <- factor(output$Sex, levels = c("male","female","Unknown"))
   output$Title <- factor(output$Title, levels = c("Mr","Mrs","Miss","Master","Rare Title / M","Rare Title / F"))
-  output$CabinFloor <- factor(output$CabinFloor, levels = c("A","B","C","D","E","F","G","T","Multiple","Unknown"))
-  output$CabinNumber <- factor(output$CabinNumber, levels = c("Odd","Even","Mixed","Unknown"))
   output$Embarked <- factor(output$Embarked, levels = c("S","C","Q","Unknown"))
   if (is_training) {
     output$Survived <- factor(output$Survived, levels = c(0,1))
@@ -785,29 +757,54 @@ clean_data <- function(data,is_training = TRUE) {
 
 cleaned_set <- clean_data(training_set)
 
-## ---- end-of-data_prep
+## ---- end-of-model_cleanse
 
-####################################################
-#
-# 4 - Train the Data using Random Forest
-#
-###################################################
+# * MODELING SURVIVAL LIKELIHOOD ----
 
-## ---- data_model
-set.seed(1)
+## ---- model_construct
+set.seed(1) 
+shuffled_set <- training_set[sample(nrow(training_set)),]
+training_grp <- shuffled_set[1:floor(0.80 *nrow(shuffled_set)),]
+testing_grp <- shuffled_set[floor(0.80 *nrow(shuffled_set) + 1):nrow(shuffled_set),]
+
+set.seed(1) 
 rf_model <- randomForest(Survived ~ .,
-                         data = cleaned_set,
+                         data = clean_data(training_grp),
                          importance=TRUE,
                          ntree=2000)
 
-rf_model
-importance(rf_model)
+## ---- end-of-model_construct
 
-## ---- end-of-data_model
+## ---- model_internal_test
 
-## ---- data_model_err_anal
-p_y <- predict(rf_model, newdata = cleaned_set %>% select(-Survived))
-err_out <-  cleaned_set %>%
-            mutate(p_y = p_y) %>%
-            filter(Survived != p_y)
-## ---- end-of-data_model_err_anal
+# Compare using the testing group
+p_y <- predict(rf_model, newdata = clean_data(testing_grp %>% select(-Survived), is_training=FALSE))
+cmp <- cbind(testing_grp %>% select(actual=Survived), predicted=p_y) %>%
+             summarise(size=n(),
+                       err=sum(ifelse(actual != predicted,1,0)))
+
+
+## ---- end-of-model_internal_test
+
+## ---- model_external_test
+
+# Create model using all the training set
+set.seed(1) 
+rf_model <- randomForest(Survived ~ .,
+                         data = clean_data(training_set),
+                         importance=TRUE,
+                         ntree=2000)
+
+# Read the test set
+test_set <- read.csv(paste0(data_dir, "test.csv"))
+
+# Predict the test set
+p_y <- predict(rf_model, newdata = clean_data(test_set, is_training=FALSE))
+predictions <- cbind(test_set %>% select(PassengerId), Survived=p_y)
+write.csv(predictions, 
+          file=paste0(output_dir,"submission.csv"),
+          row.names = FALSE)
+
+# Upload the file to https://www.kaggle.com/c/titanic/submit
+
+## ---- end-of-model_external_test

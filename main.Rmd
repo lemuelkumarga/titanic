@@ -6,9 +6,10 @@ knit: (function(inputFile, encoding) { source("shared/knit.R"); knitter(inputFil
 ---
 
 ```{r echo=FALSE, warning=FALSE, results='hide'}
+options(warn=-1)
+
 packages <- c("knitr")
 tmp <- lapply(packages, library, character.only = TRUE)
-
 read_chunk("main.R")
 read_chunk("shared/helper.R")
   
@@ -57,7 +58,6 @@ Based on the above table, notice the following:
 * <span class="hl color-1-text">Names</span> are aggregated in the following format: <span class="hl color-2-text">Last_Name, Title 
 First_Name</span>.
 * <span class="hl color-1-text">Passenger class (Pclass) </span> levels are the equivalent of <span class="hl color-2-text">First Class (1), Business Class (2) and Economy Class (3)</span>. Hence, they could be used as an indicator of income level.
-* There are different types of <span class="hl color-1-text">Ticket</span> formats.
 * <span class="hl color-1-text">Age</span> has missing data to be populated.
 * <span class="hl color-1-text">Cabin</span> data is sparse, and hence we may want to exclude this for the prediction model.
 
@@ -116,11 +116,16 @@ However, contrary to expectations, the data shows that the larger the family siz
 
 ```
 
-As can be seen from the chart above, individuals with 1 to 2 children are more likely to survive than those without any children. It is inconclusive to determine from the chart above, whether same-age company has an impact of survivalhood. Hence, this premise is <span class="hl yellow-text">TRUE TO A LIMITED EXTENT</span>.
+This counterintuitive relationship can be attributed to the following 3 factors:
 
-#### On Cabin Positions
+* <span class="hl color-3-text">Child Privilege</span>: If you have a larger family size, there is an increased probability that you will be a child. For example, a family of 5 will more likely include 2 adults and 3 children, rather than 5 adults.
+As children have a higher survival likelihood (from insight 3), by the transitive property, a larger family size consequently implies a higher likelihood of survival.The benefits accrued by this privilege, shown in <span class="hl color-3-text">red</span>, can be accounted for when we compare data from all passengers against data from only the adults (> 15 years old).
 
-<div class="st">Hypothesis 6: Cabin positions should have an impact of survivalhood, but only to a certain extent.</div>
+* <span class="hl color-2-text">Parental Privilege</span>: The larger the family size, the more likely you are to be a parent. Parents can utilize their children's lifeboat guarantee to tag-along and get themselves a space. These benefits, which are represented in <span class="hl color-2-text">green</span>, surface when we compare the survival likelihoods of adults with children and adults with none.
+
+* <span class="hl color-1-text">Husband Privilege</span>: As a male, having a family size of 2 and no children may guarantee you better odds of being in the lifeboat, since you can utilize your wife's lifeboat premium (see Insight 2) to find a space for yourself. These benefits, shown in <span class="hl color-1-text">blue</span>, can be accounted for when we compare between males and females that do not have children.
+
+<div class="st">Insight 5: Cabin positions should have an impact of survivalhood, but only to a certain extent.</div>
 
 Cabins further away from the lifeboats will have a more difficult time surviving, hence we should assume that where passengers stay will have an impact on their survivalhood. However, the cabin positions can only determine survivalhood partially, given that passengers may not be at their cabins during the time of crash.
 
@@ -128,91 +133,143 @@ A more detailed deck plan can be found <a href="https://www.encyclopedia-titanic
 
 We will break down the cabin position into three constituents: the cabin floor, the cabin number (odd or even), and the number of cabins specified.
 
-```{r exp_hypo7}
+```{r exp_cabin_decompose}
 
 ```
 
 ##### Cabin Floors
 
-```{r exp_hypo7_p1, fig.height=5, fig.width=7, warning=FALSE, fig.align="center"}
+```{r exp_cabin_floors, fig.height=5, fig.width=7, warning=FALSE, fig.align="center"}
 
 ```
 
-From the chart, we can deduce that <span class="hl yellow-text">Cabins B to E</span> has a higher likelihood of survival compared to other/unspecified cabins, which suggests that the position of cabins play a role in determining whether a passenger survive.
+From the chart, we can deduce that <span class="hl color-1-text">Cabins B to E</span> has a higher likelihood of survival compared to other/unspecified cabins, which suggests that the position of cabins play a role in determining whether a passenger survive.
 
 ##### Cabin Numbers
 
-```{r exp_hypo7_p2, fig.height=3, fig.width=10, fig.align="center"}
+```{r exp_cabin_number, fig.height=3, fig.width=10, fig.align="center"}
 
 ```
 
 It is pretty clear that those who stay in the odd rooms are more likely to survive than those in the even rooms.
 
-##### Cabins Specified
+In conclusion, cabin floors and cabin numbers, when available, can determine a passenger's survival likelihood.
 
-```{r exp_hypo7_p3, fig.height=5, fig.width=7, fig.align="center"}
+<div class="st">Insight 6: Port of embarkation has an impact on survivalhood, as they are correlated with Passenger class.</div>
 
-```
-
-Even though seems to be an inverse relationship between the survival likelihood and number of cabins specified, the sample size is too small to ensure statistical significance.
-
-In conclusion, cabin floors and cabin numbers can determine a passenger's survival likelihood, while there is too little data to deduce a relationship in the number of cabins specified. Hence, the hypothesis is <span class="hl green-text">TRUE</span>.
-
-#### On Embakartion Ports
-
-<div class="st">Hypothesis 7: Port of embarkation should have no impact on survivalhood.</div>
-
-```{r exp_hypo8, fig.height = 3, fig.align="center"}
+```{r exp_port, fig.height = 3, fig.align="center"}
 
 ```
 
 <br>
 At first glance, there seems to be no plausible explanation why a passenger's port of embarkation will have an impact on the passenger's survival likelihood.
 
-```{r exp_hypo8_p2, fig.height = 3, fig.width=10, fig.align="center"}
+```{r exp_port_income, fig.height = 3, fig.width=10, fig.align="center"}
 
 ```
 
-However, by studying the demographics of the passengers who embarked at each port, we know that a higher proportion of Cherbough are high-income. This explains the higher survival likelihood for those who embarked at Cherbough, and renders the hypothesis to be <span class="hl red-text">FALSE</span>.
+However, by studying the demographics of the passengers who embarked at each port, we know that a higher proportion of Cherbough are high-income. This explains the higher survival likelihood for those who embarked at Cherbough.
 
-## Preparation
+## Modeling Survival Likelihood
 
-Based on the above hypotheses, we will be adding the following features to predict the survival likelihood of an individual.
+### Rationale
 
-Feature | Variable Type | Hypotheses Supporting the Feature  | Null Handling 
-- | - | - | -
-Pclass | Continuous | Hypothesis 1 | -1
-Fare | Continuous | Hypothesis 1 | -1
-Sex | Categorical | Hypothesis 3 | 'Unknown' Category Variable
-Title | Categorical | Hypothesis 3 | 'Unknown' Category Variable
-Age | Continuous | Hypothesis 4 | Regression
-SibSp | Continuous | Hypothesis 5 | -1
-Parch | Continuous | Hypothesis 5 | -1
-CabinFloor | Categorical | Hypothesis 6 | 'Unknown' Category Variable
-CabinNumber | Categorical | Hypothesis 6 | 'Unknown' Category Variable
-Port of Embarkation | Categorical | Hypothesis 7 | 'Unknown' Category Variable
+While the preliminary insights are useful in qualitatively determining factors influencing survival likelihood, we also need to have a way to quantify the importance for each factor. Building a predictive model would achieve that goal.
 
-Below is an example of the cleansed data set for model ingestion.
+Since this is a classification problem (for each passenger, we either group them as "Survived" or "Died"), models such as logistic regression and decision trees come to mind. However, for the purposes of this study, the <a href="https://en.wikipedia.org/wiki/Random_forest" target="_blank">Random Forest</a> algorithm was used, as it is more rebust and there already exists a useful function <code>importance</code> that can assess the various factors intuitively.
+
+### Preparation
+
+#### Variables Considered
+
+Based on the above insights, we will be adding the following factors to predict the survival likelihood of an individual.
+
+Feature | Variable Type | Insights Supporting the Feature 
+- | - | -
+Pclass | Continuous | Insight 1
+Fare | Continuous | Insight 1
+Sex | Categorical | Insight 2
+Title | Categorical | Insight 2
+Age | Continuous | Insight 3
+FamilySize | Continuous | Insight 4
+
+*Initially, CabinFloor, CabinNumber and Port of Embarkation were used as predictors of survival likelihood. However, the accuracy of the model fell with the inclusion of these features due to over-fitting. This implies that we may be over-inflating the impact of embarkation port, while the cabin data is too sparse to yield any useful information.
+
+#### Populating Age
+Before using the raw data as an input to the model, we have to ensure that the data is in a well-defined state. One of the first things we have to do is to populate any unidentified <span class="hl">Age</span> values.
+
+```{r model_age_vars}
+```
+
+We will use the following variables as predictors of Age:
+
+* <span class="hl color-1-text">Pclass</span>: 1st class members (`r round(age_by[['Pclass']][[1]])` years old on average) are generally older than 2nd (`r round(age_by[['Pclass']][[2]])`) or 3rd (`r round(age_by[['Pclass']][[3]])`) class members.
+
+* <span class="hl color-1-text">Title</span>: Masters (`r round(age_by[['Title']][['Master']])` years old on average) and Miss-es (`r round(age_by[['Title']][['Miss']])`) tend to be younger than Mr (`r round(age_by[['Title']][['Mr']])`) and Mrs (`r round(age_by[['Title']][['Mrs']])`).
+
+* <span class="hl color-1-text">ConfirmedAdult</span>: This is a new category created just to predict the age. Assuming that there are negligible intergenerational families in Titanic (i.e. an individual having both parents and children), we know that having more than 2 parent-children relationships strongly implies an individual is a parent (since a child can have a maximum of 2 parent relationships). Such individuals are what we tag as ConfirmedAdults. These passengers are `r round(age_by[['ConfirmedAdult']][['1']] - age_by[['ConfirmedAdult']][['0']])` years older on average than the rest of the passengers.
+
+* <span class="hl color-1-text">FamilySize</span>: Based on Insight 4, we know that a larger family size implies a higher probability of being a child (or in other words, a younger age). In fact, the correlation between age and family size is modest at `r round(cor(age_data$FamilySize, age_data$Age)*100)`%.
+
+We will use ANOVA regression to predict Age based on the factors above. ANOVA regression is similar to a linear regression, with the added capability of regressing over categorical variables. 
+
+Listed below is the summary of the ANOVA regression.
+
+```{r model_age_anova}
+```
+
+Due to our careful selection of variables, all of the coefficients are statistically significant under a 5% significance level. This suggests that the variables are all good predictors of Age.
+
+#### Populating Others
+
+Other than age, we also need some kind of sanity checks to ensure that all data has been populated. Since the rest of the data is either too varied, or require only a small set of missing values to be filled, we will populate those columns with category "Unknown" or the number -1.
+
+#### Putting It All Together
+
+After resolving the missing data, we can now create a process that takes in the raw data and output a cleaned data for model consumption.
+
+```{r model_cleanse}
+```
+
+Below is an example of the data after cleansing:
+
 ```{r}
-<<data_prep>>
-
 pander(head(cleaned_set))
 ```
 
-## The <i>Random Forest</i> Model
 
-Listed below are the preliminary results from the initial run using the Random Forest model.
+### The Model
 
-```{r data_model}
+Prior to constructing the random forest model, we need to split the training set into two groups, one for training purposes and the other for testing purposes. 
+
+In order to do so, let us first shuffle the training data and split the dataset in a 80%-20% partition. The larger partition will then be used to construct a random forest model.
+
+```{r model_construct}
 
 ```
 
+Listed below is a summary of the Random Forest model.
 
 ```{r}
-<<data_model_err_anal>>
-  
-pander(head(err_out))
+
+rf_model
 
 ```
 
-## Predictive Results
+#### Assessing Results
+
+The out-of-bag error, a measure of model accuracy, indicates that the model will identify survivors accurately `r round((1 - median(rf_model$err.rate[,1]))*100,1)`% of the time.
+
+```{r model_internal_test}
+```
+
+Using the 20% testing group, we find that the model predicted accurately `r round((1 - cmp$err / cmp$size) * 100,1)`% of the time!
+
+Let us now reconstruct the model using all the training set, and save the predictions of Kaggle's testing set for <a href="https://www.kaggle.com/c/titanic/submit" target="_blank">submission</a>.
+
+```{r model_external_test}
+```
+
+The model performed slightly lower to our expectations, predicting accurately 78.9% of the time (>25th percentile in <a href="https://www.kaggle.com/c/titanic/leaderboard" target="_blank">Kaggle Leaderboard</a> at the time of submission).  Since there is only an accuracy difference of 2-3% between our internal (using the 20% partition) and external (Kaggle's testing set) tests, we can conclude that the model is not being overfitted. 
+
+#### Assessing Factors

@@ -77,6 +77,7 @@ packages <- c("dplyr","ggplot2","randomForest","tidyr","leaflet","purrr","grDevi
 load_or_install.packages(packages)
 
 data_dir <- "data/"
+output_dir <- "output/"
 
 # Load some helper functions
 source("shared/helper.R")
@@ -88,7 +89,7 @@ cat(paste0(base_pkg_str,"\n",attached_pkg_str))
 ```
 
     ## Base Packages: stats, graphics, grDevices, utils, datasets, methods, base
-    ## Attached Packages: purrr, leaflet, tidyr, randomForest, pander, ggplot2, dplyr, knitr
+    ## Attached Packages: bindrcpp, purrr, leaflet, tidyr, randomForest, pander, ggplot2, dplyr, knitr
 
 ## Exploration
 
@@ -112,11 +113,11 @@ data_overview <- function(data,
                           null_fn = function(cname) { paste0(cname," == '' | is.na(",cname,")")}) {
                   
                   cols_summary <- data.frame(ColumnNames = colnames(data))
-                  cols_summary$Type <- lapply(training_set, class) %>%
+                  cols_summary$Type <- lapply(data, class) %>%
                     toupper()
                   cols_summary$Examples <- lapply(cols_summary$ColumnNames,
                                                   function(cname) {
-                                                    training_set %>%
+                                                    data %>%
                                                       filter_(paste0("!(",null_fn(cname),")")) %>%
                                                       `[[`(cname) %>%
                                                       unique() -> filtered_set
@@ -125,14 +126,14 @@ data_overview <- function(data,
                                                   })
                   cols_summary$EmptyValues <- lapply(cols_summary$ColumnNames,
                                                      function(cname) {
-                                                       training_set %>%
+                                                       data %>%
                                                          filter_(null_fn(cname)) %>%
                                                          nrow()
                                                      })
                   cols_summary$PctFilled <- lapply(cols_summary$EmptyValues,
                                                    function(x) {
-                                                     ((nrow(training_set) - x) / nrow(training_set)) %>%
-                                                       `*`(100) %>% round(0) %>%
+                                                     ((nrow(data) - x) / nrow(data)) %>%
+                                                       `*`(100) %>% floor() %>%
                                                        paste0("%")
                                                    })
                   
@@ -158,8 +159,8 @@ pander(cols_summary, caption='Titanic Passengers Data - For more info, please vi
 | Parch       | INTEGER   | 0 // 1 // 2 // 5 // 3                                                                                                                                                                | 100%      |
 | Ticket      | CHARACTER | A/5 21171 // PC 17599 // STON/O2. 3101282 // 113803 // 373450                                                                                                                        | 100%      |
 | Fare        | NUMERIC   | 7.25 // 71.2833 // 7.925 // 53.1 // 8.05                                                                                                                                             | 100%      |
-| Cabin       | CHARACTER | C85 // C123 // E46 // G6 // C103                                                                                                                                                     | 23%       |
-| Embarked    | CHARACTER | S // C // Q                                                                                                                                                                          | 100%      |
+| Cabin       | CHARACTER | C85 // C123 // E46 // G6 // C103                                                                                                                                                     | 22%       |
+| Embarked    | CHARACTER | S // C // Q                                                                                                                                                                          | 99%       |
 
 Titanic Passengers Data - For more info, please visit
 <a href="https://www.kaggle.com/c/titanic/data" target="_blank">Kaggle</a>
@@ -174,8 +175,6 @@ Based on the above table, notice the following:
     levels are the equivalent of <span class="hl color-2-text">First
     Class (1), Business Class (2) and Economy Class (3)</span>. Hence,
     they could be used as an indicator of income level.
-  - There are different types of
-    <span class="hl color-1-text">Ticket</span> formats.
   - <span class="hl color-1-text">Age</span> has missing data to be
     populated.
   - <span class="hl color-1-text">Cabin</span> data is sparse, and hence
@@ -258,7 +257,7 @@ income_plot <-  ggplot(income_set, aes(x=SurvivalRate,
 income_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_income-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_income-1.png" style="display: block; margin: auto;" />
 The chart above shows that the more premium the class, the more likely
 the passengers were to survive. One potential reason explaining this
 insight could be that 1st class passengers were the first in line to
@@ -293,7 +292,7 @@ fares_plot <- ggplot(fares_pdata, aes(x = FareMax,
 fares_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_fare-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_fare-1.png" style="display: block; margin: auto;" />
 Similarly, we also noticed this phenomenon in fares, where the higher
 amount an individual paid for the fares, the more likely he/she will
 survive the crash.
@@ -354,7 +353,7 @@ gender_plot <- ggplot(gender_sex_totals, aes(x = Prefix,
 gender_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_titles-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_titles-1.png" style="display: block; margin: auto;" />
 
 Other than <span class="hl color-1-text">Mr, Miss, Mrs and
 Master</span>, all other titles are not presumed by many passengers. To
@@ -406,7 +405,7 @@ title_plot <- ggplot(title_set, aes(x=Title,
 title_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_title_gender-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_title_gender-1.png" style="display: block; margin: auto;" />
 
 <span class="hl">All</span> females, regardless of their titles, have
 higher survival likelihoods than males. In addition, having a title
@@ -468,7 +467,7 @@ age_plot <- ggplot(age_pdata, aes(x=AgeMin,
 age_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_age-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_age-1.png" style="display: block; margin: auto;" />
 
 With the limited data set, we can see that younger individuals are more
 likely to survive. A possible explanation is probably because babies and
@@ -493,13 +492,18 @@ making it harder to find space in the lifeboats.
 
 However, contrary to expectations, the data shows that the larger the
 family size (individual + siblings/spouses + parent/children), the more
-likely an individual is likely to
-survive:
+likely an individual is likely to survive:
 
 ``` r
+appendFamilySize <- function(data) {
+    data %>%
+    mutate(FamilySize = Parch + SibSp + 1)
+}
+
 # Group by Family Size and calculate Survival Rates for Different Subsets of Passengers
 company_set <- training_set %>%
-               mutate(Size = Parch + SibSp + 1,
+               appendFamilySize() %>%
+               mutate(Size = FamilySize,
                       isAdult = is.na(Age) | Age > 12,
                       isAdultNoChild = isAdult & Parch == 0,
                       isFemaleNoChild = isAdultNoChild & Sex == "female") %>%
@@ -567,19 +571,41 @@ company_plot <- ggplot(company_stack, aes(x= Size, y= Value)) +
 company_plot 
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_company-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_company-1.png" style="display: block; margin: auto;" />
 
-As can be seen from the chart above, individuals with 1 to 2 children
-are more likely to survive than those without any children. It is
-inconclusive to determine from the chart above, whether same-age company
-has an impact of survivalhood. Hence, this premise is
-<span class="hl yellow-text">TRUE TO A LIMITED EXTENT</span>.
+This counterintuitive relationship can be attributed to the following 3
+factors:
 
-#### On Cabin Positions
+  - <span class="hl color-3-text">Child Privilege</span>: If you have a
+    larger family size, there is an increased probability that you will
+    be a child. For example, a family of 5 will more likely include 2
+    adults and 3 children, rather than 5 adults. As children have a
+    higher survival likelihood (from insight 3), by the transitive
+    property, a larger family size consequently implies a higher
+    likelihood of survival.The benefits accrued by this privilege, shown
+    in <span class="hl color-3-text">red</span>, can be accounted for
+    when we compare data from all passengers against data from only the
+    adults (\> 15 years old).
+
+  - <span class="hl color-2-text">Parental Privilege</span>: The larger
+    the family size, the more likely you are to be a parent. Parents can
+    utilize their children’s lifeboat guarantee to tag-along and get
+    themselves a space. These benefits, which are represented in
+    <span class="hl color-2-text">green</span>, surface when we compare
+    the survival likelihoods of adults with children and adults with
+    none.
+
+  - <span class="hl color-1-text">Husband Privilege</span>: As a male,
+    having a family size of 2 and no children may guarantee you better
+    odds of being in the lifeboat, since you can utilize your wife’s
+    lifeboat premium (see Insight 2) to find a space for yourself. These
+    benefits, shown in <span class="hl color-1-text">blue</span>, can be
+    accounted for when we compare between males and females that do not
+    have children.
 
 <div class="st">
 
-Hypothesis 6: Cabin positions should have an impact of survivalhood, but
+Insight 5: Cabin positions should have an impact of survivalhood, but
 only to a certain extent.
 
 </div>
@@ -661,7 +687,6 @@ cabinLet_plot <- ggplot(cabinLet_set, aes(x=as.factor(CabinFloor),
                                           alpha = CohortSize,
                                           fill = SurvivalRate)) +
                   theme_lk() + 
-                    ########### LEGENDS ###########
                   scale_alpha_continuous(name = "Cohort Size",
                                          limits = c(0,30),
                                          guide = guide_legend(
@@ -675,17 +700,14 @@ cabinLet_plot <- ggplot(cabinLet_set, aes(x=as.factor(CabinFloor),
                                                  as.character(get_color("green"))),
                                        values = c(0.0,0.4,0.5,0.6,1.0),
                                        guide = "none") +
-                    ########### X-AXIS ###########
                     xlab("Cabin Floor") +
-                    ########### Y-AXIS ###########
                     ylab("Survival Likelihood") +
                     scale_y_continuous(labels = scales::percent,
                                        # Make Sure Bar and X-Axis Stick Together
                                        expand = c(0,0),
                                        limits =c(0,1)) +
-                    ########### ELEMENTS ###########
-                  # Actual Data
-                  geom_bar(stat="identity") +
+                    # Actual Data
+                    geom_bar(stat="identity") +
                     geom_text(aes(y = SurvivalRate - 0.08,
                                   label=paste0(round(SurvivalRate*100),"%")),
                               color = "#FFFFFF", alpha = 1,
@@ -694,10 +716,10 @@ cabinLet_plot <- ggplot(cabinLet_set, aes(x=as.factor(CabinFloor),
 cabinLet_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_hypo7_p1-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_cabin_floors-1.png" style="display: block; margin: auto;" />
 
-From the chart, we can deduce that <span class="hl yellow-text">Cabins B
-to E</span> has a higher likelihood of survival compared to
+From the chart, we can deduce that <span class="hl color-1-text">Cabins
+B to E</span> has a higher likelihood of survival compared to
 other/unspecified cabins, which suggests that the position of cabins
 play a role in determining whether a passenger survive.
 
@@ -715,44 +737,41 @@ cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
                                                 color=CabinNumber,
                                                 size=CohortSize)) +
                     theme_lk() +
-                    ########### LEGENDS ###########
-                      theme(plot.margin = unit(c(0,0,0,-40),'pt')) +
-                        # Legends
-                        theme(
-                          legend.position = c(0.5,0.2),
-                          legend.box.just = c(0.5,0.5),
-                          legend.justification = c(0.5,0.5)
-                        ) +
-                      scale_color_manual(name = "Room Type",
-                                         values = get_color(),
-                                         guide = guide_legend(order = 1,
-                                                              direction = "vertical",
-                                                              override.aes=list(size=5),
-                                                              ncol= 2)) +
-                      scale_size_continuous(name = "Cohort Size",
-                                            range = c(5,20),
-                                            guide = guide_legend(order = 2)) +
-                      ########### X-AXIS ###########
+                    theme(plot.margin = unit(c(0,0,0,-40),'pt')) +
+                    # Legends
+                    theme(
+                      legend.position = c(0.5,0.2),
+                      legend.box.just = c(0.5,0.5),
+                      legend.justification = c(0.5,0.5)
+                    ) +
+                    scale_color_manual(name = "Room Type",
+                                       values = get_color(),
+                                       guide = guide_legend(order = 1,
+                                                            direction = "vertical",
+                                                            override.aes=list(size=5),
+                                                            ncol= 2)) +
+                    scale_size_continuous(name = "Cohort Size",
+                                          range = c(5,20),
+                                          guide = guide_legend(order = 2)) +
                     theme(
                       axis.line.x = element_line(colour=NA),
                       axis.ticks.x = element_line(colour=NA),
                       axis.title.x = element_text(colour=NA),
                       axis.text.x = element_text(colour=NA)
                     ) +
-                      # Add X Axis Line
-                      geom_segment(aes(x=0.25, xend=0.8, y=0, yend=0),
-                                   size = 0.5,
-                                   color=ltxt_color,
-                                   arrow = arrow(length = unit(10,"pt"),
-                                                 type = "closed")) +
-                      geom_text(label = "Survival Likelihood",
-                                x = 0.8,
-                                y = 0.02,
-                                family = def_font,
-                                color = ltxt_color,
-                                size = 5,
-                                hjust = 1) +
-                      ########### Y-AXIS ###########
+                    # Add X Axis Line
+                    geom_segment(aes(x=0.25, xend=0.8, y=0, yend=0),
+                                 size = 0.5,
+                                 color=ltxt_color,
+                                 arrow = arrow(length = unit(10,"pt"),
+                                               type = "closed")) +
+                    geom_text(label = "Survival Likelihood",
+                              x = 0.8,
+                              y = 0.02,
+                              family = def_font,
+                              color = ltxt_color,
+                              size = 5,
+                              hjust = 1) +
                     theme(
                       # Y-Axis
                       axis.line.y = element_line(colour=NA),
@@ -760,85 +779,28 @@ cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
                       axis.title.y = element_text(colour=NA),
                       axis.text.y = element_text(colour=NA)) +
                       scale_y_continuous(limits=c(-0.12, 0.05)) +
-                      ########### ELEMENTS ###########
                     geom_point(alpha=0.5) +
-                      geom_text(aes(y = -0.03, label=paste0(round(SurvivalRate*100,0),"%")),
-                                size=4,
-                                color=txt_color,
-                                family=def_font)
+                    geom_text(aes(y = -0.03, label=paste0(round(SurvivalRate*100,0),"%")),
+                              size=4,
+                              color=txt_color,
+                              family=def_font)
 
 
 cabinNumber_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_hypo7_p2-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_cabin_number-1.png" style="display: block; margin: auto;" />
 
 It is pretty clear that those who stay in the odd rooms are more likely
 to survive than those in the even rooms.
 
-##### Cabins Specified
-
-``` r
-cabinCount_set <- cabin_set %>%
-                  group_by(CabinCount) %>%
-                  summarise(CohortSize = n(),
-                            SurvivalRate = sum(Survived)/n())
-
-cabinCount_plot <- ggplot(cabinCount_set, aes(x=as.factor(CabinCount),
-                                              y=SurvivalRate,
-                                              alpha = CohortSize,
-                                              fill = SurvivalRate)) +
-                   theme_lk() +
-                    ########### LEGENDS ###########
-                    scale_alpha_continuous(name = "Cohort Size",
-                                           limits = c(0,50),
-                                           guide = guide_legend(
-                                             nrow = 1,
-                                             override.aes=list(fill=ltxt_color)
-                                           )) +
-                    scale_fill_gradientn(colours=c(as.character(get_color("red")),
-                                                   as.character(get_color("red")),
-                                                   as.character(get_color("yellow")),
-                                                   as.character(get_color("green")),
-                                                   as.character(get_color("green"))),
-                                         values = c(0.0,0.3,0.4,0.50,1.),
-                                         guide = "none") +
-                    ########### X-AXIS ###########
-                    xlab("# Cabins Specified") +
-                    ########### Y-AXIS ###########
-                    ylab("Survival Likelihood") +
-                    scale_y_continuous(labels = scales::percent,
-                                       # Make Sure Bar and X-Axis Stick Together
-                                       expand = c(0,0),
-                                       limits =c(0,1)) +
-                    ########### ELEMENTS ###########
-                  # Actual Data
-                  geom_bar(stat="identity",
-                           width = 0.7) +
-                  geom_text(aes(y = SurvivalRate - 0.1,
-                                label=paste0("Cohort\nSize:\n",CohortSize)),
-                            color = "#FFFFFF", alpha = 1,
-                            family=def_font,size=4)
-
-cabinCount_plot
-```
-
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_hypo7_p3-1.png" style="display: block; margin: auto;" />
-
-Even though seems to be an inverse relationship between the survival
-likelihood and number of cabins specified, the sample size is too small
-to ensure statistical significance.
-
-In conclusion, cabin floors and cabin numbers can determine a
-passenger’s survival likelihood, while there is too little data to
-deduce a relationship in the number of cabins specified. Hence, the
-hypothesis is <span class="hl green-text">TRUE</span>.
-
-#### On Embakartion Ports
+In conclusion, cabin floors and cabin numbers, when available, can
+determine a passenger’s survival likelihood.
 
 <div class="st">
 
-Hypothesis 7: Port of embarkation should have no impact on survivalhood.
+Insight 6: Port of embarkation has an impact on survivalhood, as they
+are correlated with Passenger class.
 
 </div>
 
@@ -899,11 +861,11 @@ map
 
 <!--html_preserve-->
 
-<div id="htmlwidget-b43f2ee456dceea9e71d" class="leaflet html-widget" style="width:100%;height:288px;">
+<div id="htmlwidget-04bdba25ec1f024b90a9" class="leaflet html-widget" style="width:100%;height:288px;">
 
 </div>
 
-<script type="application/json" data-for="htmlwidget-b43f2ee456dceea9e71d">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-04bdba25ec1f024b90a9">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
 
 <!--/html_preserve-->
 
@@ -931,114 +893,239 @@ embark_pclass_plot <- ggplot(embark_pclass, aes(x=as.factor(Embarked),
                                                 y=PctEmbarked,
                                                 fill = as.factor(Pclass))) +
                       theme_lk() + 
-                  ########### LEGENDS ###########
-                  scale_fill_manual(name = "Passenger Class",
-                     labels = c("1"="1 (High-Income)","2"="2 (Medium-Income)","3"="3 (Low-Income)"),
-                     values = c("1"=get_color("green"),
-                                "2"=alpha(get_color("yellow"),0.2),
-                                "3"=alpha(get_color("red"),0.2)),
-                     guide = guide_legend(reverse = TRUE)) +
-                  ########### X-AXIS ###########
-                  xlab("Port of Embarkation") +
-                  scale_x_discrete(labels=c("S"="Southampton",
-                                            "C"="Cherbough",
-                                            "Q"="Queenstown")) +
-                  ########### Y-AXIS ###########
-                  ylab("Survival Likelihood") +
-                  scale_y_continuous(labels = scales::percent,
-                                     # Make Sure Bar and X-Axis Stick Together
-                                     expand = c(0,0),
-                                     limits =c(0,1)) +
-                  ########### FLIP TO HORIZONTAL BAR CHART ###########
-                  coord_flip() +
-                  ########### ELEMENTS ###########
-                  # Actual Data
-                  geom_bar(stat="identity") +
-                  geom_text(aes(label=paste0(round(PctEmbarked*100),"%"),
-                                y = PctEmbarked + 0.05),
-                            data = embark_pclass %>% filter(Pclass == 1),
-                            color = get_color("green"),
-                            family = def_font, size = 5)
+                      scale_fill_manual(name = "Passenger Class",
+                         labels = c("1"="1 (High-Income)","2"="2 (Medium-Income)","3"="3 (Low-Income)"),
+                         values = c("1"=get_color("green"),
+                                    "2"=alpha(get_color("yellow"),0.2),
+                                    "3"=alpha(get_color("red"),0.2)),
+                         guide = guide_legend(reverse = TRUE)) +
+                      xlab("Port of Embarkation") +
+                      scale_x_discrete(labels=c("S"="Southampton",
+                                                "C"="Cherbough",
+                                                "Q"="Queenstown")) +
+                      ylab("Survival Likelihood") +
+                      scale_y_continuous(labels = scales::percent,
+                                         # Make Sure Bar and X-Axis Stick Together
+                                         expand = c(0,0),
+                                         limits =c(0,1)) +
+                      coord_flip() +
+                      # Actual Data
+                      geom_bar(stat="identity") +
+                      geom_text(aes(label=paste0(round(PctEmbarked*100),"%"),
+                                    y = PctEmbarked + 0.05),
+                                data = embark_pclass %>% filter(Pclass == 1),
+                                color = get_color("green"),
+                                family = def_font, size = 5)
 
 embark_pclass_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/exp_hypo8_p2-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/exp_port_income-1.png" style="display: block; margin: auto;" />
 
 However, by studying the demographics of the passengers who embarked at
 each port, we know that a higher proportion of Cherbough are
 high-income. This explains the higher survival likelihood for those who
-embarked at Cherbough, and renders the hypothesis to be
-<span class="hl red-text">FALSE</span>.
+embarked at Cherbough.
 
-## Preparation
+## Modeling Survival Likelihood
 
-Based on the above hypotheses, we will be adding the following features
-to predict the survival likelihood of an
-individual.
+### Rationale
 
-| Feature             | Variable Type | Hypotheses Supporting the Feature | Null Handling               |
-| ------------------- | ------------- | --------------------------------- | --------------------------- |
-| Pclass              | Continuous    | Hypothesis 1                      | \-1                         |
-| Fare                | Continuous    | Hypothesis 1                      | \-1                         |
-| Sex                 | Categorical   | Hypothesis 3                      | ‘Unknown’ Category Variable |
-| Title               | Categorical   | Hypothesis 3                      | ‘Unknown’ Category Variable |
-| Age                 | Continuous    | Hypothesis 4                      | Regression                  |
-| SibSp               | Continuous    | Hypothesis 5                      | \-1                         |
-| Parch               | Continuous    | Hypothesis 5                      | \-1                         |
-| CabinFloor          | Categorical   | Hypothesis 6                      | ‘Unknown’ Category Variable |
-| CabinNumber         | Categorical   | Hypothesis 6                      | ‘Unknown’ Category Variable |
-| Port of Embarkation | Categorical   | Hypothesis 7                      | ‘Unknown’ Category Variable |
+While the preliminary insights are useful in qualitatively determining
+factors influencing survival likelihood, we also need to have a way to
+quantify the importance for each factor. Building a predictive model
+would achieve that goal.
 
-Below is an example of the cleansed data set for model ingestion.
+Since this is a classification problem (for each passenger, we either
+group them as “Survived” or “Died”), models such as logistic regression
+and decision trees come to mind. However, for the purposes of this
+study, the
+<a href="https://en.wikipedia.org/wiki/Random_forest" target="_blank">Random
+Forest</a> algorithm was used, as it is more rebust and there already
+exists a useful function <code>importance</code> that can assess the
+various factors intuitively.
+
+### Preparation
+
+#### Variables Considered
+
+Based on the above insights, we will be adding the following factors to
+predict the survival likelihood of an individual.
+
+| Feature    | Variable Type | Insights Supporting the Feature |
+| ---------- | ------------- | ------------------------------- |
+| Pclass     | Continuous    | Insight 1                       |
+| Fare       | Continuous    | Insight 1                       |
+| Sex        | Categorical   | Insight 2                       |
+| Title      | Categorical   | Insight 2                       |
+| Age        | Continuous    | Insight 3                       |
+| FamilySize | Continuous    | Insight 4                       |
+
+\*Initially, CabinFloor, CabinNumber and Port of Embarkation were used
+as predictors of survival likelihood. However, the accuracy of the model
+fell with the inclusion of these features due to over-fitting. This
+implies that we may be over-inflating the impact of embarkation port,
+while the cabin data is too sparse to yield any useful information.
+
+#### Populating Age
+
+Before using the raw data as an input to the model, we have to ensure
+that the data is in a well-defined state. One of the first things we
+have to do is to populate any unidentified <span class="hl">Age</span>
+values.
 
 ``` r
-### Create Age as Regression Parameters
+appendConfirmedAdult <- function(data) {
+    data %>%
+    mutate(ConfirmedAdult = ifelse(Parch > 2, 1, 0))
+}
+
 age_data <- training_set %>%
             appendTitle() %>%
+            appendFamilySize() %>%
+            appendConfirmedAdult() %>%
             filter(Age > 0)
-age_m <- lm(Age ~ Title + SibSp + Parch + factor(Pclass), data = age_data)
 
+age_by <- list()
+for (i in c('Pclass','Title','ConfirmedAdult','FamilySize')) {
+  tmp <- age_data %>% 
+         group_by_at(vars(i)) %>%
+         summarise(Age = mean(Age))
+  age_by[[i]] <- unlist(tmp$Age)
+  names(age_by[[i]]) <- unlist(tmp[,i])
+}
+```
+
+We will use the following variables as predictors of Age:
+
+  - <span class="hl color-1-text">Pclass</span>: 1st class members (38
+    years old on average) are generally older than 2nd (30) or 3rd (25)
+    class members.
+
+  - <span class="hl color-1-text">Title</span>: Masters (5 years old on
+    average) and Miss-es (22) tend to be younger than Mr (32) and Mrs
+    (36).
+
+  - <span class="hl color-1-text">ConfirmedAdult</span>: This is a new
+    category created just to predict the age. Assuming that there are
+    negligible intergenerational families in Titanic (i.e. an individual
+    having both parents and children), we know that having more than 2
+    parent-children relationships strongly implies an individual is a
+    parent (since a child can have a maximum of 2 parent relationships).
+    Such individuals are what we tag as ConfirmedAdults. These
+    passengers are 9 years older on average than the rest of the
+    passengers.
+
+  - <span class="hl color-1-text">FamilySize</span>: Based on Insight 4,
+    we know that a larger family size implies a higher probability of
+    being a child (or in other words, a younger age). In fact, the
+    correlation between age and family size is modest at -30%.
+
+We will use ANOVA regression to predict Age based on the factors above.
+ANOVA regression is similar to a linear regression, with the added
+capability of regressing over categorical variables.
+
+Listed below is the summary of the ANOVA regression.
+
+``` r
+age_model <- function(data) {
+  
+  age_data <- data %>%
+              appendTitle() %>%
+              appendFamilySize() %>%
+              appendConfirmedAdult() %>%
+              filter(Age > 0)
+  
+  model <- lm(Age ~ Pclass +
+                    Title + 
+                    ConfirmedAdult +
+                    FamilySize,
+              data = age_data)
+  
+  model
+}
+
+summary(age_model(training_set))
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = Age ~ Pclass + Title + ConfirmedAdult + FamilySize, 
+    ##     data = age_data)
+    ## 
+    ## Residuals:
+    ##     Min      1Q  Median      3Q     Max 
+    ## -24.347  -8.213  -1.152   6.295  44.647 
+    ## 
+    ## Coefficients:
+    ##                     Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)          29.0606     2.8020  10.372  < 2e-16 ***
+    ## Pclass               -5.8879     0.5184 -11.357  < 2e-16 ***
+    ## TitleMiss             9.9067     2.2406   4.422 1.13e-05 ***
+    ## TitleMr              19.9798     2.2397   8.921  < 2e-16 ***
+    ## TitleMrs             22.2223     2.3357   9.514  < 2e-16 ***
+    ## TitleRare Title / F  12.8385     4.7922   2.679  0.00756 ** 
+    ## TitleRare Title / M  28.1837     3.3831   8.331 4.18e-16 ***
+    ## ConfirmedAdult       16.2836     3.3101   4.919 1.08e-06 ***
+    ## FamilySize           -2.0239     0.3600  -5.621 2.73e-08 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 11.07 on 705 degrees of freedom
+    ## Multiple R-squared:  0.426,  Adjusted R-squared:  0.4195 
+    ## F-statistic: 65.41 on 8 and 705 DF,  p-value: < 2.2e-16
+
+Due to our careful selection of variables, all of the coefficients are
+statistically significant under a 5% significance level. This suggests
+that the variables are all good predictors of Age.
+
+#### Populating Others
+
+Other than age, we also need some kind of sanity checks to ensure that
+all data has been populated. Since the rest of the data is either too
+varied, or require only a small set of missing values to be filled, we
+will populate those columns with category “Unknown” or the number -1.
+
+#### Putting It All Together
+
+After resolving the missing data, we can now create a process that takes
+in the raw data and output a cleaned data for model consumption.
+
+``` r
 clean_data <- function(data,is_training = TRUE) {
   output <- appendTitle(data) %>%
-            appendCabinInfo()
+            appendFamilySize() %>%
+            appendConfirmedAdult()
+  
+  age_m <- age_model(output)
 
   # Populate Age
   output <- output %>%
             mutate(AgePredict = predict.lm(age_m, output),
                    Age = ifelse(is.na(Age),AgePredict,Age))
 
-  # Create Null Handler
-  null_handler <- function(is_categorical = TRUE) {
-    paste0('ifelse(is.na(x) | x %in% c("","NA"),', ifelse(is_categorical,'"Unknown"','-1'),',x)')
-
-  }
-
-  # Specify Features
+  # Populate Others: Names represent columns, value is TRUE if column is categorical,
+  # false otherwise
   features <- c("Pclass"=FALSE,
                 "Fare"=FALSE,
                 "Sex"=TRUE,
                 "Title"=TRUE,
                 "Age"=FALSE,
-                "SibSp"=FALSE,
-                "Parch"=FALSE,
-                "CabinFloor"=TRUE,
-                "CabinNumber"=TRUE,
-                "Embarked"=TRUE)
+                "FamilySize"=FALSE)
+  null_handler <- function(is_categorical = TRUE) {
+    paste0('ifelse(is.na(x) | x %in% c("","NA"),', ifelse(is_categorical,'"Unknown"','-1'),',x)')
+  }
   mutate_fn <- sapply(1:length(features), function(x) {
-                paste0("sapply(",names(features[x]),", function(x) { ",null_handler(features[x])," })")
-              })
-
+    paste0("sapply(",names(features[x]),", function(x) { ",null_handler(features[x])," })")
+  })
   output <- output %>%
             mutate_(
               .dots= setNames(mutate_fn, names(features))
             )
-
+  
   # Specify factors for different features
   output$Sex <- factor(output$Sex, levels = c("male","female","Unknown"))
   output$Title <- factor(output$Title, levels = c("Mr","Mrs","Miss","Master","Rare Title / M","Rare Title / F"))
-  output$CabinFloor <- factor(output$CabinFloor, levels = c("A","B","C","D","E","F","G","T","Multiple","Unknown"))
-  output$CabinNumber <- factor(output$CabinNumber, levels = c("Odd","Even","Mixed","Unknown"))
   output$Embarked <- factor(output$Embarked, levels = c("S","C","Q","Unknown"))
   if (is_training) {
     output$Survived <- factor(output$Survived, levels = c(0,1))
@@ -1055,101 +1142,112 @@ clean_data <- function(data,is_training = TRUE) {
 }
 
 cleaned_set <- clean_data(training_set)
+```
 
+Below is an example of the data after cleansing:
+
+``` r
 pander(head(cleaned_set))
 ```
 
-| Survived | Pclass | Fare  | Sex    | Title |  Age  | SibSp | Parch |
-| :------- | :----: | :---: | :----- | :---- | :---: | :---: | :---: |
-| 0        |   3    | 7.25  | male   | Mr    |  22   |   1   |   0   |
-| 1        |   1    | 71.28 | female | Mrs   |  38   |   1   |   0   |
-| 1        |   3    | 7.925 | female | Miss  |  26   |   0   |   0   |
-| 1        |   1    | 53.1  | female | Mrs   |  35   |   1   |   0   |
-| 0        |   3    | 8.05  | male   | Mr    |  35   |   0   |   0   |
-| 0        |   3    | 8.458 | male   | Mr    | 29.87 |   0   |   0   |
+| Survived | Pclass | Fare  | Sex    | Title |  Age  | FamilySize |
+| :------- | :----: | :---: | :----- | :---- | :---: | :--------: |
+| 0        |   3    | 7.25  | male   | Mr    |  22   |     2      |
+| 1        |   1    | 71.28 | female | Mrs   |  38   |     2      |
+| 1        |   3    | 7.925 | female | Miss  |  26   |     1      |
+| 1        |   1    | 53.1  | female | Mrs   |  35   |     2      |
+| 0        |   3    | 8.05  | male   | Mr    |  35   |     1      |
+| 0        |   3    | 8.458 | male   | Mr    | 29.35 |     1      |
 
-Table continues below
+### The Model
 
-| CabinFloor | CabinNumber | Embarked |
-| :--------- | :---------- | :------- |
-| Unknown    | Unknown     | S        |
-| C          | Odd         | C        |
-| Unknown    | Unknown     | S        |
-| C          | Odd         | S        |
-| Unknown    | Unknown     | S        |
-| Unknown    | Unknown     | Q        |
+Prior to constructing the random forest model, we need to split the
+training set into two groups, one for training purposes and the other
+for testing purposes.
 
-## The <i>Random Forest</i> Model
-
-Listed below are the preliminary results from the initial run using the
-Random Forest model.
+In order to do so, let us first shuffle the training data and split the
+dataset in a 80%-20% partition. The larger partition will then be used
+to construct a random forest model.
 
 ``` r
-set.seed(1)
+set.seed(1) 
+shuffled_set <- training_set[sample(nrow(training_set)),]
+training_grp <- shuffled_set[1:floor(0.80 *nrow(shuffled_set)),]
+testing_grp <- shuffled_set[floor(0.80 *nrow(shuffled_set) + 1):nrow(shuffled_set),]
+
+set.seed(1) 
 rf_model <- randomForest(Survived ~ .,
-                         data = cleaned_set,
+                         data = clean_data(training_grp),
                          importance=TRUE,
                          ntree=2000)
+```
 
+Listed below is a summary of the Random Forest model.
+
+``` r
 rf_model
 ```
 
     ## 
     ## Call:
-    ##  randomForest(formula = Survived ~ ., data = cleaned_set, importance = TRUE,      ntree = 2000) 
+    ##  randomForest(formula = Survived ~ ., data = clean_data(training_grp),      importance = TRUE, ntree = 2000) 
     ##                Type of random forest: classification
     ##                      Number of trees: 2000
-    ## No. of variables tried at each split: 3
+    ## No. of variables tried at each split: 2
     ## 
-    ##         OOB estimate of  error rate: 16.84%
+    ##         OOB estimate of  error rate: 16.15%
     ## Confusion matrix:
     ##     0   1 class.error
-    ## 0 492  57   0.1038251
-    ## 1  93 249   0.2719298
+    ## 0 393  44   0.1006865
+    ## 1  71 204   0.2581818
+
+#### Assessing Results
+
+The out-of-bag error, a measure of model accuracy, indicates that the
+model will identify survivors accurately 83.7% of the time.
 
 ``` r
-importance(rf_model)
+# Compare using the testing group
+p_y <- predict(rf_model, newdata = clean_data(testing_grp %>% select(-Survived), is_training=FALSE))
+cmp <- cbind(testing_grp %>% select(actual=Survived), predicted=p_y) %>%
+             summarise(size=n(),
+                       err=sum(ifelse(actual != predicted,1,0)))
 ```
 
-    ##                    0          1 MeanDecreaseAccuracy MeanDecreaseGini
-    ## Pclass      47.21663 47.4942132             69.39251         28.07819
-    ## Fare        43.19055 43.9893907             66.67144         58.87971
-    ## Sex         42.24730 36.8114966             42.57382         50.52881
-    ## Title       54.59914 57.1290385             60.72891         77.20460
-    ## Age         34.58641 39.4252418             53.95813         52.61366
-    ## SibSp       44.09189  0.8302836             42.35741         18.13917
-    ## Parch       11.04993  9.5437824             15.49590         10.00568
-    ## CabinFloor  24.50409  6.9765507             27.03299         21.64158
-    ## CabinNumber 17.25665 14.8254202             23.33504         12.55936
-    ## Embarked    17.95344 29.6962125             35.40686         10.48846
+Using the 20% testing group, we find that the model predicted accurately
+82.7% of the time\!
+
+Let us now reconstruct the model using all the training set, and save
+the predictions of Kaggle’s testing set for
+<a href="https://www.kaggle.com/c/titanic/submit" target="_blank">submission</a>.
 
 ``` r
-p_y <- predict(rf_model, newdata = cleaned_set %>% select(-Survived))
-err_out <-  cleaned_set %>%
-            mutate(p_y = p_y) %>%
-            filter(Survived != p_y)
-  
-pander(head(err_out))
+# Create model using all the training set
+set.seed(1) 
+rf_model <- randomForest(Survived ~ .,
+                         data = clean_data(training_set),
+                         importance=TRUE,
+                         ntree=2000)
+
+# Read the test set
+test_set <- read.csv(paste0(data_dir, "test.csv"))
+
+# Predict the test set
+p_y <- predict(rf_model, newdata = clean_data(test_set, is_training=FALSE))
+predictions <- cbind(test_set %>% select(PassengerId), Survived=p_y)
+write.csv(predictions, 
+          file=paste0(output_dir,"submission.csv"),
+          row.names = FALSE)
+
+# Upload the file to https://www.kaggle.com/c/titanic/submit
 ```
 
-| Survived | Pclass | Fare  | Sex    | Title |  Age  | SibSp | Parch |
-| :------- | :----: | :---: | :----- | :---- | :---: | :---: | :---: |
-| 1        |   2    |  13   | male   | Mr    | 32.99 |   0   |   0   |
-| 1        |   3    | 31.39 | female | Mrs   |  38   |   1   |   5   |
-| 1        |   3    | 7.229 | male   | Mr    | 29.87 |   0   |   0   |
-| 0        |   2    |  21   | female | Mrs   |  27   |   1   |   0   |
-| 1        |   1    | 35.5  | male   | Mr    | 41.48 |   0   |   0   |
-| 1        |   3    |  9.5  | male   | Mr    |  29   |   0   |   0   |
+The model performed slightly lower to our expectations, predicting
+accurately 78.9% of the time (\>25th percentile in
+<a href="https://www.kaggle.com/c/titanic/leaderboard" target="_blank">Kaggle
+Leaderboard</a> at the time of submission). Since there is only an
+accuracy difference of 2-3% between our internal (using the 20%
+partition) and external (Kaggle’s testing set) tests, we can conclude
+that the model is not being overfitted.
 
-Table continues below
-
-| CabinFloor | CabinNumber | Embarked | p\_y |
-| :--------- | :---------- | :------- | :--- |
-| Unknown    | Unknown     | S        | 0    |
-| Unknown    | Unknown     | S        | 0    |
-| Unknown    | Unknown     | C        | 0    |
-| Unknown    | Unknown     | S        | 1    |
-| C          | Even        | S        | 0    |
-| Unknown    | Unknown     | S        | 0    |
-
-## Predictive Results
+#### Assessing Factors
