@@ -277,6 +277,6 @@ Let us now reconstruct the model using all the training set, and save the predic
 ```{r model_external_test}
 ```
 
-The model performed slightly lower to our expectations, predicting accurately 78.9% of the time (>25th percentile in <a href="https://www.kaggle.com/c/titanic/leaderboard" target="_blank">Kaggle Leaderboard</a> at the time of submission).  Since there is only an accuracy difference of 2-3% between our internal (using the 20% partition) and external (Kaggle's testing set) tests, we conclude that the model is not being overfitted. 
+The model performed slightly lower to our expectations, predicting accurately 78.9% of the time (<25th percentile in <a href="https://www.kaggle.com/c/titanic/leaderboard" target="_blank">Kaggle Leaderboard</a> at the time of submission).  Since there is only an accuracy difference of 2-3% between our internal (using the 20% partition) and external (Kaggle's testing set) tests, we conclude that the model is not being overfitted. 
 
 #### Assessing Factors
