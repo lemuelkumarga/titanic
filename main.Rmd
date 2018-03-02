@@ -247,35 +247,36 @@ pander(head(cleaned_set))
 
 ### The Model
 
-Prior to constructing the random forest model, we need to split the training set into two groups, one for training purposes and the other for testing purposes. Let us first shuffle the training data and split the dataset in a 80%-20% partition. 
+Prior to constructing the random forest model, we need to split the training set into two unequal groups, with 80% of the data for training purposes and the other 20% for testing purposes. The larger partition is then used to construct a random forest model. 
+
+Listed below is a summary of the Random Forest model.
 
 ```{r}
 <<model_randomize>>
-
-training_grp_str <- paste0("Training Group Size: ",nrow(training_grp))
-testing_grp_str <- paste0("Testing Group Size: ",nrow(testing_grp))
-cat(paste0(training_grp_str,"\n",testing_grp_str))
-```
-
-The larger partition is then used to construct a random forest model. Listed below is a summary of the Random Forest model.
-
-```{r model_construct}
-
-rf_model
-
+  
+<<model_construct>>
 ```
 
 #### Assessing Performance
 
-The out-of-bag error, a measure of model accuracy, indicates that the model will identify survivors accurately `r round((1 - median(rf_model$err.rate[,1]))*100,0)`% of the time.
+We will use three different indicators to test the accuracy of the model:
 
-```{r model_internal_test}
+1. OOO: The accuracy calculated internally within the model,
+2. 20% Testing Group: The accuracy when used to predict the remaining 20% of the data not used in calibration,
+3. Kaggle's Testing Set: The accuracy when used to predict the test set provided by Kaggle.
+
+```{r }
+ooo_str <- paste0("Based on OOO: ",round((1 - median(rf_model$err.rate[,1]))*100,1),"% Accuracy Rate")
+
+<<model_internal_test>>
+int_str <- paste0("Based on 20% Testing Group: ",round((1 - cmp$err / cmp$size) * 100,1),"% Accuracy Rate")
+    
+<<model_external_test>>
+ext_str <- paste0("Based on Kaggle's Testing Set: 79.4% Accuracy Rate")
+
+cat(paste0(ooo_str,"\n",int_str,"\n",ext_str))
 ```
 
-Using the 20% testing group, we find that the model predicted accurately `r round((1 - cmp$err / cmp$size) * 100,1)`% of the time!
-
-```{r model_external_test}
-```
-Using Kaggle's test set, the model performed slightly lower to our expectations, predicting accurately 78.9% of the time (<25th percentile in <a href="https://www.kaggle.com/c/titanic/leaderboard" target="_blank">Kaggle Leaderboard</a> at the time of submission).  Since there is only an accuracy difference of 2-3% between our internal (using the 20% partition) and external (Kaggle's testing set) tests, we conclude that the model is not being overfitted. 
+As shown above, the model managed to predict Kaggle's testing set relatively well, with a score below the 18th percentile in the <a href="https://www.kaggle.com/c/titanic/leaderboard" target="_blank">Leaderboard</a> (at the time of submission). In addition, there is also only a difference of 2-4% between our internal (20% Testing Group) and external (Kaggle's Testing Set) performance, suggesting that the model is not overfitted. 
 
 #### Assessing Factors

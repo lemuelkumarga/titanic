@@ -861,11 +861,11 @@ map
 
 <!--html_preserve-->
 
-<div id="htmlwidget-c5700ec4c43b920ae8ea" class="leaflet html-widget" style="width:100%;height:288px;">
+<div id="htmlwidget-1a69e4bc75abb1970a8f" class="leaflet html-widget" style="width:100%;height:288px;">
 
 </div>
 
-<script type="application/json" data-for="htmlwidget-c5700ec4c43b920ae8ea">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-1a69e4bc75abb1970a8f">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
 
 <!--/html_preserve-->
 
@@ -1028,7 +1028,8 @@ age_model <- function(data) {
   model
 }
 
-summary(age_model(training_set))
+age_m <- age_model(training_set)
+summary(age_m)
 ```
 
     ## 
@@ -1077,16 +1078,14 @@ in the raw data and output a cleaned data for model consumption.
 Below is an example of the data after cleansing:
 
 ``` r
-clean_data <- function(data,is_training = TRUE) {
+clean_data <- function(data, age_model, is_training = TRUE) {
   output <- appendTitle(data) %>%
             appendFamilySize() %>%
             appendConfirmedAdult()
   
-  age_m <- age_model(output)
-
   # Populate Age
   output <- output %>%
-            mutate(AgePredict = predict.lm(age_m, output),
+            mutate(AgePredict = predict.lm(age_model, output),
                    Age = ifelse(is.na(Age),AgePredict,Age))
 
   # Populate Others: Names represent columns, value is TRUE if column is categorical,
@@ -1126,7 +1125,7 @@ clean_data <- function(data,is_training = TRUE) {
   output %>% select_(.dots=names(columns))
 }
 
-cleaned_set <- clean_data(training_set)
+cleaned_set <- clean_data(training_set, age_m)
   
 pander(head(cleaned_set))
 ```
@@ -1143,31 +1142,24 @@ pander(head(cleaned_set))
 ### The Model
 
 Prior to constructing the random forest model, we need to split the
-training set into two groups, one for training purposes and the other
-for testing purposes. Let us first shuffle the training data and split
-the dataset in a 80%-20% partition.
+training set into two unequal groups, with 80% of the data for training
+purposes and the other 20% for testing purposes. The larger partition is
+then used to construct a random forest model.
+
+Listed below is a summary of the Random Forest model.
 
 ``` r
 set.seed(1) 
 shuffled_set <- training_set[sample(nrow(training_set)),]
 training_grp <- shuffled_set[1:floor(0.80 *nrow(shuffled_set)),]
 testing_grp <- shuffled_set[floor(0.80 *nrow(shuffled_set) + 1):nrow(shuffled_set),]
+  
+# Create age estimator using all the dataset
+age_m <- age_model(rbind(training_grp, testing_grp))
 
-training_grp_str <- paste0("Training Group Size: ",nrow(training_grp))
-testing_grp_str <- paste0("Testing Group Size: ",nrow(testing_grp))
-cat(paste0(training_grp_str,"\n",testing_grp_str))
-```
-
-    ## Training Group Size: 712
-    ## Testing Group Size: 179
-
-The larger partition is then used to construct a random forest model.
-Listed below is a summary of the Random Forest model.
-
-``` r
 set.seed(1) 
 rf_model <- randomForest(Survived ~ .,
-                         data = clean_data(training_grp),
+                         data = clean_data(training_grp, age_m),
                          importance=TRUE,
                          ntree=2000)
 
@@ -1176,61 +1168,78 @@ rf_model
 
     ## 
     ## Call:
-    ##  randomForest(formula = Survived ~ ., data = clean_data(training_grp),      importance = TRUE, ntree = 2000) 
+    ##  randomForest(formula = Survived ~ ., data = clean_data(training_grp,      age_m), importance = TRUE, ntree = 2000) 
     ##                Type of random forest: classification
     ##                      Number of trees: 2000
     ## No. of variables tried at each split: 2
     ## 
-    ##         OOB estimate of  error rate: 16.15%
+    ##         OOB estimate of  error rate: 16.29%
     ## Confusion matrix:
     ##     0   1 class.error
-    ## 0 393  44   0.1006865
+    ## 0 392  45   0.1029748
     ## 1  71 204   0.2581818
 
 #### Assessing Performance
 
-The out-of-bag error, a measure of model accuracy, indicates that the
-model will identify survivors accurately 84% of the time.
+We will use three different indicators to test the accuracy of the
+model:
+
+1.  OOO: The accuracy calculated internally within the model,
+2.  20% Testing Group: The accuracy when used to predict the remaining
+    20% of the data not used in calibration,
+3.  Kaggle’s Testing Set: The accuracy when used to predict the test set
+    provided by
+Kaggle.
+
+<!-- end list -->
 
 ``` r
+ooo_str <- paste0("Based on OOO: ",round((1 - median(rf_model$err.rate[,1]))*100,1),"% Accuracy Rate")
+
 # Compare using the testing group
-p_y <- predict(rf_model, newdata = clean_data(testing_grp %>% select(-Survived), is_training=FALSE))
+p_y <- predict(rf_model, newdata = clean_data(testing_grp %>% select(-Survived), age_m, is_training=FALSE))
 cmp <- cbind(testing_grp %>% select(actual=Survived), predicted=p_y) %>%
              summarise(size=n(),
                        err=sum(ifelse(actual != predicted,1,0)))
-```
-
-Using the 20% testing group, we find that the model predicted accurately
-82.7% of the time\!
-
-``` r
-# Create model using all the training set
-set.seed(1) 
-rf_model <- randomForest(Survived ~ .,
-                         data = clean_data(training_set),
-                         importance=TRUE,
-                         ntree=2000)
-
+int_str <- paste0("Based on 20% Testing Group: ",round((1 - cmp$err / cmp$size) * 100,1),"% Accuracy Rate")
+    
 # Read the test set
 test_set <- read.csv(paste0(data_dir, "test.csv"))
 
+# Create age estimator using both the train and test dataset
+age_m <- age_model(rbind(training_set %>% select(-Survived),
+                         test_set))
+
+# Create model using all the training set
+set.seed(1) 
+rf_model <- randomForest(Survived ~ .,
+                         data = clean_data(training_set, age_m),
+                         importance=TRUE,
+                         ntree=2000)
+
 # Predict the test set
-p_y <- predict(rf_model, newdata = clean_data(test_set, is_training=FALSE))
+p_y <- predict(rf_model, newdata = clean_data(test_set, age_m, is_training=FALSE))
 predictions <- cbind(test_set %>% select(PassengerId), Survived=p_y)
 write.csv(predictions, 
           file=paste0(output_dir,"submission.csv"),
           row.names = FALSE)
 
 # Upload the file to https://www.kaggle.com/c/titanic/submit
+ext_str <- paste0("Based on Kaggle's Testing Set: 79.4% Accuracy Rate")
+
+cat(paste0(ooo_str,"\n",int_str,"\n",ext_str))
 ```
 
-Using Kaggle’s test set, the model performed slightly lower to our
-expectations, predicting accurately 78.9% of the time (\<25th percentile
-in
-<a href="https://www.kaggle.com/c/titanic/leaderboard" target="_blank">Kaggle
-Leaderboard</a> at the time of submission). Since there is only an
-accuracy difference of 2-3% between our internal (using the 20%
-partition) and external (Kaggle’s testing set) tests, we conclude that
-the model is not being overfitted.
+    ## Based on OOO: 83.7% Accuracy Rate
+    ## Based on 20% Testing Group: 83.2% Accuracy Rate
+    ## Based on Kaggle's Testing Set: 79.4% Accuracy Rate
+
+As shown above, the model managed to predict Kaggle’s testing set
+relatively well, with a score below the 18th percentile in the
+<a href="https://www.kaggle.com/c/titanic/leaderboard" target="_blank">Leaderboard</a>
+(at the time of submission). In addition, there is also only a
+difference of 2-4% between our internal (20% Testing Group) and external
+(Kaggle’s Testing Set) performance, suggesting that the model is not
+overfitted.
 
 #### Assessing Factors

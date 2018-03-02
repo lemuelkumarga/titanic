@@ -702,22 +702,21 @@ age_model <- function(data) {
   model
 }
 
-summary(age_model(training_set))
+age_m <- age_model(training_set)
+summary(age_m)
 
 ## ---- end-of-model_age_anova
 
 ## ---- model_cleanse
 
-clean_data <- function(data,is_training = TRUE) {
+clean_data <- function(data, age_model, is_training = TRUE) {
   output <- appendTitle(data) %>%
             appendFamilySize() %>%
             appendConfirmedAdult()
   
-  age_m <- age_model(output)
-
   # Populate Age
   output <- output %>%
-            mutate(AgePredict = predict.lm(age_m, output),
+            mutate(AgePredict = predict.lm(age_model, output),
                    Age = ifelse(is.na(Age),AgePredict,Age))
 
   # Populate Others: Names represent columns, value is TRUE if column is categorical,
@@ -757,7 +756,7 @@ clean_data <- function(data,is_training = TRUE) {
   output %>% select_(.dots=names(columns))
 }
 
-cleaned_set <- clean_data(training_set)
+cleaned_set <- clean_data(training_set, age_m)
 
 ## ---- end-of-model_cleanse
 
@@ -771,9 +770,12 @@ testing_grp <- shuffled_set[floor(0.80 *nrow(shuffled_set) + 1):nrow(shuffled_se
 ## ---- end-of-model_randomize
 
 ## ---- model_construct
+# Create age estimator using all the dataset
+age_m <- age_model(rbind(training_grp, testing_grp))
+
 set.seed(1) 
 rf_model <- randomForest(Survived ~ .,
-                         data = clean_data(training_grp),
+                         data = clean_data(training_grp, age_m),
                          importance=TRUE,
                          ntree=2000)
 
@@ -784,7 +786,7 @@ rf_model
 ## ---- model_internal_test
 
 # Compare using the testing group
-p_y <- predict(rf_model, newdata = clean_data(testing_grp %>% select(-Survived), is_training=FALSE))
+p_y <- predict(rf_model, newdata = clean_data(testing_grp %>% select(-Survived), age_m, is_training=FALSE))
 cmp <- cbind(testing_grp %>% select(actual=Survived), predicted=p_y) %>%
              summarise(size=n(),
                        err=sum(ifelse(actual != predicted,1,0)))
@@ -794,18 +796,22 @@ cmp <- cbind(testing_grp %>% select(actual=Survived), predicted=p_y) %>%
 
 ## ---- model_external_test
 
-# Create model using all the training set
-set.seed(1) 
-rf_model <- randomForest(Survived ~ .,
-                         data = clean_data(training_set),
-                         importance=TRUE,
-                         ntree=2000)
-
 # Read the test set
 test_set <- read.csv(paste0(data_dir, "test.csv"))
 
+# Create age estimator using both the train and test dataset
+age_m <- age_model(rbind(training_set %>% select(-Survived),
+                         test_set))
+
+# Create model using all the training set
+set.seed(1) 
+rf_model <- randomForest(Survived ~ .,
+                         data = clean_data(training_set, age_m),
+                         importance=TRUE,
+                         ntree=2000)
+
 # Predict the test set
-p_y <- predict(rf_model, newdata = clean_data(test_set, is_training=FALSE))
+p_y <- predict(rf_model, newdata = clean_data(test_set, age_m, is_training=FALSE))
 predictions <- cbind(test_set %>% select(PassengerId), Survived=p_y)
 write.csv(predictions, 
           file=paste0(output_dir,"submission.csv"),
