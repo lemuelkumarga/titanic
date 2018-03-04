@@ -93,7 +93,7 @@ income_plot <-  ggplot(income_set, aes(x=SurvivalRate,
                           color=txt_color,
                           family=def_font)
 
-income_plot
+
 ## ---- end-of-exp_income
 
 ## ---- exp_fare
@@ -122,7 +122,6 @@ fares_plot <- ggplot(fares_pdata, aes(x = FareMax,
               scale_y_continuous(labels = scales::percent) +
               geom_step(color = get_color(1))
 
-fares_plot
 ## ---- end-of-exp_fare
 
 # * INSIGHT 2:  Gender and Title ----
@@ -143,6 +142,7 @@ gender_sex_totals <- gender_set %>%
                        pct = ifelse(Sex == "female",1.,-1.) * val / total
                      ) %>%
                      arrange(desc(val))
+gender_sex_totals$Prefix <- substr(gender_sex_totals$Prefix,1,4)
 gender_sex_totals$Prefix <- factor(gender_sex_totals$Prefix, levels=unique(gender_sex_totals$Prefix))
 
 gender_plot <- ggplot(gender_sex_totals, aes(x = Prefix,
@@ -166,8 +166,6 @@ gender_plot <- ggplot(gender_sex_totals, aes(x = Prefix,
                                  labels = c("female"="F","male"="M")) +
                 ylab("Gender") +
                 geom_tile(colour = bg_color, size = 5)
-
-gender_plot
 
 ## ---- end-of-exp_titles
 
@@ -210,8 +208,6 @@ title_plot <- ggplot(title_set, aes(x=Title,
                         color = "#FFFFFF",
                         family=def_font,
                         size=4)
-
-title_plot
 
 ## ---- end-of-exp_title_gender
 
@@ -259,8 +255,6 @@ age_plot <- ggplot(age_pdata, aes(x=AgeMin,
                             color = ltxt_color,
                             size = 5,
                             family = def_font)
-
-age_plot
 
 ## ---- end-of-exp_age
 
@@ -340,8 +334,6 @@ company_plot <- ggplot(company_stack, aes(x= Size, y= Value)) +
                           color=txt_color,
                           size=5,
                           family = def_font)
-
-company_plot 
 
 ## ---- end-of-exp_company
 
@@ -435,8 +427,6 @@ cabinLet_plot <- ggplot(cabinLet_set, aes(x=as.factor(CabinFloor),
                               color = "#FFFFFF", alpha = 1,
                               family=def_font,size=4)
 
-cabinLet_plot
-
 ## ---- end-of-exp_cabin_floors
 
 ## ---- exp_cabin_number
@@ -500,51 +490,7 @@ cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
                               color=txt_color,
                               family=def_font)
 
-
-cabinNumber_plot
-
 ## ---- end-of-exp_cabin_number
-
-## ---- exp_cabin_specified
-cabinCount_set <- cabin_set %>%
-                  group_by(CabinCount) %>%
-                  summarise(CohortSize = n(),
-                            SurvivalRate = sum(Survived)/n())
-
-cabinCount_plot <- ggplot(cabinCount_set, aes(x=as.factor(CabinCount),
-                                              y=SurvivalRate,
-                                              alpha = CohortSize,
-                                              fill = SurvivalRate)) +
-                   theme_lk() +
-                   scale_alpha_continuous(name = "Cohort Size",
-                                          limits = c(0,50),
-                                          guide = guide_legend(
-                                          nrow = 1,
-                                          override.aes=list(fill=ltxt_color)
-                                         )) +
-                   scale_fill_gradientn(colours=c(as.character(get_color("red")),
-                                                 as.character(get_color("red")),
-                                                 as.character(get_color("yellow")),
-                                                 as.character(get_color("green")),
-                                                 as.character(get_color("green"))),
-                                       values = c(0.0,0.3,0.4,0.50,1.),
-                                       guide = "none") +
-                   xlab("# Cabins Specified") +
-                   ylab("Survival Likelihood") +
-                   scale_y_continuous(labels = scales::percent,
-                                      # Make Sure Bar and X-Axis Stick Together
-                                      expand = c(0,0),
-                                      limits =c(0,1)) +
-                   # Actual Data
-                   geom_bar(stat="identity",
-                            width = 0.7) +
-                   geom_text(aes(y = SurvivalRate - 0.1,
-                                 label=paste0("Cohort\nSize:\n",CohortSize)),
-                             color = "#FFFFFF", alpha = 1,
-                             family=def_font,size=4)
-
-cabinCount_plot
-## ---- end-of-exp_cabin_specified
 
 # * INSIGHT 6 : EMBARKATION PORTS ----
 
@@ -601,8 +547,6 @@ pwalk(
   }
 )
 
-map
-
 ## ---- end-of-exp_port
 
 ## ---- exp_port_income
@@ -649,8 +593,6 @@ embark_pclass_plot <- ggplot(embark_pclass, aes(x=as.factor(Embarked),
                                 data = embark_pclass %>% filter(Pclass == 1),
                                 color = get_color("green"),
                                 family = def_font, size = 5)
-
-embark_pclass_plot
 
 ## ---- end-of-exp_port_income
 

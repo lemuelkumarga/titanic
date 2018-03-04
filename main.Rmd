@@ -10,6 +10,9 @@ options(warn=-1)
 
 packages <- c("knitr")
 tmp <- lapply(packages, library, character.only = TRUE)
+
+# Set images globally
+opts_chunk$set(fig.align='center', fig.height = 4, fig.width = 7)
 read_chunk("main.R")
 read_chunk("shared/helper.R")
   
@@ -66,30 +69,40 @@ First_Name</span>.
 <div class="st">Insight 1: Wealthy individuals are more likely to survive.</div>
 
 Using passenger class as a proxy for wealth, we calculated the survival likelihood (% of passengers survived) for each class.
-```{r exp_income, fig.height=3, fig.width=10, fig.align="center"}
+```{r, fig.asp=0.5}
+<<exp_income>>
 
+income_plot
 ```
+
 The chart above shows that the more premium the class, the more likely the passengers were to survive. One potential reason explaining this insight could be that 1st class passengers were the first in line to access the lifeboats, while 3rd class passengers were left to fend for themselves.
 
-```{r exp_fare, fig.height=3, fig.width=10, fig.align="center"}
+```{r, fig.asp=0.35}
+<<exp_fare>>
 
+fares_plot
 ```
+
 Similarly, we also noticed this phenomenon in fares, where the higher amount an individual paid for the fares, the more likely he/she will survive the crash.
 
 <div class="st">Insight 2: Females and more esteemed individuals are more likely to survive than males.</div>
 
 The data provides us with a list of titles under the <span class="color-1-text">Name</span> column. Each title is associated with a gender (with the exception of one), as shown below:
 
-```{r exp_titles, fig.height=2.6, fig.width=10, fig.align="center"}
+```{r, fig.asp=0.32}
+<<exp_titles>>
 
+gender_plot
 ```
 
 Other than <span class="hl color-1-text">Mr, Miss, Mrs and Master</span>, all other titles are not presumed by many passengers. To navigate the small sample size, we group all of these other titles under <span class="hl color-2-text">Rare Title</span>.
 
 Using the following modifications, we can then assess the survival likelihood of each title and gender:
 
-```{r exp_title_gender, fig.height=3, fig.width=10, fig.align="center"}
-
+```{r}
+<<exp_title_gender>>
+  
+title_plot
 ```
 
 <span class="hl">All</span> females, regardless of their titles, have higher survival likelihoods than males. In addition, having a title other than Mrs, Miss or Mr, elevates the survival likelihood of the individual. One reason explaining this insight could be that females and esteemed individuals were given early access to escape the Titanic. 
@@ -98,8 +111,10 @@ Using the following modifications, we can then assess the survival likelihood of
 
 The chart below shows how survival likelihood changes according to age.
 
-```{r exp_age, fig.height=3, fig.width=10, fig.align="center"}
-
+```{r, fig.asp=0.35}
+<<exp_age>>
+  
+age_plot
 ```
 
 With the limited data set, we can see that younger individuals are more likely to survive. A possible explanation is probably because babies and toddlers occupy less space (and hence easier to find seats within the lifeboats). 
@@ -112,8 +127,10 @@ Typically, we would expect that the more family members there is in Titanic, the
 
 However, contrary to expectations, the data shows that the larger the family size (individual + siblings/spouses + parent/children), the more likely an individual is likely to survive:
 
-```{r exp_company, fig.height=4, fig.width=10, fig.align="center"}
-
+```{r}
+<<exp_company>>
+  
+company_plot 
 ```
 
 This counterintuitive relationship can be attributed to the following 3 factors:
@@ -134,21 +151,24 @@ A more detailed deck plan can be found <a href="https://www.encyclopedia-titanic
 We will break down the cabin position into three constituents: the cabin floor, the cabin number (odd or even), and the number of cabins specified.
 
 ```{r exp_cabin_decompose}
-
 ```
 
 ##### Cabin Floors
 
-```{r exp_cabin_floors, fig.height=5, fig.width=7, warning=FALSE, fig.align="center"}
-
+```{r}
+<<exp_cabin_floors>>
+  
+cabinLet_plot
 ```
 
 From the chart, we can deduce that <span class="hl color-1-text">Cabins B to E</span> has a higher likelihood of survival compared to other/unspecified cabins, which suggests that the position of cabins play a role in determining whether a passenger survive.
 
 ##### Cabin Numbers
 
-```{r exp_cabin_number, fig.height=3, fig.width=10, fig.align="center"}
-
+```{r, fig.asp=0.45}
+<<exp_cabin_number>>
+  
+cabinNumber_plot
 ```
 
 It is pretty clear that those who stay in the odd rooms are more likely to survive than those in the even rooms.
@@ -157,15 +177,19 @@ In conclusion, cabin floors and cabin numbers, when available, can determine a p
 
 <div class="st">Insight 6: Port of embarkation has an impact on survivalhood, as they are correlated with Passenger class.</div>
 
-```{r exp_port, fig.height = 3, fig.align="center"}
+```{r, fig.asp=0.4}
+<<exp_port>>
 
+map
 ```
 
 <br>
 At first glance, there seems to be no plausible explanation why a passenger's port of embarkation will have an impact on the passenger's survival likelihood.
 
-```{r exp_port_income, fig.height = 3, fig.width=10, fig.align="center"}
+```{r, fig.asp=0.45}
+<<exp_port_income>>
 
+embark_pclass_plot
 ```
 
 However, by studying the demographics of the passengers who embarked at each port, we know that a higher proportion of Cherbough are high-income. This explains the higher survival likelihood for those who embarked at Cherbough.
@@ -265,7 +289,7 @@ We will use three different indicators to test the accuracy of the model:
 2. <span class="hl">20% Testing Group</span>: The accuracy when used to predict the remaining 20% of the data not used in calibration,
 3. <span class="hl">Kaggle's Testing Set</span>: The accuracy when used to predict the test set provided by Kaggle.
 
-```{r }
+```{r}
 ooo_str <- paste0("Based on OOO: ",round((1 - median(rf_model$err.rate[,1]))*100,1),"% Accuracy Rate")
 
 <<model_internal_test>>
