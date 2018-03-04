@@ -250,7 +250,7 @@ age_plot <- ggplot(age_pdata, aes(x=AgeMin,
                              color = ltxt_color) +
                   geom_text(data = age_pdata %>%
                                    filter(row_number() %in% c(3,16)),
-                            aes(x = AgeMin + 6, label = paste(AgeMin, "Years Old")),
+                            aes(x = AgeMin + 8.5, label = paste(AgeMin, "Years Old")),
                             y = max(age_pdata$SurviveL),
                             color = ltxt_color,
                             size = 5,
