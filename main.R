@@ -324,11 +324,11 @@ company_plot <- ggplot(company_stack, aes(x= Size, y= Value)) +
                                            "AttrParents"="Parental",
                                            "AttrChild"="Child"),
                                   values=c("Baseline"=alpha(txt_color,0.2),
-                                           "AttrHusband"=alpha(get_color(1),0.8),
-                                           "AttrParents"=alpha(get_color(2),0.8),
-                                           "AttrChild"=alpha(get_color(3),0.8)),
+                                           "AttrHusband"=alpha(get_color(1),1.),
+                                           "AttrParents"=alpha(get_color(2),1.),
+                                           "AttrChild"=alpha(get_color(3),1.)),
                                   guide=guide_legend(reverse=T)) +
-                geom_area(aes(fill = Attribution), position = 'stack') + 
+                geom_area(aes(fill = Attribution), size=0, position = 'stack') + 
                 geom_text(data=unique(company_stack %>% select(Size, SurvivalRate)),
                           aes(x=Size, y=SurvivalRate+0.03, label=paste0(round(SurvivalRate*100),"%")),
                           color=txt_color,
@@ -573,8 +573,8 @@ embark_pclass_plot <- ggplot(embark_pclass, aes(x=as.factor(Embarked),
                       scale_fill_manual(name = "Passenger Class",
                          labels = c("1"="1 (High-Income)","2"="2 (Medium-Income)","3"="3 (Low-Income)"),
                          values = c("1"=get_color("green"),
-                                    "2"=alpha(get_color("yellow"),0.2),
-                                    "3"=alpha(get_color("red"),0.2)),
+                                    "2"=alpha(get_color("yellow"),0.4),
+                                    "3"=alpha(get_color("red"),0.4)),
                          guide = guide_legend(reverse = TRUE)) +
                       xlab("Port of Embarkation") +
                       scale_x_discrete(labels=c("S"="Southampton",
@@ -587,11 +587,11 @@ embark_pclass_plot <- ggplot(embark_pclass, aes(x=as.factor(Embarked),
                                          limits =c(0,1)) +
                       coord_flip() +
                       # Actual Data
-                      geom_bar(stat="identity") +
+                      geom_bar(stat="identity", width=0.8) +
                       geom_text(aes(label=paste0(round(PctEmbarked*100),"%"),
-                                    y = PctEmbarked + 0.05),
+                                    y = PctEmbarked - 0.05),
                                 data = embark_pclass %>% filter(Pclass == 1),
-                                color = get_color("green"),
+                                color = bg_color,
                                 family = def_font, size = 5)
 
 ## ---- end-of-exp_port_income
