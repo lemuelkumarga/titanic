@@ -230,7 +230,7 @@ income_plot <-  ggplot(income_set, aes(x=SurvivalRate,
                 ) +
                geom_segment(aes(x=0.2, xend=0.7, y=0, yend=0),
                             size = 0.5,
-                            color=ltxt_color,
+                            color=alpha(ltxt_color,0.5),
                             arrow = arrow(length = unit(10,"pt"),
                                           type = "closed")) +
                geom_text(label = "Survival Likelihood",
@@ -249,16 +249,22 @@ income_plot <-  ggplot(income_set, aes(x=SurvivalRate,
                 ) +
                scale_y_continuous(limits=c(-0.12, 0.05)) +
                # Elements
-                geom_point(alpha=0.8) +
+                geom_point() +
                 geom_text(aes(y = -0.03, label=paste0(round(SurvivalRate*100,0),"%")),
                           size=4,
                           color=txt_color,
                           family=def_font)
 
-income_plot
+plot(rep(1,10),col=colorRampPalette(hue_palette)(10),pch=19,cex=3)
 ```
 
 <img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
+
+``` r
+income_plot
+```
+
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-4-2.png" style="display: block; margin: auto;" />
 
 The chart above shows that the more premium the class, the more likely
 the passengers were to survive. One potential reason explaining this
@@ -561,11 +567,16 @@ company_plot <- ggplot(company_stack, aes(x= Size, y= Value)) +
                                            "AttrParents"="Parental",
                                            "AttrChild"="Child"),
                                   values=c("Baseline"=alpha(txt_color,0.2),
-                                           "AttrHusband"=alpha(get_color(1),1.),
-                                           "AttrParents"=alpha(get_color(2),1.),
-                                           "AttrChild"=alpha(get_color(3),1.)),
+                                           "AttrHusband"=get_color(1,0.8),
+                                           "AttrParents"=get_color(2,0.8),
+                                           "AttrChild"=get_color(3,0.8)),
                                   guide=guide_legend(reverse=T)) +
-                geom_area(aes(fill = Attribution), size=0, position = 'stack') + 
+                scale_color_manual(values=c("Baseline"=alpha(txt_color,0),
+                                            "AttrHusband"=get_color(1),
+                                            "AttrParents"=get_color(2),
+                                            "AttrChild"=get_color(3)),
+                                   guide = 'none') + 
+                geom_area(aes(fill = Attribution, colour=Attribution), size=2, linetype=1, position = 'stack') + 
                 geom_text(data=unique(company_stack %>% select(Size, SurvivalRate)),
                           aes(x=Size, y=SurvivalRate+0.03, label=paste0(round(SurvivalRate*100),"%")),
                           color=txt_color,
@@ -756,7 +767,8 @@ cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
                                                             ncol= 2)) +
                     scale_size_continuous(name = "Cohort Size",
                                           range = c(5,20),
-                                          guide = guide_legend(order = 2)) +
+                                          guide = guide_legend(order = 2,
+                                                               override.aes=list(alpha=0.5))) +
                     theme(
                       axis.line.x = element_line(colour=NA),
                       axis.ticks.x = element_line(colour=NA),
@@ -766,7 +778,7 @@ cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
                     # Add X Axis Line
                     geom_segment(aes(x=0.25, xend=0.8, y=0, yend=0),
                                  size = 0.5,
-                                 color=ltxt_color,
+                                 color=alpha(ltxt_color,0.5),
                                  arrow = arrow(length = unit(10,"pt"),
                                                type = "closed")) +
                     geom_text(label = "Survival Likelihood",
@@ -783,7 +795,7 @@ cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
                       axis.title.y = element_text(colour=NA),
                       axis.text.y = element_text(colour=NA)) +
                       scale_y_continuous(limits=c(-0.12, 0.05)) +
-                    geom_point(alpha=0.5) +
+                    geom_point() +
                     geom_text(aes(y = -0.03, label=paste0(round(SurvivalRate*100,0),"%")),
                               size=4,
                               color=txt_color,
@@ -864,19 +876,11 @@ map
 
 <!--html_preserve-->
 
-<<<<<<< HEAD
-<div id="htmlwidget-54db3b86db301661a130" class="leaflet html-widget" style="width:100%;height:268.8px;">
+<div id="htmlwidget-56b9d857dd15a2315f26" class="leaflet html-widget" style="width:100%;height:268.8px;">
 
 </div>
 
-<script type="application/json" data-for="htmlwidget-54db3b86db301661a130">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A062","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A062","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B45C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B45C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B45C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B45C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
-=======
-<div id="htmlwidget-227f24c31dc002be7790" class="leaflet html-widget" style="width:100%;height:268.8px;">
-
-</div>
-
-<script type="application/json" data-for="htmlwidget-227f24c31dc002be7790">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#6C812F","weight":5,"opacity":0.8,"fill":true,"fillColor":"#6C812F","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A43820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A43820","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A43820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A43820","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
->>>>>>> 96762bc9cfcdab8a79a69116a9cb4064fe9dec65
+<script type="application/json" data-for="htmlwidget-56b9d857dd15a2315f26">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A062","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A062","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B45C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B45C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B45C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B45C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
 
 <!--/html_preserve-->
 
@@ -907,13 +911,8 @@ embark_pclass_plot <- ggplot(embark_pclass, aes(x=as.factor(Embarked),
                       scale_fill_manual(name = "Passenger Class",
                          labels = c("1"="1 (High-Income)","2"="2 (Medium-Income)","3"="3 (Low-Income)"),
                          values = c("1"=get_color("green"),
-<<<<<<< HEAD
                                     "2"=alpha(get_color("green",0.5),0.2),
                                     "3"=alpha(get_color("red"),0.2)),
-=======
-                                    "2"=alpha(get_color("yellow"),0.4),
-                                    "3"=alpha(get_color("red"),0.4)),
->>>>>>> 96762bc9cfcdab8a79a69116a9cb4064fe9dec65
                          guide = guide_legend(reverse = TRUE)) +
                       xlab("Port of Embarkation") +
                       scale_x_discrete(labels=c("S"="Southampton",

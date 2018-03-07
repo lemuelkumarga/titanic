@@ -69,7 +69,7 @@ income_plot <-  ggplot(income_set, aes(x=SurvivalRate,
                 ) +
                geom_segment(aes(x=0.2, xend=0.7, y=0, yend=0),
                             size = 0.5,
-                            color=ltxt_color,
+                            color=alpha(ltxt_color,0.5),
                             arrow = arrow(length = unit(10,"pt"),
                                           type = "closed")) +
                geom_text(label = "Survival Likelihood",
@@ -88,12 +88,11 @@ income_plot <-  ggplot(income_set, aes(x=SurvivalRate,
                 ) +
                scale_y_continuous(limits=c(-0.12, 0.05)) +
                # Elements
-                geom_point(alpha=0.8) +
+                geom_point() +
                 geom_text(aes(y = -0.03, label=paste0(round(SurvivalRate*100,0),"%")),
                           size=4,
                           color=txt_color,
                           family=def_font)
-
 
 ## ---- end-of-exp_income
 
@@ -325,11 +324,16 @@ company_plot <- ggplot(company_stack, aes(x= Size, y= Value)) +
                                            "AttrParents"="Parental",
                                            "AttrChild"="Child"),
                                   values=c("Baseline"=alpha(txt_color,0.2),
-                                           "AttrHusband"=alpha(get_color(1),1.),
-                                           "AttrParents"=alpha(get_color(2),1.),
-                                           "AttrChild"=alpha(get_color(3),1.)),
+                                           "AttrHusband"=get_color(1,0.8),
+                                           "AttrParents"=get_color(2,0.8),
+                                           "AttrChild"=get_color(3,0.8)),
                                   guide=guide_legend(reverse=T)) +
-                geom_area(aes(fill = Attribution), size=0, position = 'stack') + 
+                scale_color_manual(values=c("Baseline"=alpha(txt_color,0),
+                                            "AttrHusband"=get_color(1),
+                                            "AttrParents"=get_color(2),
+                                            "AttrChild"=get_color(3)),
+                                   guide = 'none') + 
+                geom_area(aes(fill = Attribution, colour=Attribution), size=2, linetype=1, position = 'stack') + 
                 geom_text(data=unique(company_stack %>% select(Size, SurvivalRate)),
                           aes(x=Size, y=SurvivalRate+0.03, label=paste0(round(SurvivalRate*100),"%")),
                           color=txt_color,
@@ -458,7 +462,8 @@ cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
                                                             ncol= 2)) +
                     scale_size_continuous(name = "Cohort Size",
                                           range = c(5,20),
-                                          guide = guide_legend(order = 2)) +
+                                          guide = guide_legend(order = 2,
+                                                               override.aes=list(alpha=0.5))) +
                     theme(
                       axis.line.x = element_line(colour=NA),
                       axis.ticks.x = element_line(colour=NA),
@@ -468,7 +473,7 @@ cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
                     # Add X Axis Line
                     geom_segment(aes(x=0.25, xend=0.8, y=0, yend=0),
                                  size = 0.5,
-                                 color=ltxt_color,
+                                 color=alpha(ltxt_color,0.5),
                                  arrow = arrow(length = unit(10,"pt"),
                                                type = "closed")) +
                     geom_text(label = "Survival Likelihood",
@@ -485,7 +490,7 @@ cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
                       axis.title.y = element_text(colour=NA),
                       axis.text.y = element_text(colour=NA)) +
                       scale_y_continuous(limits=c(-0.12, 0.05)) +
-                    geom_point(alpha=0.5) +
+                    geom_point() +
                     geom_text(aes(y = -0.03, label=paste0(round(SurvivalRate*100,0),"%")),
                               size=4,
                               color=txt_color,
