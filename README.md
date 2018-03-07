@@ -212,14 +212,15 @@ income_plot <-  ggplot(income_set, aes(x=SurvivalRate,
                 scale_color_manual(name = "Passenger Class",
                                   labels = c("1"="1 (High-Income)","2"="2 (Medium-Income)","3"="3 (Low-Income)"),
                                   values = c("1"=as.character(get_color("green")),
-                                             "2"=as.character(get_color("yellow")),
+                                             "2"=as.character(get_color("green",0.5)),
                                              "3"=as.character(get_color("red"))),
                                   guide = guide_legend(order = 1,
                                                        direction = "vertical",
                                                        override.aes=list(size=5))) +
                scale_size_continuous(name = "Cohort Size",
                                      range = c(5,20),
-                                     guide = guide_legend(order = 2)) +
+                                     guide = guide_legend(order = 2,
+                                                          override.aes = list(alpha=0.5))) +
                # X Axis
                 theme(
                   axis.line.x = element_line(colour=NA),
@@ -248,7 +249,7 @@ income_plot <-  ggplot(income_set, aes(x=SurvivalRate,
                 ) +
                scale_y_continuous(limits=c(-0.12, 0.05)) +
                # Elements
-                geom_point(alpha=0.5) +
+                geom_point(alpha=0.8) +
                 geom_text(aes(y = -0.03, label=paste0(round(SurvivalRate*100,0),"%")),
                           size=4,
                           color=txt_color,
@@ -257,7 +258,7 @@ income_plot <-  ggplot(income_set, aes(x=SurvivalRate,
 income_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
 
 The chart above shows that the more premium the class, the more likely
 the passengers were to survive. One potential reason explaining this
@@ -293,7 +294,7 @@ fares_plot <- ggplot(fares_pdata, aes(x = FareMax,
 fares_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/unnamed-chunk-5-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-5-1.png" style="display: block; margin: auto;" />
 
 Similarly, we also noticed this phenomenon in fares, where the higher
 amount an individual paid for the fares, the more likely he/she will
@@ -356,7 +357,7 @@ gender_plot <- ggplot(gender_sex_totals, aes(x = Prefix,
 gender_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
 
 Other than <span class="hl color-1-text">Mr, Miss, Mrs and
 Master</span>, all other titles are not presumed by many passengers. To
@@ -408,7 +409,7 @@ title_plot <- ggplot(title_set, aes(x=Title,
 title_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
 
 <span class="hl">All</span> females, regardless of their titles, have
 higher survival likelihoods than males. In addition, having a title
@@ -470,7 +471,7 @@ age_plot <- ggplot(age_pdata, aes(x=AgeMin,
 age_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/unnamed-chunk-8-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-8-1.png" style="display: block; margin: auto;" />
 
 With the limited data set, we can see that younger individuals are more
 likely to survive. A possible explanation is probably because babies and
@@ -574,7 +575,7 @@ company_plot <- ggplot(company_stack, aes(x= Size, y= Value)) +
 company_plot 
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/unnamed-chunk-9-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-9-1.png" style="display: block; margin: auto;" />
 
 This counterintuitive relationship can be attributed to the following 3
 factors:
@@ -719,7 +720,7 @@ cabinLet_plot <- ggplot(cabinLet_set, aes(x=as.factor(CabinFloor),
 cabinLet_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/unnamed-chunk-10-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-10-1.png" style="display: block; margin: auto;" />
 
 From the chart, we can deduce that <span class="hl color-1-text">Cabins
 B to E</span> has a higher likelihood of survival compared to
@@ -791,7 +792,7 @@ cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
 cabinNumber_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/unnamed-chunk-11-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-11-1.png" style="display: block; margin: auto;" />
 
 It is pretty clear that those who stay in the odd rooms are more likely
 to survive than those in the even rooms.
@@ -863,11 +864,11 @@ map
 
 <!--html_preserve-->
 
-<div id="htmlwidget-4e3b085eaccfeb7d66c7" class="leaflet html-widget" style="width:100%;height:268.8px;">
+<div id="htmlwidget-54db3b86db301661a130" class="leaflet html-widget" style="width:100%;height:268.8px;">
 
 </div>
 
-<script type="application/json" data-for="htmlwidget-4e3b085eaccfeb7d66c7">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A162","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A162","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B55C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B55C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-54db3b86db301661a130">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#94A062","weight":5,"opacity":0.8,"fill":true,"fillColor":"#94A062","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B45C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B45C5C","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#B45C5C","weight":5,"opacity":0.8,"fill":true,"fillColor":"#B45C5C","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
 
 <!--/html_preserve-->
 
@@ -898,7 +899,7 @@ embark_pclass_plot <- ggplot(embark_pclass, aes(x=as.factor(Embarked),
                       scale_fill_manual(name = "Passenger Class",
                          labels = c("1"="1 (High-Income)","2"="2 (Medium-Income)","3"="3 (Low-Income)"),
                          values = c("1"=get_color("green"),
-                                    "2"=alpha(get_color("yellow"),0.2),
+                                    "2"=alpha(get_color("green",0.5),0.2),
                                     "3"=alpha(get_color("red"),0.2)),
                          guide = guide_legend(reverse = TRUE)) +
                       xlab("Port of Embarkation") +
@@ -912,17 +913,17 @@ embark_pclass_plot <- ggplot(embark_pclass, aes(x=as.factor(Embarked),
                                          limits =c(0,1)) +
                       coord_flip() +
                       # Actual Data
-                      geom_bar(stat="identity") +
+                      geom_bar(stat="identity", width=0.8) +
                       geom_text(aes(label=paste0(round(PctEmbarked*100),"%"),
-                                    y = PctEmbarked + 0.05),
+                                    y = PctEmbarked - 0.05),
                                 data = embark_pclass %>% filter(Pclass == 1),
-                                color = get_color("green"),
+                                color = bg_color,
                                 family = def_font, size = 5)
 
 embark_pclass_plot
 ```
 
-<img src="/Users/lemuel/Google Drive/Website/content/titanic/README_files/figure-gfm/unnamed-chunk-13-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-13-1.png" style="display: block; margin: auto;" />
 
 However, by studying the demographics of the passengers who embarked at
 each port, we know that a higher proportion of Cherbough are

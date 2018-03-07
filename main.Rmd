@@ -268,7 +268,6 @@ pander(head(cleaned_set))
 
 ```
 
-
 ### The Model
 
 Prior to constructing the random forest model, we need to split the training set into two unequal groups, with 80% of the data for training purposes and the other 20% for testing purposes. The larger partition is then used to construct a random forest model. 
