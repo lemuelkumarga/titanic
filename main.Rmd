@@ -69,7 +69,7 @@ First_Name</span>.
 <div class="st">Insight 1: Wealthy individuals are more likely to survive.</div>
 
 Using passenger class as a proxy for wealth, we calculated the survival likelihood (% of passengers survived) for each class.
-```{r, fig.asp=0.5}
+```{r, fig.asp=0.4}
 <<exp_income>>
 
 income_plot
@@ -165,7 +165,7 @@ From the chart, we can deduce that <span class="hl color-1-text">Cabins B to E</
 
 ##### Cabin Numbers
 
-```{r, fig.asp=0.45}
+```{r, fig.asp=0.4}
 <<exp_cabin_number>>
   
 cabinNumber_plot
@@ -268,7 +268,6 @@ pander(head(cleaned_set))
 
 ```
 
-
 ### The Model
 
 Prior to constructing the random forest model, we need to split the training set into two unequal groups, with 80% of the data for training purposes and the other 20% for testing purposes. The larger partition is then used to construct a random forest model. 
@@ -304,3 +303,13 @@ cat(paste0(ooo_str,"\n",int_str,"\n",ext_str))
 As shown above, the model managed to predict Kaggle's testing set relatively well, with a score below the 18th percentile in the <a href="https://www.kaggle.com/c/titanic/leaderboard" target="_blank">Leaderboard</a> (at the time of submission). In addition, there is also only a difference of 2-4% between our internal (20% Testing Group) and external (Kaggle's Testing Set) performance, suggesting that the model is not overfitted. 
 
 #### Assessing Factors
+
+Since the model is robust and reliable, let us now derive some knowledge from the model. Based on the score (or Z-score for those statisticians), we have the following:
+
+
+```{r, fig.asp=0.3}
+<<model_factors>>
+  
+z_plot
+```
+
