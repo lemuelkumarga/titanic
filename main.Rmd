@@ -303,3 +303,13 @@ cat(paste0(ooo_str,"\n",int_str,"\n",ext_str))
 As shown above, the model managed to predict Kaggle's testing set relatively well, with a score below the 18th percentile in the <a href="https://www.kaggle.com/c/titanic/leaderboard" target="_blank">Leaderboard</a> (at the time of submission). In addition, there is also only a difference of 2-4% between our internal (20% Testing Group) and external (Kaggle's Testing Set) performance, suggesting that the model is not overfitted. 
 
 #### Assessing Factors
+
+Since the model is robust and reliable, let us now derive some knowledge from the model. Based on the score (or Z-score for those statisticians), we have the following:
+
+
+```{r}
+<<model_factors>>
+  
+z_plot
+```
+

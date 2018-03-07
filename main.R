@@ -67,12 +67,14 @@ income_plot <-  ggplot(income_set, aes(x=SurvivalRate,
                   axis.title.x = element_text(colour=NA),
                   axis.text.x = element_text(colour=NA)
                 ) +
-               geom_segment(aes(x=0.2, xend=0.7, y=0, yend=0),
+               geom_segment(data = data.frame(1),
+                            aes(x=0.2, xend=0.7, y=0, yend=0),
                             size = 0.5,
-                            color=alpha(ltxt_color,0.5),
+                            color=ltxt_color,
                             arrow = arrow(length = unit(10,"pt"),
                                           type = "closed")) +
-               geom_text(label = "Survival Likelihood",
+               geom_text(data = data.frame(1),
+                         label = "Survival Likelihood",
                          x = 0.7,
                          y = 0.02,
                          family = def_font,
@@ -471,12 +473,14 @@ cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
                       axis.text.x = element_text(colour=NA)
                     ) +
                     # Add X Axis Line
-                    geom_segment(aes(x=0.25, xend=0.8, y=0, yend=0),
+                    geom_segment(data = data.frame(1),
+                                 aes(x=0.25, xend=0.8, y=0, yend=0),
                                  size = 0.5,
                                  color=alpha(ltxt_color,0.5),
                                  arrow = arrow(length = unit(10,"pt"),
                                                type = "closed")) +
-                    geom_text(label = "Survival Likelihood",
+                    geom_text(data = data.frame(1),
+                              label = "Survival Likelihood",
                               x = 0.8,
                               y = 0.02,
                               family = def_font,
@@ -768,3 +772,61 @@ write.csv(predictions,
 # Upload the file to https://www.kaggle.com/c/titanic/submit
 
 ## ---- end-of-model_external_test
+
+## ---- model_factors
+
+z_scores <- (rf_model$importance[,"MeanDecreaseAccuracy"] / rf_model$importanceSD[,"MeanDecreaseAccuracy"]) %>%
+            { c(.,"Benchmark"=2.32) } %>%
+            sort() %>%
+            { data.frame("Feature"=names(.),"Zscore"=as.numeric(.)) }
+z_scores$Feature <- factor(z_scores$Feature, levels = z_scores$Feature)
+
+z_plot <- ggplot(data = z_scores, aes(x = Zscore,
+                                      y = 0,
+                                      color=Feature)) +
+          theme(plot.margin = unit(c(0,0,0,-40),'pt')) +
+          theme_lk() +
+          scale_color_manual(name = "Feature",
+                             values = c(txt_color,get_color("palette")(7)),
+                             guide = guide_legend(nrow=1,
+                                                  override.aes=list(size=5))) +
+          theme(
+            axis.line.x = element_line(colour=NA),
+            axis.ticks.x = element_line(colour=NA),
+            axis.title.x = element_text(colour=NA),
+            axis.text.x = element_text(colour=NA)
+          ) +
+          # Add X Axis Line
+          geom_segment(data = data.frame(1),
+                       aes(x=min(z_scores$Zscore)*0.9, 
+                       xend=max(z_scores$Zscore)*1.1, 
+                       y=0, 
+                       yend=0),
+                       size = 0.5,
+                       color=ltxt_color,
+                       arrow = arrow(length = unit(10,"pt"),
+                                     type = "closed")) +
+          geom_label(data = data.frame(ticks=c(10,20,30,40,50,60)),
+                    aes(x = ticks, y = 0.03, label=paste0(round(ticks,0))),
+                    size=4,
+                    color=txt_color,
+                    family=def_font) +
+          geom_text(data = data.frame(1),
+                    label = "Score",
+                    x = max(z_scores$Zscore) * 1.1,
+                    y = 0.03,
+                    family = def_font,
+                    color = ltxt_color,
+                    size = 5,
+                    hjust = 1) +
+          theme(
+            # Y-Axis
+            axis.line.y = element_line(colour=NA),
+            axis.ticks.y = element_line(colour=NA),
+            axis.title.y = element_text(colour=NA),
+            axis.text.y = element_text(colour=NA)) +
+          scale_y_continuous(limits=c(-0.12, 0.05)) +
+          geom_point(size = 5)
+
+
+## ---- end-of-model_factors
