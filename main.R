@@ -776,7 +776,7 @@ write.csv(predictions,
 ## ---- model_factors
 
 z_scores <- (rf_model$importance[,"MeanDecreaseAccuracy"] / rf_model$importanceSD[,"MeanDecreaseAccuracy"]) %>%
-            { c(.,"1% Significant Level"=2.32) } %>%
+            { c(.,"Baseline"=2.32) } %>%
             sort() %>%
             { data.frame("Feature"=names(.),"Zscore"=as.numeric(.)) }
 z_scores$Feature <- factor(z_scores$Feature, levels = z_scores$Feature)
