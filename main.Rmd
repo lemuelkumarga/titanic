@@ -302,9 +302,9 @@ As shown above, the model managed to predict Kaggle's testing set relatively wel
 
 #### Assessing Factors
 
-Since the model is robust and reliable, we can now derive some knowledge from the model. We will reference the <a data-toggle="popover" title="Mean Decrease Accuracy" data-content="The degree to which accuracy will fall if the feature/factor of interest is excluded from calibration. (To be more specific, the feature is not excluded, but randomized. Nevertheless, the impact to the model remains the same.) The higher the mean decrease accuracy, the more important the factor is to the prediction.">mean decrease accuracy</a> score to determine the importance of each factor.
+Since the model is robust and reliable, we can now derive some knowledge from the model. We will reference the <a data-toggle="popover" title="Mean Decrease In Accuracy" data-content="The degree to which accuracy will fall if the feature/factor of interest is excluded from calibration. (To be more specific, the feature is not excluded, but randomized. Nevertheless, the impact to the model remains the same.) The higher the mean decrease in accuracy, the more important the factor is to the prediction.">mean decrease in accuracy</a> score to determine the importance of each factor.
 
-The chart below maps the mean decrease accuracy for all features in the model:
+The chart below maps the mean decrease in accuracy for each feature in the model:
 
 ```{r, fig.asp=0.3}
 <<model_factors>>
