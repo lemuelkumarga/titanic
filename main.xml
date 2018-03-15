@@ -1,7 +1,7 @@
 <project>
   <folder>titanic</folder>
   <title>Estimating Survival Rate of Titanic Passengers</title>
-  <excerpt>Have you ever wondered how the Titanic sank, and what were its evacuation procedures? Using data of titanic passengers, this portfolio aims to understand the influencing factors behind a passenger's survival likehood.</excerpt>
+  <excerpt>The Titanic disaster was one of the most unexpected catastrophes of the early 20th century, with over one thousand people killed. Utilizing demographic data, we aim to investigate the relevant factors influencing a passenger's survival likelihood.</excerpt>
   <algo>Random Forest</algo>
   <code>R</code>
   <color></color>
