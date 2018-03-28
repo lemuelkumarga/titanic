@@ -14,7 +14,6 @@ tmp <- lapply(packages, library, character.only = TRUE)
 # Set images globally
 opts_chunk$set(fig.align='center', fig.height = 4, fig.width = 7)
 read_chunk("main.R")
-read_chunk("shared/helper.R")
   
 ```
 
@@ -46,8 +45,6 @@ cat(paste0(base_pkg_str,"\n",attached_pkg_str))
 
 We kick off by exploring the data that was provided:
 ```{r}
-<<data_overview>>
-  
 <<data_comp>>
 
 pander(cols_summary, caption='Titanic Passengers Data - For more info, please visit <a href="https://www.kaggle.com/c/titanic/data" target="_blank">Kaggle</a>')

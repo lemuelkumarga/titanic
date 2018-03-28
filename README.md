@@ -72,6 +72,8 @@ First load the necessary packages for this exercise.
 ``` r
 # Load default settings for R Markdown -- see file for more details
 source("shared/defaults.R")
+# Load some helper functions
+source("shared/helper.R")
 
 options(stringsAsFactors = FALSE)
 packages <- c("dplyr","ggplot2","randomForest","tidyr","leaflet","purrr","grDevices","pander")
@@ -79,9 +81,6 @@ load_or_install.packages(packages)
 
 data_dir <- "data/"
 output_dir <- "output/"
-
-# Load some helper functions
-source("shared/helper.R")
 
 si <- sessionInfo()
 base_pkg_str <- paste0("Base Packages: ",paste(si[["basePkgs"]], collapse=", "))
@@ -99,48 +98,6 @@ cat(paste0(base_pkg_str,"\n",attached_pkg_str))
 We kick off by exploring the data that was provided:
 
 ``` r
-# Provides high level information about a particular data frame
-# @input data: the data frame
-# @input null_fn: a function that takes in a value (like those in the cells)
-# and outputs true if value corresponds to the equivalent null value, false
-# otherwise. For example, we may want to consider 0 as nulls on some scenarios
-# but not on others.
-# @output A data frame showing
-# - Name of the Columns
-# - Type of Variables in Each Column
-# - Some Non-Null Examples of Each Column
-# - % of Values that are Non-Null in Each Column (% Filled)
-data_overview <- function(data,
-                          null_fn = function(cname) { paste0(cname," == '' | is.na(",cname,")")}) {
-                  
-                  cols_summary <- data.frame(ColumnNames = colnames(data))
-                  cols_summary$Type <- lapply(data, class) %>%
-                    toupper()
-                  cols_summary$Examples <- lapply(cols_summary$ColumnNames,
-                                                  function(cname) {
-                                                    data %>%
-                                                      filter_(paste0("!(",null_fn(cname),")")) %>%
-                                                      `[[`(cname) %>%
-                                                      unique() -> filtered_set
-                                                    filtered_set[1:min(5, length(filtered_set))] %>%
-                                                      paste(collapse=' // ')
-                                                  })
-                  cols_summary$EmptyValues <- lapply(cols_summary$ColumnNames,
-                                                     function(cname) {
-                                                       data %>%
-                                                         filter_(null_fn(cname)) %>%
-                                                         nrow()
-                                                     })
-                  cols_summary$PctFilled <- lapply(cols_summary$EmptyValues,
-                                                   function(x) {
-                                                     ((nrow(data) - x) / nrow(data)) %>%
-                                                       `*`(100) %>% floor() %>%
-                                                       paste0("%")
-                                                   })
-                  
-                  select(cols_summary, ColumnNames, Type, Examples, PctFilled)
-}
-  
 training_set <- read.csv(paste0(data_dir, "train.csv"))
 
 cols_summary <- data_overview(training_set)
@@ -261,7 +218,7 @@ income_plot <-  ggplot(income_set, aes(x=SurvivalRate,
 income_plot
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
 
 The chart above shows that the more premium the class, the more likely
 passengers were to survive. One reason explaining this could be that 1st
@@ -296,7 +253,7 @@ fares_plot <- ggplot(fares_pdata, aes(x = FareMax,
 fares_plot
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-5-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-5-1.png" style="display: block; margin: auto;" />
 
 Similarly, we also noticed this phenomenon in fares. Passengers who were
 paying more have a higher survival likelihood than others.
@@ -358,7 +315,7 @@ gender_plot <- ggplot(gender_sex_totals, aes(x = Prefix,
 gender_plot
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
 
 Other than <span class="hl color-1-text">Mr, Miss, Mrs and
 Master</span>, all other titles are not common to the average passenger.
@@ -410,7 +367,7 @@ title_plot <- ggplot(title_set, aes(x=Title,
 title_plot
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
 
 <span class="hl">All</span> females, regardless of their titles, have
 higher survival likelihoods than males. In addition, having a title
@@ -472,7 +429,7 @@ age_plot <- ggplot(age_pdata, aes(x=AgeMin,
 age_plot
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-8-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-8-1.png" style="display: block; margin: auto;" />
 
 Among those passengers whose age were populated, we can see that younger
 individuals are more likely to survive. One possible explanation could
@@ -580,7 +537,7 @@ company_plot <- ggplot(company_stack, aes(x= Size, y= Value)) +
 company_plot 
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-9-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-9-1.png" style="display: block; margin: auto;" />
 
 This counterintuitive relationship can be explained through 3 factors:
 
@@ -720,7 +677,7 @@ cabinLet_plot <- ggplot(cabinLet_set, aes(x=as.factor(CabinFloor),
 cabinLet_plot
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-10-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-10-1.png" style="display: block; margin: auto;" />
 
 From the chart above, we know that <span class="hl">Cabins B to E</span>
 has a higher likelihood of survival compared to other cabins. This
@@ -795,7 +752,7 @@ cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
 cabinNumber_plot
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-11-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-11-1.png" style="display: block; margin: auto;" />
 
 It is pretty clear that those who stay in the odd rooms are more likely
 to survive than those in the even rooms.
@@ -867,11 +824,11 @@ map
 
 <!--html_preserve-->
 
-<div id="htmlwidget-b6141205196f4fb7cbbd" class="leaflet html-widget" style="width:100%;height:268.8px;">
+<div id="htmlwidget-feb53f709e2159688d74" class="leaflet html-widget" style="width:100%;height:268.8px;">
 
 </div>
 
-<script type="application/json" data-for="htmlwidget-b6141205196f4fb7cbbd">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#858B31","weight":5,"opacity":0.8,"fill":true,"fillColor":"#858B31","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A33820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A33820","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A33820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A33820","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-feb53f709e2159688d74">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#858B31","weight":5,"opacity":0.8,"fill":true,"fillColor":"#858B31","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A33820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A33820","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A33820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A33820","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
 
 <!--/html_preserve-->
 
@@ -927,7 +884,7 @@ embark_pclass_plot <- ggplot(embark_pclass, aes(x=as.factor(Embarked),
 embark_pclass_plot
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-13-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-13-1.png" style="display: block; margin: auto;" />
 
 However, by studying the demographics of the passengers embarking at
 each port, we discovered that a higher proportion of Cherbough are 1st
@@ -1328,7 +1285,7 @@ z_plot <- ggplot(data = z_scores, aes(x = sapply(z_scores$Zscore, function (x) {
 z_plot
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-19-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/titanic/README_files/figure-gfm/unnamed-chunk-19-1.png" style="display: block; margin: auto;" />
 
 Using a 1% significant level as the baseline, we conclude that all the
 factors are statistically significant. This means that for each of the
