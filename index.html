@@ -9,7 +9,7 @@
 <meta name="generator" content="pandoc" />
 
 
-<meta name="author" content="Lemuel Kumarga" />
+<meta name="author" content="byLemuel KumargaFeb 2018" />
 
 
 <title>Estimating Survival Rate of Titanic Passengers</title>
@@ -159,8 +159,7 @@ $(document).ready(function () {
 
 
 <h1 class="title toc-ignore">Estimating Survival Rate of Titanic Passengers</h1>
-<h4 class="author"><em>Lemuel Kumarga</em></h4>
-<h4 class="date"><em>Feb 2018</em></h4>
+<h4 class="author"><em><span class="meta"><span class="by">by</span><span class="writer">Lemuel Kumarga</span><span class="date">Feb 2018</span></span></em></h4>
 
 </div>
 
@@ -850,8 +849,8 @@ pwalk(
 )
 
 map</code></pre>
-<div id="htmlwidget-7b33972d02f8484a3b4c" style="width:100%;height:268.8px;" class="leaflet html-widget"></div>
-<script type="application/json" data-for="htmlwidget-7b33972d02f8484a3b4c">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#858B31","weight":5,"opacity":0.8,"fill":true,"fillColor":"#858B31","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A43820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A43820","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A43820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A43820","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-e65a0be565f8d2b9b170" style="width:100%;height:268.8px;" class="leaflet html-widget"></div>
+<script type="application/json" data-for="htmlwidget-e65a0be565f8d2b9b170">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#858B31","weight":5,"opacity":0.8,"fill":true,"fillColor":"#858B31","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A43820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A43820","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A43820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A43820","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
 <p><br> The map above indicates that those who embarked at Cherbough are more likely to survive. This is a puzzling observation as where the passenger embarks should not have an impact of what is happening on the Titanic.</p>
 <pre class="r"><code># Assessing the correlation between Embarkation and Passenger Class
 
