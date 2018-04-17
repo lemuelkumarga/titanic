@@ -1,6 +1,7 @@
 ---
 title: "Estimating Survival Rate of Titanic Passengers"
 author: "Lemuel Kumarga"
+date: "Feb 2018"
 always_allow_html: yes
 knit: (function(inputFile, encoding) { source("shared/knit.R"); knitter(inputFile, encoding)})
 ---
