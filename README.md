@@ -1,4 +1,4 @@
-### Find this work and others at my website [[lemuelkumarga.com]](https://www.lemuelkumarga.com)!
+### Find this work and others at my website [[lemuelkumarga.com]](https://www.lemuelkumarga.com/#github)!
 ---
 
 
@@ -230,7 +230,7 @@ income_plot <-  ggplot(income_set, aes(x=SurvivalRate,
 income_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Documents/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
 
 The chart above shows that the more premium the class, the more likely
 passengers were to survive. One reason explaining this could be that 1st
@@ -265,7 +265,7 @@ fares_plot <- ggplot(fares_pdata, aes(x = FareMax,
 fares_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-5-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Documents/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-5-1.png" style="display: block; margin: auto;" />
 
 Similarly, we also noticed this phenomenon in fares. Passengers who were
 paying more have a higher survival likelihood than others.
@@ -327,7 +327,7 @@ gender_plot <- ggplot(gender_sex_totals, aes(x = Prefix,
 gender_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Documents/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
 
 Other than <span class="hl color-1-text">Mr, Miss, Mrs and
 Master</span>, all other titles are not common to the average passenger.
@@ -379,7 +379,7 @@ title_plot <- ggplot(title_set, aes(x=Title,
 title_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Documents/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
 
 <span class="hl">All</span> females, regardless of their titles, have
 higher survival likelihoods than males. In addition, having a title
@@ -441,7 +441,7 @@ age_plot <- ggplot(age_pdata, aes(x=AgeMin,
 age_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-8-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Documents/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-8-1.png" style="display: block; margin: auto;" />
 
 Among those passengers whose age were populated, we can see that younger
 individuals are more likely to survive. One possible explanation could
@@ -549,7 +549,7 @@ company_plot <- ggplot(company_stack, aes(x= Size, y= Value)) +
 company_plot 
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-9-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Documents/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-9-1.png" style="display: block; margin: auto;" />
 
 This counterintuitive relationship can be explained through 3 factors:
 
@@ -689,7 +689,7 @@ cabinLet_plot <- ggplot(cabinLet_set, aes(x=as.factor(CabinFloor),
 cabinLet_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-10-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Documents/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-10-1.png" style="display: block; margin: auto;" />
 
 From the chart above, we know that <span class="hl">Cabins B to E</span>
 has a higher likelihood of survival compared to other cabins. This
@@ -764,7 +764,7 @@ cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
 cabinNumber_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-11-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Documents/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-11-1.png" style="display: block; margin: auto;" />
 
 It is pretty clear that those who stay in the odd rooms are more likely
 to survive than those in the even rooms.
@@ -836,11 +836,11 @@ map
 
 <!--html_preserve-->
 
-<div id="htmlwidget-e3a4b3230780a033e7d8" class="leaflet html-widget" style="width:100%;height:268.8px;">
+<div id="htmlwidget-d2d3d631f8742846f338" class="leaflet html-widget" style="width:100%;height:268.8px;">
 
 </div>
 
-<script type="application/json" data-for="htmlwidget-e3a4b3230780a033e7d8">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#858B31","weight":5,"opacity":0.8,"fill":true,"fillColor":"#858B31","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A43820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A43820","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A43820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A43820","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-d2d3d631f8742846f338">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#858B31","weight":5,"opacity":0.8,"fill":true,"fillColor":"#858B31","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A43820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A43820","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A43820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A43820","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
 
 <!--/html_preserve-->
 
@@ -896,7 +896,7 @@ embark_pclass_plot <- ggplot(embark_pclass, aes(x=as.factor(Embarked),
 embark_pclass_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-13-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Documents/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-13-1.png" style="display: block; margin: auto;" />
 
 However, by studying the demographics of the passengers embarking at
 each port, we discovered that a higher proportion of Cherbough are 1st
@@ -1297,7 +1297,7 @@ z_plot <- ggplot(data = z_scores, aes(x = sapply(z_scores$Zscore, function (x) {
 z_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-19-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/Documents/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-19-1.png" style="display: block; margin: auto;" />
 
 Using a 1% significant level as the baseline, we conclude that all the
 factors are statistically significant. This means that for each of the
