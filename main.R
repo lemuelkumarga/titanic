@@ -333,7 +333,7 @@ company_plot <- ggplot(company_stack, aes(x= Size, y= Value)) +
                                             "AttrParents"=get_color(2),
                                             "AttrChild"=get_color(3)),
                                    guide = 'none') + 
-                geom_area(aes(fill = Attribution, colour=Attribution), size=2, linetype=1, position = 'stack') + 
+                geom_area(aes(fill = Attribution, colour=Attribution), size=1.5, linetype=1, position = 'stack') + 
                 geom_text(data=unique(company_stack %>% select(Size, SurvivalRate)),
                           aes(x=Size, y=SurvivalRate+0.03, label=paste0(round(SurvivalRate*100),"%")),
                           color=txt_color,
