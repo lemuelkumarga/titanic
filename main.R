@@ -566,7 +566,8 @@ embark_pclass <- training_set %>%
                  filter(Embarked != "") %>%
                  group_by(Pclass, Embarked) %>%
                  summarise(CohortSize=n(),
-                           SurvivalRate=sum(Survived)/n())
+                           SurvivalRate=sum(Survived)/n()) %>%
+                 ungroup()
 embark_pclass <- embark_pclass %>%
                  left_join(embark_pclass %>% group_by(Embarked) %>% summarise(TotalSize = sum(CohortSize)), by=c("Embarked")) %>%
                  mutate(PctEmbarked = CohortSize / TotalSize) %>%
