@@ -210,7 +210,7 @@ income_plot <-  ggplot(income_set, aes(x=SurvivalRate,
                          y = 0.02,
                          family = def_font,
                          color = ltxt_color,
-                         size = 5,
+                         size = 4.5,
                          hjust = 1) +
                # Y Axis
                 theme(
@@ -435,7 +435,7 @@ age_plot <- ggplot(age_pdata, aes(x=AgeMin,
                             aes(x = AgeMin + 8.5, label = paste(AgeMin, "Years Old")),
                             y = max(age_pdata$SurviveL),
                             color = ltxt_color,
-                            size = 5,
+                            size = 4,
                             family = def_font)
   
 age_plot
@@ -543,7 +543,7 @@ company_plot <- ggplot(company_stack, aes(x= Size, y= Value)) +
                 geom_text(data=unique(company_stack %>% select(Size, SurvivalRate)),
                           aes(x=Size, y=SurvivalRate+0.03, label=paste0(round(SurvivalRate*100),"%")),
                           color=txt_color,
-                          size=5,
+                          size=4,
                           family = def_font)
   
 company_plot 
@@ -746,7 +746,7 @@ cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
                               y = 0.02,
                               family = def_font,
                               color = ltxt_color,
-                              size = 5,
+                              size = 4.5,
                               hjust = 1) +
                     theme(
                       # Y-Axis
@@ -836,11 +836,11 @@ map
 
 <!--html_preserve-->
 
-<div id="htmlwidget-f0284abbf11768ab3d70" class="leaflet html-widget" style="width:100%;height:268.8px;">
+<div id="htmlwidget-3c6490fbc91435aa95ad" class="leaflet html-widget" style="width:100%;height:268.8px;">
 
 </div>
 
-<script type="application/json" data-for="htmlwidget-f0284abbf11768ab3d70">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#89942F","weight":5,"opacity":0.8,"fill":true,"fillColor":"#89942F","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A43820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A43820","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A43820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A43820","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-3c6490fbc91435aa95ad">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#89942F","weight":5,"opacity":0.8,"fill":true,"fillColor":"#89942F","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A43820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A43820","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A43820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A43820","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
 
 <!--/html_preserve-->
 
@@ -892,7 +892,7 @@ embark_pclass_plot <- ggplot(embark_pclass, aes(x=as.factor(Embarked),
                                     y = PctEmbarked - 0.05),
                                 data = embark_pclass %>% filter(Pclass == 1),
                                 color = bg_color,
-                                family = def_font, size = 5)
+                                family = def_font, size = 4)
 
 embark_pclass_plot
 ```
@@ -1279,7 +1279,7 @@ z_plot <- ggplot(data = z_scores, aes(x = sapply(z_scores$Zscore, function (x) {
                     y = 0),
                     family = def_font,
                     color = ltxt_color,
-                    size = 5,
+                    size = 4,
                     hjust = 1) +
           theme(
             # Y-Axis
@@ -1292,7 +1292,7 @@ z_plot <- ggplot(data = z_scores, aes(x = sapply(z_scores$Zscore, function (x) {
           geom_text(aes(label=paste0(round(Zscore,0))),
                     family = def_font,
                     color = "#FFFFFF",
-                    size = 5,
+                    size = 4,
                     hjust = 0.5)
   
 z_plot

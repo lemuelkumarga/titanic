@@ -77,7 +77,7 @@ income_plot <-  ggplot(income_set, aes(x=SurvivalRate,
                          y = 0.02,
                          family = def_font,
                          color = ltxt_color,
-                         size = 5,
+                         size = 4.5,
                          hjust = 1) +
                # Y Axis
                 theme(
@@ -253,7 +253,7 @@ age_plot <- ggplot(age_pdata, aes(x=AgeMin,
                             aes(x = AgeMin + 8.5, label = paste(AgeMin, "Years Old")),
                             y = max(age_pdata$SurviveL),
                             color = ltxt_color,
-                            size = 5,
+                            size = 4,
                             family = def_font)
 
 ## ---- end-of-exp_age
@@ -337,7 +337,7 @@ company_plot <- ggplot(company_stack, aes(x= Size, y= Value)) +
                 geom_text(data=unique(company_stack %>% select(Size, SurvivalRate)),
                           aes(x=Size, y=SurvivalRate+0.03, label=paste0(round(SurvivalRate*100),"%")),
                           color=txt_color,
-                          size=5,
+                          size=4,
                           family = def_font)
 
 ## ---- end-of-exp_company
@@ -483,7 +483,7 @@ cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
                               y = 0.02,
                               family = def_font,
                               color = ltxt_color,
-                              size = 5,
+                              size = 4.5,
                               hjust = 1) +
                     theme(
                       # Y-Axis
@@ -601,7 +601,7 @@ embark_pclass_plot <- ggplot(embark_pclass, aes(x=as.factor(Embarked),
                                     y = PctEmbarked - 0.05),
                                 data = embark_pclass %>% filter(Pclass == 1),
                                 color = bg_color,
-                                family = def_font, size = 5)
+                                family = def_font, size = 4)
 
 ## ---- end-of-exp_port_income
 
@@ -825,7 +825,7 @@ z_plot <- ggplot(data = z_scores, aes(x = sapply(z_scores$Zscore, function (x) {
                     y = 0),
                     family = def_font,
                     color = ltxt_color,
-                    size = 5,
+                    size = 4,
                     hjust = 1) +
           theme(
             # Y-Axis
@@ -838,7 +838,7 @@ z_plot <- ggplot(data = z_scores, aes(x = sapply(z_scores$Zscore, function (x) {
           geom_text(aes(label=paste0(round(Zscore,0))),
                     family = def_font,
                     color = "#FFFFFF",
-                    size = 5,
+                    size = 4,
                     hjust = 0.5)
 
 
