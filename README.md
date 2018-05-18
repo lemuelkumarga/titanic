@@ -61,11 +61,14 @@ passengers lost.
 There were many question marks concerning the events leading to and
 during the disaster. One of these was the evacuation process of the
 passengers. By analyzing personal details and disaster outcomes
-(survival/lost), we aim to <b>discover the various factors affecting
-passengers’ survival likelihoods.</b>
+(survival/lost), we aim to <span class="hl">discover the various factors
+affecting passengers’ survival likelihoods.</span>
 
-<span class="color-1-text">FYI: This problem was posed as an
-introductory challenge in
+To skip the methodology and proceed directly to the summary of results,
+click <a href="#summary-of-results">here</a>.
+
+<span style="color:var(--font-color-50)">FYI: This problem was posed as
+an introductory challenge in
 <a href="https://www.kaggle.com/c/titanic" target="_blank">Kaggle</a>.
 The passengers are divided into two groups, one for training and the
 other for testing. The former contains both the passengers’ personal
@@ -73,9 +76,6 @@ details and outcomes, while the latter only contains personal
 informaion. The aim of the project is to develop a robust model through
 the training set, and predict the survival of passengers in the testing
 set.</span>
-
-To skip the methodology and proceed directly to the summary of results,
-click <a href="#summary-of-results">here</a>.
 
 ## Preliminaries
 
@@ -836,11 +836,11 @@ map
 
 <!--html_preserve-->
 
-<div id="htmlwidget-3c6490fbc91435aa95ad" class="leaflet html-widget" style="width:100%;height:268.8px;">
+<div id="htmlwidget-92a1910d32cbd340ef33" class="leaflet html-widget" style="width:100%;height:268.8px;">
 
 </div>
 
-<script type="application/json" data-for="htmlwidget-3c6490fbc91435aa95ad">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#89942F","weight":5,"opacity":0.8,"fill":true,"fillColor":"#89942F","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A43820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A43820","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A43820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A43820","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-92a1910d32cbd340ef33">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"zIndex":null,"unloadInvisibleTiles":null,"updateWhenIdle":null,"detectRetina":false,"reuseTiles":false}]},{"method":"addAwesomeMarkers","args":[41.7666636,-50.2333324,{"icon":"ship","markerColor":"gray","iconColor":"#FFFFFF","spin":false,"squareMarker":false,"iconRotate":0,"font":"monospace","prefix":"fa"},null,null,{"clickable":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Titanic Crash Site",null,null,null,null,null,null]},{"method":"addCircleMarkers","args":[49.645009,-1.62444,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#89942F","weight":5,"opacity":0.8,"fill":true,"fillColor":"#89942F","fillOpacity":0.5,"dashArray":null},null,null,"Cherbough<br>Survival Likelihood: 55%",null,null,null,null]},{"method":"addCircleMarkers","args":[51.851,-8.2967,10,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A43820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A43820","fillOpacity":0.5,"dashArray":null},null,null,"Queenstown<br>Survival Likelihood: 39%",null,null,null,null]},{"method":"addCircleMarkers","args":[50.9038684,-1.4176118,15,null,null,{"lineCap":null,"lineJoin":null,"clickable":true,"pointerEvents":null,"className":"","stroke":true,"color":"#A43820","weight":5,"opacity":0.8,"fill":true,"fillColor":"#A43820","fillOpacity":0.5,"dashArray":null},null,null,"Southampton<br>Survival Likelihood: 34%",null,null,null,null]}],"limits":{"lat":[41.7666636,51.851],"lng":[-50.2333324,-1.4176118]}},"evals":[],"jsHooks":[]}</script>
 
 <!--/html_preserve-->
 
