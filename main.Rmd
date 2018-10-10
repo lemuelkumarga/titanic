@@ -147,8 +147,9 @@ cv_plot
 ```{r}
 <<p>>
   
-cat("Optimal GAM Test Error Rate: ", scales::percent(0.77990),"\n",
-    "One SE GAM Test Error Rate: ", scales::percent(0.79425),"\n")
+cat("Null Classifier Error Rate: ", scales::percent(1.-0.62679),"\n",
+    "Optimal GAM Test Error Rate: ", scales::percent(1.-0.77990),"\n",
+    "One SE GAM Test Error Rate: ", scales::percent(1.-0.79425),"\n")
 ```
 
 #### Interpretation

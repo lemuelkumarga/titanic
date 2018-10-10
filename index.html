@@ -715,10 +715,12 @@ save_predictions &lt;- function(m.gam, id=&quot;opt&quot;) {
 save_predictions(opt.gam)
 save_predictions(onese.gam, &quot;onese&quot;)
   
-cat(&quot;Optimal GAM Test Error Rate: &quot;, scales::percent(0.77990),&quot;\n&quot;,
-    &quot;One SE GAM Test Error Rate: &quot;, scales::percent(0.79425),&quot;\n&quot;)</code></pre>
-<pre><code>## Optimal GAM Test Error Rate:  78% 
-##  One SE GAM Test Error Rate:  79.4%</code></pre>
+cat(&quot;Null Classifier Error Rate: &quot;, scales::percent(1.-0.62679),&quot;\n&quot;,
+    &quot;Optimal GAM Test Error Rate: &quot;, scales::percent(1.-0.77990),&quot;\n&quot;,
+    &quot;One SE GAM Test Error Rate: &quot;, scales::percent(1.-0.79425),&quot;\n&quot;)</code></pre>
+<pre><code>## Null Classifier Error Rate:  37.3% 
+##  Optimal GAM Test Error Rate:  22% 
+##  One SE GAM Test Error Rate:  20.6%</code></pre>
 </section>
 </section>
 <section id="interpretation" class="level4">

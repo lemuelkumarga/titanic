@@ -610,12 +610,14 @@ save_predictions <- function(m.gam, id="opt") {
 save_predictions(opt.gam)
 save_predictions(onese.gam, "onese")
   
-cat("Optimal GAM Test Error Rate: ", scales::percent(0.77990),"\n",
-    "One SE GAM Test Error Rate: ", scales::percent(0.79425),"\n")
+cat("Null Classifier Error Rate: ", scales::percent(1.-0.62679),"\n",
+    "Optimal GAM Test Error Rate: ", scales::percent(1.-0.77990),"\n",
+    "One SE GAM Test Error Rate: ", scales::percent(1.-0.79425),"\n")
 ```
 
-    ## Optimal GAM Test Error Rate:  78% 
-    ##  One SE GAM Test Error Rate:  79.4%
+    ## Null Classifier Error Rate:  37.3% 
+    ##  Optimal GAM Test Error Rate:  22% 
+    ##  One SE GAM Test Error Rate:  20.6%
 
 #### Interpretation
 
