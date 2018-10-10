@@ -82,7 +82,7 @@ From the above chart, it seems that having a more distinguished status such as <
 
 Interaction term with SibSp and ParentSize
 
-```{r, fig.asp=0.7}
+```{r, fig.asp=0.5}
 <<f_fam_size>>
 
 famsize_plot
@@ -90,7 +90,7 @@ famsize_plot
 
 #### Cabin Deck
 
-```{r, fig.asp=0.7}
+```{r, fig.asp=0.5}
 <<f_cabin_deck>>
 
 cabin_deck_plot
@@ -109,14 +109,15 @@ cabin_number_plot
 ```{r, fig.asp=1}
 <<features>>
 
-snapshot <- data_snapshot(features %>% mutate(Survived = Survived %>% factor), Survived)
-suppressMessages(for (p in snapshot) {
-  { p +
-  scale_fill_manual(name = "Status",
-                    values=c(`0`=`@c`(ltxt,0.5),`1`=`@c`(1)),
-                    labels=c(`0`="Died",`1`="Survived")) } %>% plot
-})
 
+suppressMessages({
+  snapshot <- data_snapshot(features %>% mutate(Survived = Survived %>% factor), Survived,
+                            cont_geom = geom_density(color=NA, alpha=0.5, bw="bcv"),
+                            misc_layers = scale_fill_manual(name = "Status",
+                                                            values=c(`0`=`@c`(ltxt,0.5),`1`=`@c`(1)),
+                                                            labels=c(`0`="Died",`1`="Survived")))
+  for (p in snapshot) { plot(p) }
+})
 ```
 
 ### Modeling Survival Likelihood

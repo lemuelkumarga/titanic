@@ -374,17 +374,18 @@ title_plot</code></pre>
 
 famsize_plot &lt;- training_set %&gt;%
                 mutate(FamSize = feature_famsize(SibSp, Parch)) %&gt;%
-                group_by(FamSize) %&gt;%
-                summarise(CohortSize = n(),
-                          SurvivalRate = sum(Survived)/n()) %&gt;%
                 {
-                  ggplot(., aes(x=FamSize, y=SurvivalRate, size=CohortSize, weight=CohortSize)) +
+                  ggplot(., aes(x=FamSize, fill=factor(Survived))) +
                     theme_lk() +
-                    geom_point(alpha=0.5, color=`@c`(ltxt)) +
-                    geom_smooth(color = `@c`(1), se=FALSE, show.legend=FALSE, method = &quot;loess&quot;) +
-                    scale_x_continuous(name=&quot;Family Size&quot;) + 
-                    scale_y_continuous(name=&quot;Survival Likelihood&quot;, expand=c(0,0,0.02,0), labels=scales::percent) +
-                    scale_size_continuous(name=&quot;Cohort Size&quot;)
+                    theme(
+                      axis.ticks.y = element_blank(),
+                      axis.text.y = element_blank()
+                    ) +
+                    geom_density(color=NA, alpha=0.5, bw=&quot;bcv&quot;) +
+                    scale_x_continuous(name=&quot;Family Size&quot;, expand=c(0,0), breaks=1:5*2) + 
+                    scale_y_continuous(name=&quot;Density&quot;, expand=c(0,0,0.02,0)) +
+                    scale_fill_manual(name=&quot;Cohort Size&quot;, values=c(`1`=`@c`(1),`0`=`@c`(ltxt)),
+                                                          labels=c(`1`=&quot;Survived&quot;,`0`=&quot;Died&quot;))
                 }
 
 famsize_plot</code></pre>
@@ -416,17 +417,18 @@ feature_cabin_deck &lt;- function(Cabin) {
 cabin_deck_plot &lt;- training_set %&gt;%
                     mutate(CabinDeck = feature_cabin_deck(Cabin)) %&gt;%
                    filter(!is.na(CabinDeck)) %&gt;%
-                   group_by(CabinDeck) %&gt;%
-                   summarise(CohortSize = n(),
-                             SurvivalRate = sum(Survived)/n()) %&gt;%
                   {
-                    ggplot(., aes(x=CabinDeck, y=SurvivalRate, size=CohortSize, weight=CohortSize)) +
+                    ggplot(., aes(x=CabinDeck, fill=factor(Survived))) +
                       theme_lk() +
-                      geom_point(alpha=0.5, color=`@c`(ltxt)) +
-                      geom_smooth(color = `@c`(1), se=FALSE, show.legend=FALSE, method=&quot;loess&quot;) +
-                      scale_x_continuous(name=&quot;Cabin Deck&quot;, breaks=deck_to_index, labels=setNames(names(deck_to_index),deck_to_index)) + 
-                      scale_y_continuous(name=&quot;Survival Likelihood&quot;, expand=c(0,0,0.02,0), labels=scales::percent) +
-                      scale_size_continuous(name=&quot;Cohort Size&quot;)
+                      theme(
+                        axis.ticks.y = element_blank(),
+                        axis.text.y = element_blank()
+                      ) +
+                      geom_density(color=NA, alpha=0.5, bw=&quot;bcv&quot;) +
+                      scale_x_continuous(name=&quot;Cabin Deck&quot;, expand=c(0,0), breaks=deck_to_index, labels=setNames(names(deck_to_index),deck_to_index)) + 
+                      scale_y_continuous(name=&quot;Density&quot;, expand=c(0,0,0.02,0)) +
+                      scale_fill_manual(name=&quot;Cohort Size&quot;, values=c(`1`=`@c`(1),`0`=`@c`(ltxt)),
+                                        labels=c(`1`=&quot;Survived&quot;,`0`=&quot;Died&quot;))
                   }
 
 cabin_deck_plot</code></pre>
@@ -518,12 +520,14 @@ cabin_number_plot</code></pre>
 
 features &lt;- preprocess_data(training_set)
 
-snapshot &lt;- data_snapshot(features %&gt;% mutate(Survived = Survived %&gt;% factor), Survived)
-suppressMessages(for (p in snapshot) {
-  { p +
-  scale_fill_manual(name = &quot;Status&quot;,
-                    values=c(`0`=`@c`(ltxt,0.5),`1`=`@c`(1)),
-                    labels=c(`0`=&quot;Died&quot;,`1`=&quot;Survived&quot;)) } %&gt;% plot
+
+suppressMessages({
+  snapshot &lt;- data_snapshot(features %&gt;% mutate(Survived = Survived %&gt;% factor), Survived,
+                            cont_geom = geom_density(color=NA, alpha=0.5, bw=&quot;bcv&quot;),
+                            misc_layers = scale_fill_manual(name = &quot;Status&quot;,
+                                                            values=c(`0`=`@c`(ltxt,0.5),`1`=`@c`(1)),
+                                                            labels=c(`0`=&quot;Died&quot;,`1`=&quot;Survived&quot;)))
+  for (p in snapshot) { plot(p) }
 })</code></pre>
 <p><img src="index_files/figure-html/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /><img src="index_files/figure-html/unnamed-chunk-8-2.png" width="672" style="display: block; margin: auto;" /></p>
 </section>

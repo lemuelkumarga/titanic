@@ -252,17 +252,18 @@ feature_famsize <- function(Sibsp, Parch) { pmap(list(x=Sibsp, y=Parch), ..(x,y)
 
 famsize_plot <- training_set %>%
                 mutate(FamSize = feature_famsize(SibSp, Parch)) %>%
-                group_by(FamSize) %>%
-                summarise(CohortSize = n(),
-                          SurvivalRate = sum(Survived)/n()) %>%
                 {
-                  ggplot(., aes(x=FamSize, y=SurvivalRate, size=CohortSize, weight=CohortSize)) +
+                  ggplot(., aes(x=FamSize, fill=factor(Survived))) +
                     theme_lk() +
-                    geom_point(alpha=0.5, color=`@c`(ltxt)) +
-                    geom_smooth(color = `@c`(1), se=FALSE, show.legend=FALSE, method = "loess") +
-                    scale_x_continuous(name="Family Size") + 
-                    scale_y_continuous(name="Survival Likelihood", expand=c(0,0,0.02,0), labels=scales::percent) +
-                    scale_size_continuous(name="Cohort Size")
+                    theme(
+                      axis.ticks.y = element_blank(),
+                      axis.text.y = element_blank()
+                    ) +
+                    geom_density(color=NA, alpha=0.5, bw="bcv") +
+                    scale_x_continuous(name="Family Size", expand=c(0,0), breaks=1:5*2) + 
+                    scale_y_continuous(name="Density", expand=c(0,0,0.02,0)) +
+                    scale_fill_manual(name="Cohort Size", values=c(`1`=`@c`(1),`0`=`@c`(ltxt)),
+                                                          labels=c(`1`="Survived",`0`="Died"))
                 }
 
 famsize_plot
@@ -297,17 +298,18 @@ feature_cabin_deck <- function(Cabin) {
 cabin_deck_plot <- training_set %>%
                     mutate(CabinDeck = feature_cabin_deck(Cabin)) %>%
                    filter(!is.na(CabinDeck)) %>%
-                   group_by(CabinDeck) %>%
-                   summarise(CohortSize = n(),
-                             SurvivalRate = sum(Survived)/n()) %>%
                   {
-                    ggplot(., aes(x=CabinDeck, y=SurvivalRate, size=CohortSize, weight=CohortSize)) +
+                    ggplot(., aes(x=CabinDeck, fill=factor(Survived))) +
                       theme_lk() +
-                      geom_point(alpha=0.5, color=`@c`(ltxt)) +
-                      geom_smooth(color = `@c`(1), se=FALSE, show.legend=FALSE, method="loess") +
-                      scale_x_continuous(name="Cabin Deck", breaks=deck_to_index, labels=setNames(names(deck_to_index),deck_to_index)) + 
-                      scale_y_continuous(name="Survival Likelihood", expand=c(0,0,0.02,0), labels=scales::percent) +
-                      scale_size_continuous(name="Cohort Size")
+                      theme(
+                        axis.ticks.y = element_blank(),
+                        axis.text.y = element_blank()
+                      ) +
+                      geom_density(color=NA, alpha=0.5, bw="bcv") +
+                      scale_x_continuous(name="Cabin Deck", expand=c(0,0), breaks=deck_to_index, labels=setNames(names(deck_to_index),deck_to_index)) + 
+                      scale_y_continuous(name="Density", expand=c(0,0,0.02,0)) +
+                      scale_fill_manual(name="Cohort Size", values=c(`1`=`@c`(1),`0`=`@c`(ltxt)),
+                                        labels=c(`1`="Survived",`0`="Died"))
                   }
 
 cabin_deck_plot
@@ -404,12 +406,14 @@ preprocess_data <- function(data) {
 
 features <- preprocess_data(training_set)
 
-snapshot <- data_snapshot(features %>% mutate(Survived = Survived %>% factor), Survived)
-suppressMessages(for (p in snapshot) {
-  { p +
-  scale_fill_manual(name = "Status",
-                    values=c(`0`=`@c`(ltxt,0.5),`1`=`@c`(1)),
-                    labels=c(`0`="Died",`1`="Survived")) } %>% plot
+
+suppressMessages({
+  snapshot <- data_snapshot(features %>% mutate(Survived = Survived %>% factor), Survived,
+                            cont_geom = geom_density(color=NA, alpha=0.5, bw="bcv"),
+                            misc_layers = scale_fill_manual(name = "Status",
+                                                            values=c(`0`=`@c`(ltxt,0.5),`1`=`@c`(1)),
+                                                            labels=c(`0`="Died",`1`="Survived")))
+  for (p in snapshot) { plot(p) }
 })
 ```
 
