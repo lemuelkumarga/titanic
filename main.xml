@@ -3,7 +3,7 @@
   <title>Estimating Survival Rate of Titanic Passengers</title>
   <excerpt>The Titanic disaster was one of the most unexpected catastrophes of the early 20th century, with over one thousand people killed. Utilizing demographic data, we aim to investigate the relevant factors influencing a passenger's survival likelihood.</excerpt>
   <date>2018-02</date>
-  <algo>Random Forest</algo>
+  <algo>GAM</algo>
   <code>R</code>
   <color></color>
   <data>https://github.com/lemuelkumarga/titanic/tree/master/data</data>

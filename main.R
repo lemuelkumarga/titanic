@@ -8,17 +8,15 @@ source("shared/defaults.R")
 source("shared/helper.R")
 
 options(stringsAsFactors = FALSE)
-packages <- c("dplyr","ggplot2","randomForest","tidyr","leaflet","purrr","grDevices","pander")
-load_or_install.packages(packages)
+load_or_install.packages("purrr","mgcv","DMwR")
 
 data_dir <- "data/"
 output_dir <- "output/"
 
 ## ---- end-of-init
 
-# DATA EXPLORATION ### ----
+# DATA OVERVIEW ### ----
 
-# * Data Overview ----
 ## ---- data_comp
 training_set <- read.csv(paste0(data_dir, "train.csv"))
 
@@ -26,820 +24,508 @@ cols_summary <- data_overview(training_set)
 
 ## ---- end-of-data_comp
 
-# * INSIGHT 1: High Income, High Survivalhood ----
-## ---- exp_income
+# DETERMINING THE FEATURES ### ----
 
-income_set <- training_set %>%
-              group_by(Pclass) %>%
+# * Feature Extraction ----
+
+## ---- f_title
+
+prefix <- function(l) { as.character(sapply(l, ..(x) %:=% { unlist(strsplit(unlist(strsplit(x, ", "))[2],"\\. "))[1] })) }
+
+title_set <- training_set %>%
+             mutate(Title = prefix(Name))
+
+# Find Titles that Have Sufficient Sample Size For Model Estimation (>10)
+common_titles <- title_set %>%
+                 group_by(Title) %>%
+                 summarise(N=n()) %>%
+                 filter(N > 10) %>%
+                 select(Title) %>%
+                 { c(.$Title) }
+
+title_plot <- training_set %>%
+              mutate(Title = ifelse(prefix(Name) %in% common_titles, prefix(Name), "Rare Title")) %>%
+              mutate(MaleSurvivalRate = sum(Sex == "male" & Survived == 1) / sum(Sex == "male"),
+                     FemaleSurvivalRate = sum(Sex == "female" & Survived == 1) / sum(Sex == "female"),
+                     MixedSurvivalRate = sum(Survived) / n()) %>%
+              group_by(Title) %>%
               summarise(CohortSize = n(),
-                        SurvivalRate = sum(Survived)/n())
+                        SurvivalRate = sum(Survived)/n(),
+                        Gender = sum(Sex == "male")/n(),
+                        MaleSurvivalRate = MaleSurvivalRate %>% max,
+                        FemaleSurvivalRate = FemaleSurvivalRate %>% max,
+                        MixedSurvivalRate = MixedSurvivalRate %>% max) %>%
+              mutate(Gender = ifelse(Gender == 0, "Female",
+                                     ifelse(Gender == 1, "Male", "Mixed")),
+                     BaselineRate = recode(Gender, Female=FemaleSurvivalRate, Male=MaleSurvivalRate, Mixed=MixedSurvivalRate)) %>%
+              arrange(Gender, desc(SurvivalRate)) %>%
+              mutate(Title = factor(Title, levels=Title %>% unique)) %>%
+              {
+                  ggplot(.,aes(x=Title, y=BaselineRate, fill=Gender)) +
+                  theme_lk() +
+                  geom_bar(stat="identity", 
+                           alpha = 0.2,
+                           width = .5, 
+                           position=position_nudge(x=-0.25)) +                                       
+                  geom_tile(aes(y=(BaselineRate + (SurvivalRate - BaselineRate) / 2.), 
+                                height=SurvivalRate-BaselineRate), 
+                            width = .5, 
+                            fill = (.$SurvivalRate - .$BaselineRate >= 0) %?% `@c`(green) %:% `@c`(red),
+                            position = position_nudge(x=+0.2)) + 
+                  geom_text(data=subset(.,SurvivalRate - BaselineRate >= 0),
+                            aes(label = "+" %|% scales::percent(SurvivalRate - BaselineRate),
+                                y = SurvivalRate + 0.02),
+                            nudge_x = 0.2,
+                            family = `@f`,
+                            color = `@c`(green)) +
+                  geom_text(data=subset(.,SurvivalRate - BaselineRate < 0),
+                            aes(label = scales::percent(SurvivalRate - BaselineRate),
+                                y = SurvivalRate - 0.02),
+                            nudge_x = 0.2,
+                            family = `@f`,
+                            color = `@c`(red)) +
+                  scale_fill_manual(name = "Baseline Survival Rate",
+                                    values = c("Male"= `@c`(blue),
+                                               "Female" =`@c`(red),
+                                               "Mixed" = `@c`(purple))) +
+                  scale_y_continuous(name="Survival Likelihood", 
+                                     labels=scales::percent,
+                                     expand=c(0,0,0.02,0))
+              }
 
-income_plot <-  ggplot(income_set, aes(x=SurvivalRate,
-                                      y = 0,
-                                      color=as.factor(Pclass),
-                                      size=CohortSize)) +
-                theme_lk() +
-                theme(plot.margin = unit(c(0,0,0,-40),'pt')) +
-                # Legends
-                theme(
-                  legend.position = c(0.5,0.2),
-                  legend.box.just = c(0.5,0.5),
-                  legend.justification = c(0.5,0.5)
-                ) +
-                scale_color_manual(name = "Passenger Class",
-                                  labels = c("1"="1 (High-Income)","2"="2 (Medium-Income)","3"="3 (Low-Income)"),
-                                  values = c("1"=as.character(get_color("green")),
-                                             "2"=as.character(get_color("green",0.5)),
-                                             "3"=as.character(get_color("red"))),
-                                  guide = guide_legend(order = 1,
-                                                       direction = "vertical",
-                                                       override.aes=list(size=5))) +
-               scale_size_continuous(name = "Cohort Size",
-                                     range = c(5,20),
-                                     guide = guide_legend(order = 2,
-                                                          override.aes = list(alpha=0.5))) +
-               # X Axis
-                theme(
-                  axis.line.x = element_line(colour=NA),
-                  axis.ticks.x = element_line(colour=NA),
-                  axis.title.x = element_blank(),
-                  axis.text.x = element_blank()
-                ) +
-               geom_segment(data = data.frame(1),
-                            aes(x=0.2, xend=0.7, y=0, yend=0),
-                            size = 0.5,
-                            color=ltxt_color,
-                            arrow = arrow(length = unit(10,"pt"),
-                                          type = "closed")) +
-               geom_text(data = data.frame(1),
-                         label = "Survival Likelihood",
-                         x = 0.7,
-                         y = 0.02,
-                         family = def_font,
-                         color = ltxt_color,
-                         size = 4.5,
-                         hjust = 1) +
-               # Y Axis
-                theme(
-                  axis.line.y = element_line(colour=NA),
-                  axis.ticks.y = element_line(colour=NA),
-                  axis.title.y = element_blank(),
-                  axis.text.y = element_blank()
-                ) +
-               scale_y_continuous(limits=c(-0.12, 0.05)) +
-               # Elements
-                geom_point() +
-                geom_text(aes(y = -0.03, label=paste0(round(SurvivalRate*100,0),"%")),
-                          size=4,
-                          color=txt_color,
-                          family=def_font)
+feature_title <- function(Name) { ifelse(prefix(Name) %in% common_titles, 
+                                         ifelse(prefix(Name) %in% c("Mr","Miss"),"Mr/Miss",prefix(Name)), "Rare Title") }
 
-## ---- end-of-exp_income
+## ---- end-of-f_title
 
-## ---- exp_fare
+## ---- f_fam_size
 
-fares_set <- training_set %>% 
-             select(Fare, Pclass, Survived)
+feature_famsize <- function(Sibsp, Parch) { pmap(list(x=Sibsp, y=Parch), ..(x,y) %:=%  { x + y + 1 }) %>% as.integer }
 
-rows_p_fare_bin <- 100
-fares_pdata <- fares_set %>%
-               arrange(Fare) %>%
-               mutate(Group = as.integer((row_number() - 1) / rows_p_fare_bin)+1) %>%
-               group_by(Group) %>%
-               summarise(FareMax = min(Fare),
-                         Survived = sum(Survived),
-                         CohortSize = n()) %>%
-               mutate(SurvivalRate = Survived / CohortSize)
-fares_pdata <- rbind(fares_pdata, c(0,0,0,0,0), c(max(fares_pdata$Group)+1,max(fares_set$Fare),0,0,0)) %>%
-               arrange(Group)
-
-fares_plot <- ggplot(fares_pdata, aes(x = FareMax,
-                                      y = SurvivalRate)) +
-              theme_lk() +
-              xlab("Passenger Fares") +
-              scale_x_continuous(labels = scales::dollar) +
-              ylab("Survival Likelihood") +
-              scale_y_continuous(labels = scales::percent) +
-              geom_step(color = get_color(1))
-
-## ---- end-of-exp_fare
-
-# * INSIGHT 2:  Gender and Title ----
-## ---- exp_titles
-prefix <- function(x) { unlist(strsplit(unlist(strsplit(x, ", "))[2],"\\. "))[1] }
-
-gender_set <- training_set %>%
-              mutate(Prefix = as.character(lapply(Name, prefix))) %>%
-              select(Prefix, Sex)
-prefix_totals <- gender_set %>%
-                 group_by(Prefix) %>%
-                 summarise(total = n())
-gender_sex_totals <- gender_set %>%
-                     group_by(Prefix, Sex) %>%
-                     summarise(val=n()) %>%
-                     left_join(prefix_totals, by=c("Prefix")) %>%
-                     mutate(
-                       pct = ifelse(Sex == "female",1.,-1.) * val / total
-                     ) %>%
-                     arrange(desc(val))
-gender_sex_totals$Prefix <- substr(gender_sex_totals$Prefix,1,4)
-gender_sex_totals$Prefix <- factor(gender_sex_totals$Prefix, levels=unique(gender_sex_totals$Prefix))
-
-gender_plot <- ggplot(gender_sex_totals, aes(x = Prefix,
-                                             y = Sex,
-                                             fill = Sex,
-                                             alpha = val)) +
-               theme_lk() +
-               scale_fill_manual(values=c("female"=as.character(get_color("red")),
-                                           "male"=as.character(get_color("blue"))),
-                                    guide = "none") +
-               scale_alpha_continuous(limits = c(0,25),
-                                       range = c(0.3,1),
-                                       name = "Cohort Size",
-                                       guide = guide_legend(
-                                         nrow = 1,
-                                         override.aes=list(fill=ltxt_color)
-                                       )) +
-                xlab("Title") +
-                scale_x_discrete(expand = c(0, 0)) +
-                scale_y_discrete(expand = c(0, 0),
-                                 labels = c("female"="F","male"="M")) +
-                ylab("Gender") +
-                geom_tile(colour = bg_color, size = 5)
-
-## ---- end-of-exp_titles
-
-## ---- exp_title_gender
-
-appendTitle <- function(data) {
-  data %>%
-  mutate(Title = as.character(lapply(Name, prefix))) %>%
-  mutate(Title = ifelse(Title %in% c("Mr","Mrs","Miss","Master"), Title,
-                        ifelse(Sex == "male","Rare Title / M", "Rare Title / F")))
-}
-
-title_set <- appendTitle(training_set) %>%
-             select(Title, Sex, Survived) %>%
-             group_by(Title, Sex) %>%
-             summarise(survive = sum(Survived) / n()) %>%
-             arrange(desc(survive))
-
-title_set$Title <- factor(title_set$Title, levels=c(title_set$Title))
-
-title_plot <- ggplot(title_set, aes(x=Title,
-                                    y=survive,
-                                    fill=Sex)) +
-              theme_lk() +
-              scale_fill_manual(name = "Gender",
-                                  label = c("male"="Male", "female"="Female"),
-                                  values = c("male"= as.character(get_color("blue")),
-                                             "female" = as.character(get_color("red"))),
-                                   guide = guide_legend()) +
-
-              xlab("Title") +
-              ylab("Survival Likelihood") +
-              scale_y_continuous(labels = scales::percent,
-                                 # Make Sure Bar and X-Axis Stick Together
-                                 expand = c(0,0)) +
-              geom_bar(stat="identity",
-                       width = .5) +
-              geom_text(aes(y = survive - 0.08,
-                            label=paste0(round(survive*100),"%")),
-                        color = "#FFFFFF",
-                        family=def_font,
-                        size=4)
-
-## ---- end-of-exp_title_gender
-
-# * INSIGHT 3 : AGE AND SURVIVALHOOD ----
-
-## ---- exp_age
-
-age_set <- training_set %>%
-           select(Age, Survived) %>%
-           filter(Age > 0)
-
-rows_p_age_bin <- 50
-age_pdata <- age_set %>%
-                 arrange(Age) %>%
-                 mutate(Group = as.integer((row_number() - 1)/rows_p_age_bin) + 1) %>%
-                 group_by(Group) %>%
-                 summarise(AgeMin = min(Age),
-                           Survived = sum(Survived),
-                           CohortSize = n(),
-                           SurviveL = Survived/CohortSize)
-age_pdata <- rbind(age_pdata,
-                   c(0,0,0,0,0),
-                   c(max(age_pdata$Group)+1,max(age_set$Age),0,0,0)) %>%
-             arrange(Group)
-
-age_plot <- ggplot(age_pdata, aes(x=AgeMin,
-                                      y=SurviveL)) +
-            theme_lk() +
-            xlab("Age") +
-            scale_x_continuous(breaks=seq(0,max(age_pdata$AgeMin),by=10)) +
-            ylab("Survival Likelihood") +
-            scale_y_continuous(labels = scales::percent,
-                               expand = c(0.4, -0.15)) +
-                  # Actual Data
-                  geom_step(color=get_color(1)) +
-                  geom_vline(data = age_pdata %>%
-                                    filter(row_number() %in% c(3,16)),
-                             aes(xintercept = AgeMin),
-                             linetype = "dashed",
-                             color = ltxt_color) +
-                  geom_text(data = age_pdata %>%
-                                   filter(row_number() %in% c(3,16)),
-                            aes(x = AgeMin + 8.5, label = paste(AgeMin, "Years Old")),
-                            y = max(age_pdata$SurviveL),
-                            color = ltxt_color,
-                            size = 4,
-                            family = def_font)
-
-## ---- end-of-exp_age
-
-# * INSIGHT 4 : COMPANY AND SURVIVALHOOD ----
-
-## ---- exp_company
-
-appendFamilySize <- function(data) {
-    data %>%
-    mutate(FamilySize = Parch + SibSp + 1)
-}
-
-# Group by Family Size and calculate Survival Rates for Different Subsets of Passengers
-company_set <- training_set %>%
-               appendFamilySize() %>%
-               mutate(Size = FamilySize,
-                      isAdult = is.na(Age) | Age > 12,
-                      isAdultNoChild = isAdult & Parch == 0,
-                      isFemaleNoChild = isAdultNoChild & Sex == "female") %>%
-               group_by(Size) %>%
-               summarise(CohortSize = n(),
-                         SurvivalRate = sum(Survived)/CohortSize,
-                         Adults = sum(isAdult),
-                         SurvivalRateAdults = sum(isAdult & Survived)/Adults,
-                         AdultsNoChild = sum(isAdultNoChild),
-                         SurvivalRateAdultsNoChild = sum(isAdultNoChild & Survived)/AdultsNoChild,
-                         FemaleNoChild = sum(isFemaleNoChild),
-                         SurvivalRateFemaleNoChild = sum(isFemaleNoChild & Survived)/FemaleNoChild)
-
-# Normalize the survival rates with respect to baseline (Size = 0)
-for (c_name in c("SurvivalRateAdults",
-                 "SurvivalRateAdultsNoChild",
-                 "SurvivalRateFemaleNoChild")) {
-  company_set[,c_name] <- company_set[,c_name] / as.double(company_set[1,c_name]) * as.double(company_set[1,"SurvivalRate"])
-}
-
-# Calculate attribution statistics
-company_set$AttrChild <- company_set$SurvivalRate - company_set$SurvivalRateAdults
-company_set$AttrParents <- company_set$SurvivalRateAdults - company_set$SurvivalRateAdultsNoChild
-company_set$AttrHusband <- company_set$SurvivalRateAdultsNoChild - company_set$SurvivalRateFemaleNoChild
-company_set$Baseline <- company_set$SurvivalRate - company_set$AttrChild - company_set$AttrParents - company_set$AttrHusband
-
-# Only analyze cohort size until 3 due to small sample sizes afterwards
-company_stack <- company_set %>% 
-                filter(Size <= 3) %>% 
-                select(Size, Baseline, AttrHusband, AttrParents, AttrChild, SurvivalRate) %>%
-                gather_("Attribution","Value",setdiff(names(.),c("Size","SurvivalRate"))) %>%
-                mutate(Value = sapply(Value, function(x) { max(x,0) }))
-
-# Reorder factor levels
-company_stack$Attribution <- factor(company_stack$Attribution, levels = rev(unique(company_stack$Attribution)))
-
-
-company_plot <- ggplot(company_stack, aes(x= Size, y= Value)) + 
-                theme_lk() +
-                scale_x_continuous(name="Family Size",
-                                   expand = c(0.05,0),
-                                   labels = function(i) { round(i) },
-                                   breaks = 1:3) +
-                scale_y_continuous(name="Survival Likelihood",
-                                   expand = c(0,0),
-                                   labels = scales::percent) +
-                coord_cartesian(ylim=c(0.2,0.65)) +
-                scale_fill_manual(name="Attribution", 
-                                  labels=c("Baseline"="Baseline", 
-                                           "AttrHusband"="Husband",
-                                           "AttrParents"="Parental",
-                                           "AttrChild"="Child"),
-                                  values=c("Baseline"=alpha(txt_color,0.2),
-                                           "AttrHusband"=get_color(1,0.8),
-                                           "AttrParents"=get_color(2,0.8),
-                                           "AttrChild"=get_color(3,0.8)),
-                                  guide=guide_legend(reverse=T)) +
-                scale_color_manual(values=c("Baseline"=alpha(txt_color,0),
-                                            "AttrHusband"=get_color(1),
-                                            "AttrParents"=get_color(2),
-                                            "AttrChild"=get_color(3)),
-                                   guide = 'none') + 
-                geom_area(aes(fill = Attribution, colour=Attribution), size=1.5, linetype=1, position = 'stack') + 
-                geom_text(data=unique(company_stack %>% select(Size, SurvivalRate)),
-                          aes(x=Size, y=SurvivalRate+0.03, label=paste0(round(SurvivalRate*100),"%")),
-                          color=txt_color,
-                          size=4,
-                          family = def_font)
-
-## ---- end-of-exp_company
-
-# * INSIGHT 5 : CABIN AND SURVIVALHOOD ----
-
-## ---- exp_cabin_decompose
-
-getCabinFloor <- function(x) {
-
-  if (x == "") { return("NA") }
-
-  ltr <- unique(strsplit(gsub("[0-9]","",x)," ")[[1]])
-  if (length(ltr) == 1) {
-    ltr
-  } else {
-    "Multiple"
-  }
-
-}
-
-getCabinNumber <- function(x) {
-
-  if (x == "") { return("NA") }
-
-  num <- as.integer(strsplit(gsub("[A-z]","",x)," ")[[1]]) %% 2
-
-  if (is.nan(mean(num))) {
-    return("NA")
-  } else if (length(unique(num)) == 1) {
-    if (unique(num) == 0) { return("Even") } else { return("Odd") }
-  } else {
-    return("Mixed")
-  }
-
-}
-
-getCabinCount <- function(x) {
-  if (x == "") { return("NA") }
-  length(strsplit(x," ")[[1]])
-}
-
-appendCabinInfo <- function(data) {
-  data %>%
-  mutate(
-    CabinFloor = sapply(Cabin, getCabinFloor),
-    CabinNumber = sapply(Cabin, getCabinNumber),
-    CabinCount = sapply(Cabin, getCabinCount)
-  )
-}
-
-cabin_set <- appendCabinInfo(training_set) %>%
-             select(CabinFloor,CabinNumber,CabinCount, Survived)
-
-## ---- end-of-exp_cabin_decompose
-
-## ---- exp_cabin_floors
-
-cabinLet_set <- cabin_set %>%
-                group_by(CabinFloor) %>%
+famsize_plot <- training_set %>%
+                mutate(FamSize = feature_famsize(SibSp, Parch)) %>%
+                group_by(FamSize) %>%
                 summarise(CohortSize = n(),
-                          SurvivalRate = sum(Survived)/n())
-
-cabinLet_plot <- ggplot(cabinLet_set, aes(x=as.factor(CabinFloor),
-                                          y=SurvivalRate,
-                                          alpha = CohortSize,
-                                          fill = SurvivalRate)) +
-                  theme_lk() + 
-                  scale_alpha_continuous(name = "Cohort Size",
-                                         limits = c(0,30),
-                                         guide = guide_legend(
-                                           nrow = 1,
-                                           override.aes=list(fill=ltxt_color)
-                                         )) +
-                  scale_fill_gradientn(colours=c(as.character(get_color("red")),
-                                                 as.character(get_color("red")),
-                                                 as.character(get_color("yellow")),
-                                                 as.character(get_color("green")),
-                                                 as.character(get_color("green"))),
-                                       values = c(0.0,0.4,0.5,0.6,1.0),
-                                       guide = "none") +
-                    xlab("Cabin Floor") +
-                    ylab("Survival Likelihood") +
-                    scale_y_continuous(labels = scales::percent,
-                                       # Make Sure Bar and X-Axis Stick Together
-                                       expand = c(0,0),
-                                       limits =c(0,1)) +
-                    # Actual Data
-                    geom_bar(stat="identity") +
-                    geom_text(aes(y = SurvivalRate - 0.08,
-                                  label=paste0(round(SurvivalRate*100),"%")),
-                              color = "#FFFFFF", alpha = 1,
-                              family=def_font,size=4)
-
-## ---- end-of-exp_cabin_floors
-
-## ---- exp_cabin_number
-
-cabinNumber_set <- cabin_set %>%
-                   group_by(CabinNumber) %>%
-                    summarise(CohortSize = n(),
-                              SurvivalRate = sum(Survived)/n())
-cabinNumber_set$CabinNumber <- factor(cabinNumber_set$CabinNumber, levels=c("Even","Odd","Mixed","NA"))
-
-cabinNumber_plot <- ggplot(cabinNumber_set, aes(x = SurvivalRate,
-                                                y = 0,
-                                                color=CabinNumber,
-                                                size=CohortSize)) +
+                          SurvivalRate = sum(Survived)/n()) %>%
+                {
+                  ggplot(., aes(x=FamSize, y=SurvivalRate, size=CohortSize, weight=CohortSize)) +
                     theme_lk() +
-                    theme(plot.margin = unit(c(0,0,0,-40),'pt')) +
-                    # Legends
-                    theme(
-                      legend.position = c(0.5,0.2),
-                      legend.box.just = c(0.5,0.5),
-                      legend.justification = c(0.5,0.5)
-                    ) +
-                    scale_color_manual(name = "Room Type",
-                                       values = get_color(),
-                                       guide = guide_legend(order = 1,
-                                                            direction = "vertical",
-                                                            override.aes=list(size=5),
-                                                            ncol= 2)) +
-                    scale_size_continuous(name = "Cohort Size",
-                                          range = c(5,20),
-                                          guide = guide_legend(order = 2,
-                                                               override.aes=list(alpha=0.5))) +
-                    theme(
-                      axis.line.x = element_line(colour=NA),
-                      axis.ticks.x = element_line(colour=NA),
-                      axis.title.x = element_blank(),
-                      axis.text.x = element_blank()
-                    ) +
-                    # Add X Axis Line
-                    geom_segment(data = data.frame(1),
-                                 aes(x=0.25, xend=0.8, y=0, yend=0),
-                                 size = 0.5,
-                                 color=alpha(ltxt_color,0.5),
-                                 arrow = arrow(length = unit(10,"pt"),
-                                               type = "closed")) +
-                    geom_text(data = data.frame(1),
-                              label = "Survival Likelihood",
-                              x = 0.8,
-                              y = 0.02,
-                              family = def_font,
-                              color = ltxt_color,
-                              size = 4.5,
-                              hjust = 1) +
-                    theme(
-                      # Y-Axis
-                      axis.line.y = element_line(colour=NA),
-                      axis.ticks.y = element_line(colour=NA),
-                      axis.title.y = element_blank(),
-                      axis.text.y = element_blank()) +
-                      scale_y_continuous(limits=c(-0.12, 0.05)) +
-                    geom_point() +
-                    geom_text(aes(y = -0.03, label=paste0(round(SurvivalRate*100,0),"%")),
-                              size=4,
-                              color=txt_color,
-                              family=def_font)
+                    geom_point(alpha=0.5, color=`@c`(ltxt)) +
+                    geom_smooth(color = `@c`(1), se=FALSE, show.legend=FALSE, method = "loess") +
+                    scale_x_continuous(name="Family Size") + 
+                    scale_y_continuous(name="Survival Likelihood", expand=c(0,0,0.02,0), labels=scales::percent) +
+                    scale_size_continuous(name="Cohort Size")
+                }
+  
+## ---- end-of-f_fam_size
 
-## ---- end-of-exp_cabin_number
+## ---- f_cabin_deck
 
-# * INSIGHT 6 : EMBARKATION PORTS ----
+deck_to_index <- c("A"=1,"B"=2,"C"=3,"D"=4,"E"=5,"F"=6,"G"=7)
 
-## ---- exp_port
-
-embark_set <- training_set %>%
-              filter(Embarked != "") %>%
-              group_by(Embarked) %>%
-              summarise(CohortSize = n(),
-                        SurvivalRate = sum(Survived)/n()) %>%
-              mutate(
-                Port = ifelse(Embarked == "C","Cherbough",
-                              ifelse(Embarked == "Q","Queenstown","Southampton")),
-                Lat = ifelse(Embarked == "C",49.645009,
-                      ifelse(Embarked == "Q",51.851,50.9038684)),
-                Lng = ifelse(Embarked == "C",-1.62444,
-                      ifelse(Embarked == "Q",-8.2967,-1.4176118 ))
-              )
-
-
-# Create Color Palette
-col_grad <- colorRamp(c(get_color("red"),get_color("yellow"), get_color("green")))
-col_limits <- c(0.4,0.6)
-colpal <- function(x) {
-            col_list <- col_grad((min(max(x,col_limits[1]),col_limits[2])-col_limits[1])/(col_limits[2]-col_limits[1]))
-            rgb(col_list[1],col_list[2],col_list[3], maxColorValue= 255)
-          }
-size_range <- c(10,15)
-
-# Create Marker Icon
-tit_icon <- awesomeIcons(
-            icon = 'ship',
-            iconColor = '#FFFFFF',
-            library = 'fa',
-            markerColor = 'gray'
-          )
-
-# Create Map
-map <- leaflet(width = "100%") %>%
-       addProviderTiles("CartoDB.Positron") %>%
-        # Location of Titanic Crash
-        addAwesomeMarkers(-50.2333324,41.7666636, icon=tit_icon,popup="Titanic Crash Site")
-
-pwalk(
-  list(embark_set$Port, embark_set$Lat, embark_set$Lng, embark_set$SurvivalRate, embark_set$CohortSize),
-  function(port_name, lat, lng, srate, cohort) {
-    map <<- map %>%
-            addCircleMarkers(lng, lat,
-                             popup=paste0(port_name, "<br>","Survival Likelihood: ",round(srate*100),"%"),
-                             color = colpal(srate),
-                             radius = max(min(cohort/20, size_range[2]),size_range[1]),
-                             opacity = 0.8,
-                             fillOpacity = 0.5)
-  }
-)
-
-## ---- end-of-exp_port
-
-## ---- exp_port_income
-
-# Assessing the correlation between Embarkation and Passenger Class
-
-embark_pclass <- training_set %>%
-                 select(Pclass, Embarked, Survived) %>%
-                 filter(Embarked != "") %>%
-                 group_by(Pclass, Embarked) %>%
-                 summarise(CohortSize=n(),
-                           SurvivalRate=sum(Survived)/n()) %>%
-                 ungroup()
-embark_pclass <- embark_pclass %>%
-                 left_join(embark_pclass %>% group_by(Embarked) %>% summarise(TotalSize = sum(CohortSize)), by=c("Embarked")) %>%
-                 mutate(PctEmbarked = CohortSize / TotalSize) %>%
-                 arrange(Pclass, desc(PctEmbarked))
-embark_pclass$Embarked <- factor(embark_pclass$Embarked, levels=unique(embark_pclass$Embarked))
-embark_pclass$Pclass <- factor(embark_pclass$Pclass, levels=rev(unique(embark_pclass$Pclass)))
-
-embark_pclass_plot <- ggplot(embark_pclass, aes(x=as.factor(Embarked),
-                                                y=PctEmbarked,
-                                                fill = as.factor(Pclass))) +
-                      theme_lk() + 
-                      scale_fill_manual(name = "Passenger Class",
-                         labels = c("1"="1 (High-Income)","2"="2 (Medium-Income)","3"="3 (Low-Income)"),
-                         values = c("1"=get_color("green"),
-                                    "2"=alpha(get_color("green",0.5),0.2),
-                                    "3"=alpha(get_color("red"),0.2)),
-                         guide = guide_legend(reverse = TRUE)) +
-                      xlab("Port of Embarkation") +
-                      scale_x_discrete(labels=c("S"="Southampton",
-                                                "C"="Cherbough",
-                                                "Q"="Queenstown")) +
-                      ylab("Survival Likelihood") +
-                      scale_y_continuous(labels = scales::percent,
-                                         # Make Sure Bar and X-Axis Stick Together
-                                         expand = c(0,0),
-                                         limits =c(0,1)) +
-                      coord_flip() +
-                      # Actual Data
-                      geom_bar(stat="identity", width=0.8) +
-                      geom_text(aes(label=paste0(round(PctEmbarked*100),"%"),
-                                    y = PctEmbarked - 0.05),
-                                data = embark_pclass %>% filter(Pclass == 1),
-                                color = bg_color,
-                                family = def_font, size = 4)
-
-## ---- end-of-exp_port_income
-
-# DATA MODELING ### ----
-
-# * PREPARING THE DATA ----
-
-## ---- model_age_append
-appendConfirmedAdult <- function(data) {
-    data %>%
-    mutate(ConfirmedAdult = ifelse(Parch > 2, 1, 0))
-}
-## ---- end-of-model_age_append
-
-## ---- model_age_vars
-age_data <- training_set %>%
-            appendTitle() %>%
-            appendFamilySize() %>%
-            appendConfirmedAdult() %>%
-            filter(Age > 0)
-
-age_by <- list()
-for (i in c('Pclass','Title','ConfirmedAdult','FamilySize')) {
-  tmp <- age_data %>% 
-         group_by_at(vars(i)) %>%
-         summarise(Age = mean(Age))
-  age_by[[i]] <- unlist(tmp$Age)
-  names(age_by[[i]]) <- unlist(tmp[,i])
+feature_cabin_deck <- function(Cabin) {
+  
+  lapply(Cabin, ..(c) %:=% {
+    
+    # Get All Cabins Specified
+    decks <- strsplit(c %>% { gsub("[0-9]","",.) }," ") %>% unlist %>%
+            # Convert Cabins to Numeric
+            sapply(..(f) %:=% {
+              deck_to_index[f]
+            })
+    
+    # Assume a Leave No Man Behind Approach,
+    # In other words, your chances of survival is dependent on
+    # the person with the worst deck in the group
+    (length(decks) == 0) %?% NA %:% (decks %>% as.integer %>% max)
+                
+  }) %>% unlist
 }
 
-## ---- end-of-model_age_vars
+cabin_deck_plot <- training_set %>%
+                    mutate(CabinDeck = feature_cabin_deck(Cabin)) %>%
+                   filter(!is.na(CabinDeck)) %>%
+                   group_by(CabinDeck) %>%
+                   summarise(CohortSize = n(),
+                             SurvivalRate = sum(Survived)/n()) %>%
+                  {
+                    ggplot(., aes(x=CabinDeck, y=SurvivalRate, size=CohortSize, weight=CohortSize)) +
+                      theme_lk() +
+                      geom_point(alpha=0.5, color=`@c`(ltxt)) +
+                      geom_smooth(color = `@c`(1), se=FALSE, show.legend=FALSE, method="loess") +
+                      scale_x_continuous(name="Cabin Deck", breaks=deck_to_index, labels=setNames(names(deck_to_index),deck_to_index)) + 
+                      scale_y_continuous(name="Survival Likelihood", expand=c(0,0,0.02,0), labels=scales::percent) +
+                      scale_size_continuous(name="Cohort Size")
+                  }
+                   
+## ---- end-of-f_cabin_deck
 
-## ---- model_age_anova
+## ---- f_cabin_no
 
-age_model <- function(data) {
+feature_cabin_no <- function(Cabin) {
   
-  age_data <- data %>%
-              appendTitle() %>%
-              appendFamilySize() %>%
-              appendConfirmedAdult() %>%
-              filter(Age > 0)
-  
-  model <- lm(Age ~ Pclass +
-                    Title + 
-                    ConfirmedAdult +
-                    FamilySize,
-              data = age_data)
-  
-  model
-}
-
-age_m <- age_model(training_set)
-summary(age_m)
-
-## ---- end-of-model_age_anova
-
-## ---- model_cleanse
-
-clean_data <- function(data, age_model, is_training = TRUE) {
-  output <- appendTitle(data) %>%
-            appendFamilySize() %>%
-            appendConfirmedAdult()
-  
-  # Populate Age
-  output <- output %>%
-            mutate(AgePredict = predict.lm(age_model, output),
-                   Age = ifelse(is.na(Age),AgePredict,Age))
-
-  # Populate Others: Names represent columns, value is TRUE if column is categorical,
-  # false otherwise
-  features <- c("Pclass"=FALSE,
-                "Fare"=FALSE,
-                "Sex"=TRUE,
-                "Title"=TRUE,
-                "Age"=FALSE,
-                "FamilySize"=FALSE)
-  null_handler <- function(is_categorical = TRUE) {
-    paste0('ifelse(is.na(x) | x %in% c("","NA"),', ifelse(is_categorical,'"Unknown"','-1'),',x)')
-  }
-  mutate_fn <- sapply(1:length(features), function(x) {
-    paste0("sapply(",names(features[x]),", function(x) { ",null_handler(features[x])," })")
+  sapply(Cabin, ..(x) %:=% {
+    if (x == "") { return(NA) }
+    
+    num <- as.integer(strsplit(gsub("[A-z]","",x)," ")[[1]]) %% 2
+    
+    if (is.nan(mean(num)) | length(which(num==0)) == length(which(num==1))) {
+      return(NA)
+    } else {
+      # Check if there is more even cabins or odd cabins
+      if (length(which(num==0)) >= length(which(num==1))) { return("Even") } else { return("Odd") }
+    }
   })
-  output <- output %>%
-            mutate_(
-              .dots= setNames(mutate_fn, names(features))
-            )
-  
-  # Specify factors for different features
-  output$Sex <- factor(output$Sex, levels = c("male","female","Unknown"))
-  output$Title <- factor(output$Title, levels = c("Mr","Mrs","Miss","Master","Rare Title / M","Rare Title / F"))
-  output$Embarked <- factor(output$Embarked, levels = c("S","C","Q","Unknown"))
-  if (is_training) {
-    output$Survived <- factor(output$Survived, levels = c(0,1))
-  }
-
-  # Specify columns to extract
-  if(is_training) {
-    columns <- c("Survived"=TRUE,features)
-  } else {
-    columns <- features
-  }
-
-  output %>% select_(.dots=names(columns))
 }
 
-cleaned_set <- clean_data(training_set, age_m)
+cabin_number_plot <- training_set %>%
+                      mutate(CabinNo = feature_cabin_no(Cabin),
+                             CabinNo = ifelse(is.na(CabinNo),"Unspecified",CabinNo)) %>%
+                      group_by(CabinNo) %>%
+                      summarise(CohortSize = n(),
+                                SurvivalRate = sum(Survived)/n()) %>%
+                      mutate(CabinNo = factor(CabinNo, levels=c("Even","Odd","Unspecified"))) %>%
+                      {
+                        ggplot(., aes(x = SurvivalRate,y = 0,color=CabinNo,size=CohortSize)) +
+                          theme_lk() +
+                          theme(plot.margin = unit(c(0,0,0,-40),'pt'),
+                                legend.position = c(1.,0.05),
+                                legend.box.just = c(0.5,0.5),
+                                axis.line.x = element_line(colour=NA),
+                                axis.ticks.x = element_line(colour=NA),
+                                axis.title.x = element_blank(),
+                                axis.text.x = element_blank(),
+                                axis.line.y = element_line(colour=NA),
+                                axis.ticks.y = element_line(colour=NA),
+                                axis.title.y = element_blank(),
+                                axis.text.y = element_blank()
+                          ) +
+                          scale_color_manual(name = "Room Type",
+                                             values = `@c`(),
+                                             guide = guide_legend(order = 1,override.aes=list(size=5),
+                                                                  nrow= 1)) +
+                          scale_size_continuous(name = "Cohort Size",
+                                                range = c(5,20),breaks=c(100,300,600),
+                                                guide = guide_legend(order = 2,override.aes=list(alpha=0.5), nrow=1)) +
+                          # Add X Axis Line
+                          geom_segment(data = data.frame(1),aes(x=0.25, xend=0.8, y=0, yend=0),
+                                       size = 0.5,color=alpha(`@c`(ltxt),0.5),
+                                       arrow = arrow(length = unit(10,"pt"),type = "closed")) +
+                          geom_text(data = data.frame(1),label = "Survival Likelihood",
+                                    x = 0.8,y = 0.02,family = `@f`,color = `@c`(ltxt),
+                                    size = 4.5,hjust = 1) +
+                          scale_y_continuous(limits=c(-0.12, 0.05)) +
+                          geom_point() +
+                          geom_text(aes(y = c(-0.025,-0.02,-0.04), label=paste0(round(SurvivalRate*100,0),"%")),
+                                    size=4,color=`@c`(txt),family=`@f`)
+                      }
 
-## ---- end-of-model_cleanse
+## ---- end-of-f_cabin_no
 
-# * MODELING SURVIVAL LIKELIHOOD ----
+## ---- features
 
-## ---- model_randomize
-set.seed(1) 
-shuffled_set <- training_set[sample(nrow(training_set)),]
-training_grp <- shuffled_set[1:floor(0.80 *nrow(shuffled_set)),]
-testing_grp <- shuffled_set[floor(0.80 *nrow(shuffled_set) + 1):nrow(shuffled_set),]
-## ---- end-of-model_randomize
+preprocess_data <- function(data) {
+  data %>%
+    mutate(Title=feature_title(Name),
+           FamSize=feature_famsize(SibSp, Parch),
+           CabinDeck=feature_cabin_deck(Cabin),
+           CabinNo=feature_cabin_no(Cabin)) %>%
+    select(-PassengerId, -Name, -Ticket, -Cabin) %>%
+    # Substitute unknown continuous features with -1
+    mutate_if(is.numeric, 
+              ~ map(., ~ if (is.na(.)) { -1 } else {.}) %>% unlist) %>%
+    # Substitute unknown discrete features with "-"
+    mutate_if(~ !is.numeric(.),
+              ~ map(., ~ if (is.na(.) | . == "") { "-"} else {.}) %>% unlist) %>%
+    # Set Factors for Discrete Features
+    mutate_if(~ !is.numeric(.),
+              ~ factor(., levels=unique(c("-",.))))
+}
 
-## ---- model_construct
-# Create age estimator using all the dataset
-age_m <- age_model(rbind(training_grp, testing_grp))
+features <- preprocess_data(training_set)
 
-set.seed(1) 
-rf_model <- randomForest(Survived ~ .,
-                         data = clean_data(training_grp, age_m),
-                         importance=TRUE,
-                         ntree=2000)
+## ---- end-of-features
 
-rf_model
+# MODELING SURVIVAL LIKELIHOOD ### ----
 
-## ---- end-of-model_construct
+## ---- gam
 
-## ---- model_internal_test
+predict.mod_gam <- function(object, newdata, type="link", threshold=0.5, ...) {
+  
+  # There is a Bug in GAM where if we use "by", predict will crash with the following error message:
+  # newdata is a model.frame: it should contain all required variables
+  # This is an attempt to fix that
+  gp <- interpret.gam(object$formula)
+  # if new data has no Survived column, append to fix the bug
+  if (!("Survived" %in% colnames(newdata))) {
+    newdata[,"Survived"] <- rep(-999,nrow(newdata))
+  }
+  
+  newdata <- model.frame(gp$fake.formula, newdata)
+  if (type == "class") {
+    (predict.gam(object=object, newdata=newdata, type="response", ...) >= threshold) * 1
+  } else {
+    predict.gam(object=object, newdata=newdata, type=type, ...)
+  }
+}
 
-# Compare using the testing group
-p_y <- predict(rf_model, newdata = clean_data(testing_grp %>% select(-Survived), age_m, is_training=FALSE))
-cmp <- cbind(testing_grp %>% select(actual=Survived), predicted=p_y) %>%
-             summarise(size=n(),
-                       err=sum(ifelse(actual != predicted,1,0)))
+mod.gam <- function(data) {
+  # 1. Specify List of Features
+  all_features <- data %>% select(-Survived)
+  cont_vars <- all_features %>% select_if(is.numeric) %>% colnames %>% 
+    map(~ "s(" %|% . %|% 
+          ", k=" %|% { (length(unique(data[,.])) >= 10) %?% -1 %:% length(unique(data[,.])) } %|% 
+          " ,by=(" %|% . %|%  " >= 0)*1)") %>% unlist
+  disc_vars <- all_features %>% select_if(~ !is.numeric(.)) %>% colnames
+  
+  # Helper Function to Build Modified GAM Model
+  build_gam(vars) %:=% {
+    all_vars <- vars %>% paste0(collapse=" + ")
+    m.gam <- gam("Survived ~ " %|% all_vars %>% as.formula, data=data, family="binomial")
+    class(m.gam) <- c("mod_gam",class(m.gam))
+    if (max(summary(m.gam)$p.table[,2]) >= 10) { warning("High Standard Errors.") } 
+    m.gam
+  }  
+  
+  # 2. Perform Forward Selection by comparing chi square statistic
+  cur_vars <- c()
+  rem_vars <- c(cont_vars,disc_vars)
+  last.gam <- build_gam(c("1"))
+  for (i in 1:length(rem_vars)) {
+    # We attempt to find out which variables to put in next.
+    # There are three extreme cases where we want to prevent the particular
+    # var from being inserted
+    # 1. If GAM calibration returns an error
+    # 2. If GAM calibration returns a warning (often no convergence)
+    # 3. If GAM calibration results in high standard errors
+    chi_sq <- sapply(rem_vars, ..(v) %:=% {
+      tryCatch({ 
+        m.gam <- build_gam(c(cur_vars,v)); 
+        (last.gam$deviance - m.gam$deviance) / ((m.gam$edf %>% sum) - (last.gam$edf %>% sum)) }, 
+        warning= ..(e) %:=% { return(-Inf) },
+        error= ..(e) %:=% { return(-Inf) })
+      })
+    
+    # If all of the remaining vars cause errors, terminate forward selection
+    if (max(chi_sq) == -Inf) { break }
+    
+    best.var <- chi_sq %>% which.max %>% names
+    cur_vars <- c(cur_vars, best.var)
+    rem_vars <- rem_vars[rem_vars != best.var]
+    last.gam <- suppressWarnings(build_gam(cur_vars))
+  }  
+  
+  # 3. Return Model
+  lapply(1:length(c(cont_vars, disc_vars)), ..(i) %:=% {
+    if (i > length(cur_vars)) { return(NULL) }
+    build_gam(cur_vars[1:i])
+  })
+}
 
+m.gam <- cache("m_gam", list(), ..() %:=% { mod.gam(features) })
 
-## ---- end-of-model_internal_test
+## ---- end-of-gam
 
-## ---- model_external_test
+## ---- cv
 
-# Read the test set
-test_set <- read.csv(paste0(data_dir, "test.csv"))
+# Create Cross Validation Function
+cv.mod.gam <- function(formula, train, test) {
+  # 1. Generate Modified GAM Models
+  gams <- mod.gam(train)
+  
+  # 2. Get the MSE's for each GAM Model at different thresholds
+  output <- list()
+  cur_env <- environment()
+  thresholds <- 1:19*0.05
+  walk(thresholds, ..(t) %:=% {
+    err_rates <- sapply(gams, ..(i) %:=% {
+      if (is.null(i)) { return(Inf) }
+      { predict(i, test, type="class", threshold = t) != test$Survived } %>%
+      { length(which(.)) / length(.) }
+    })
+    names(err_rates) <- t %|% "," %|% 1:length(err_rates)
+    assign("output",append(output, err_rates), envir = cur_env)
+  })
+  
+  output
+}
 
-# Create age estimator using both the train and test dataset
-age_m <- age_model(rbind(training_set %>% select(-Survived),
-                         test_set))
+# Run Cross Validation With Different Folds
+# 5-Fold Focuses more on Variance Error while 10-Fold Focuses more on Bias Error
+res.cv <- cache("res_cv", list(), ..() %:=% { 
+            crossValidation(learner("cv.mod.gam"), 
+                            dataset(Survived ~ ., features),
+                            cvSettings(s = 1))
+          }) %>% 
+          # Reformat CV Results Into a Table
+          { tmp_tbl <- .@foldResults %>% as.data.frame
+            tmp_tbl[,"Fold"] <- rownames(tmp_tbl)
+            tmp_tbl } %>%
+          gather("Params","Err_Rate",-Fold) %>%
+          mutate(Err_Rate = Err_Rate %>% unlist) %>%
+          group_by(Params) %>%
+          summarise(MER = mean(Err_Rate),
+                    SE = sd(Err_Rate)/sqrt(n()))
 
-# Create model using all the training set
-set.seed(1) 
-rf_model <- randomForest(Survived ~ .,
-                         data = clean_data(training_set, age_m),
-                         importance=TRUE,
-                         ntree=2000)
+res.cv[,"Threshold"] <- map(res.cv$Params, ~strsplit(.,",")[[1]][1]) %>% unlist %>% as.numeric
+res.cv[,"N_Params"] <- map(res.cv$Params, ~strsplit(.,",")[[1]][2]) %>% unlist %>% as.numeric
 
-# Predict the test set
-p_y <- predict(rf_model, newdata = clean_data(test_set, age_m, is_training=FALSE))
-predictions <- cbind(test_set %>% select(PassengerId), Survived=p_y)
-write.csv(predictions, 
-          file=paste0(output_dir,"submission.csv"),
-          row.names = FALSE)
+opt.row <- res.cv %>% arrange(MER) %>% { .[1,] }
+opt.threshold <- opt.row$Threshold 
+opt.n <- opt.row$N_Params
+opt.gam <- m.gam[[opt.n]]
+opt.gam$threshold <- opt.threshold
 
-# Upload the file to https://www.kaggle.com/c/titanic/submit
+se <- opt.row$SE %>% as.numeric
+res.cv[,"Min_SE"] <- res.cv[,"MER"] - opt.row$MER - se
+onese.row <- res.cv %>% filter(Min_SE <= 0) %>% arrange(N_Params, (Threshold-0.5)^2) %>% { .[1,] }
+onese.threshold <- onese.row$Threshold
+onese.n <- onese.row$N_Params
+onese.gam <- m.gam[[onese.n]]
+onese.gam$threshold <- onese.threshold
 
-## ---- end-of-model_external_test
+cv_plot <- ggplot(res.cv %>% filter(MER != Inf & Threshold >= 0.25 & Threshold <= 0.75), 
+                  aes(x=N_Params, y=Threshold)) +
+            theme_lk() +
+            geom_tile(aes(alpha=ifelse(Threshold == opt.threshold & N_Params == opt.n, 99,
+                                       ifelse(Threshold == onese.threshold & N_Params == onese.n, 99, MER)),
+                          fill=ifelse(Threshold == opt.threshold & N_Params == opt.n, "Optimal",
+                                      ifelse(Threshold == onese.threshold & N_Params == onese.n, "One SE", NA)))) +
+            geom_text(data=res.cv %>% subset((Threshold == opt.threshold & N_Params == opt.n) | 
+                                               (Threshold == onese.threshold & N_Params == onese.n)),
+                      aes(label=ifelse(Threshold == opt.threshold & N_Params == opt.n, "Optimal", "One SE")),
+                      alpha = 1.,
+                      color = `@c`(bg),
+                      family = `@f`) +
+            scale_x_continuous(name = "Number of Features", breaks = 1:4 * 2,
+                               expand = c(0,0)) +
+            scale_y_continuous(name = "Threshold", labels=scales::percent,
+                               expand = c(0,0)) + 
+            scale_alpha_continuous(name="CV Error Rate", range=c(0.05,1), 
+                                   limits=c(NA,0.25), na.value=1,
+                                   labels=scales::percent, 
+                                   guide=guide_legend(override.aes=list(fill=`@c`(ltxt,0.8)))) +
+            scale_fill_manual(values=c("Optimal"=`@c`(green), "One SE"=`@c`(blue)), na.value=`@c`(txt,0.8),
+                              guide="none")
 
-## ---- model_factors
+## ---- end-of-cv
 
-z_scores <- (rf_model$importance[,"MeanDecreaseAccuracy"] / rf_model$importanceSD[,"MeanDecreaseAccuracy"]) %>%
-            { c(.,"Baseline"=2.32) } %>%
-            sort() %>%
-            { data.frame("Feature"=names(.),"Zscore"=as.numeric(.)) }
-z_scores$Feature <- factor(z_scores$Feature, levels = z_scores$Feature)
+## ---- p
 
-z_plot <- ggplot(data = z_scores, aes(x = sapply(z_scores$Zscore, function (x) {max(36,x)}),
-                                      y = 0,
-                                      color=Feature)) +
-          theme_lk() +
-          scale_color_manual(name = "Feature",
-                             values = c(txt_color,get_color("palette")(7)),
-                             guide = guide_legend(nrow=1,
-                                                  override.aes=list(size=5))) +
-          theme(
-            axis.line.x = element_line(colour=NA),
-            axis.ticks.x = element_line(colour=NA),
-            axis.title.x = element_blank(),
-            axis.text.x = element_blank()
-          ) +
-          # Add X Axis Line
-          geom_segment(data = data.frame(1),
-               aes(x=35, 
-                   xend=38, 
-                   y=0, 
-                   yend=0),
-               size = 0.5,
-               color=ltxt_color) +
-          geom_segment(data = data.frame(1),
-                       aes(x=38, 
-                           xend=40, 
-                           y=0, 
-                           yend=0),
-                       size = 0.5,
-                       color=ltxt_color,
-                       linetype=2) +
-          geom_segment(data = data.frame(1),
-                       aes(x=40, 
-                       xend=73, 
-                       y=0, 
-                       yend=0),
-                       size = 0.5,
-                       color=ltxt_color,
-                       arrow = arrow(length = unit(10,"pt"),
-                                     type = "closed")) +
-          geom_text(data = data.frame(1),
-                    label = "Score",
-                    aes(x = 77,
-                    y = 0),
-                    family = def_font,
-                    color = ltxt_color,
-                    size = 4,
-                    hjust = 1) +
-          theme(
-            # Y-Axis
-            axis.line.y = element_line(colour=NA),
-            axis.ticks.y = element_line(colour=NA),
-            axis.title.y = element_blank(),
-            axis.text.y = element_blank()) +
-          scale_y_continuous(limits=c(-0.05, 0.05)) +
-          geom_point(size = 15) +
-          geom_text(aes(label=paste0(round(Zscore,0))),
-                    family = def_font,
-                    color = "#FFFFFF",
-                    size = 4,
-                    hjust = 0.5)
+test_set <- read.csv(data_dir %|% "test.csv")
+test_features <- test_set %>% preprocess_data
+save_predictions <- function(m.gam, id="opt") {
+  
+  p_y <- predict(m.gam, test_features, type="class", threshold=m.gam$threshold)
+  predictions <- cbind(test_set %>% select(PassengerId), Survived=p_y)
+  write.csv(predictions, 
+            file=paste0(output_dir,id,"_submission.csv"),
+            row.names = FALSE)
+}
 
+save_predictions(opt.gam)
+save_predictions(onese.gam, "onese")
 
-## ---- end-of-model_factors
+## ---- end-of-p
+
+## ---- i_threshold
+
+threshold_plot <- res.cv %>% filter(N_Params == onese.n) %>%
+                  {
+                    ggplot(., aes(x=Threshold, y=MER)) +
+                    theme_lk() +
+                    geom_point(aes(color=Threshold != onese.threshold,
+                                   shape = Threshold != onese.threshold,
+                                   size = Threshold != onese.threshold), 
+                               show.legend=FALSE) +
+                    scale_color_manual(values=c(`@c`(red),`@c`(ltxt,0.5))) +
+                    scale_shape_manual(values=c(4,16)) +
+                    scale_size_manual(values=c(5,3)) +
+                    geom_smooth(color=`@c`(1), fill=`@c`(ltxt,0.2), method='loess') +
+                    scale_x_continuous(labels=scales::percent) + 
+                    scale_y_continuous(name="CV Error Rate", labels=scales::percent)
+                  }
+
+## ---- end-of-i_threshold
+
+## ---- i_features
+
+coeffs <- predict(onese.gam, features, type = "terms") %>% as.data.frame %>%
+          mutate(ID = rownames(.)) %>%
+          gather("Feature","Val",-ID) %>%
+          mutate(Feature = gsub(":[A-Za-z()>=0-9\\* ]*|\\)|s\\(","",Feature))
+
+x_vals <- features %>% mutate(ID = rownames(features)) %>%
+          gather("Feature","X",-ID)
+
+x_f_raw <- coeffs %>%
+           inner_join(x_vals, by=c("ID","Feature"))
+
+x_f_tbl <- x_f_raw %>%
+           select(Feature, X, Val) %>%
+           filter(X != -1) %>%
+           group_by(Feature, X, Val) %>%
+           summarise(CohortSize=n()) %>%
+           ungroup() %>%
+           arrange(Feature, X)
+
+cont_tbl <- x_f_tbl %>%
+            filter(grepl("[0-9\\.]+",X)) %>%
+            mutate(X = X %>% as.numeric)
+
+cont_plot <- ggplot(cont_tbl, aes(x=X, y=Val)) +
+              geom_smooth(aes(weight=CohortSize), color=`@c`(ltxt,0.5), 
+                          linetype="dotted", method="loess") +
+              geom_point(aes(size=CohortSize), color=`@c`(1), alpha=0.8) +
+              theme_lk() +
+              scale_size_continuous(name="Cohort Size") +
+              scale_y_continuous(name="f(X)") +
+              facet_wrap(~toupper(Feature), ncol=2, scales="free", strip.position = "bottom")
+
+## ---- end-of-i_features
+
+## ---- i_features_2
+discr_tbl <- x_f_tbl %>%
+              filter(!grepl("[0-9\\.]+",X)) %>%
+              arrange(Feature, desc(Val)) %>%
+              mutate(X = factor(X, levels=unique(X)))
+
+discr_plot <- ggplot(discr_tbl, aes(x=X, y=Val)) +
+              theme_lk() +
+              geom_col(fill=`@c`(1,0.5), color=`@c`(1)) +
+              scale_y_continuous(name="f(X)", expand=c(0,0,0.01,0)) +
+              facet_wrap(~toupper(Feature), ncol=2, scales="free_x", strip.position = "bottom")
+## ---- end-of-i_features_2
+
+## ---- i_importance
+
+imp_tbl <- x_f_raw %>%
+           group_by(Feature) %>%
+           #Normalize all features so that the weighted sum of f(feature) = 0
+           mutate(Val = abs(Val - sum(Val)/n())) %>%
+           ungroup() %>% group_by(ID) %>%
+           mutate(PctImpt = Val / sum(Val)) %>%
+           group_by(Feature) %>%
+           summarise(PctImpt = mean(PctImpt)) %>%
+           arrange(PctImpt) %>%
+           mutate(Feature = factor(Feature, levels=Feature))
+
+imp_plot <- ggplot(imp_tbl, aes(fill=Feature, x=1, y=PctImpt)) + 
+            theme_void() +
+            theme_lk(fmt_x = FALSE, fmt_y = FALSE) +
+            geom_col(position = position_stack(vjust = .5), 
+                     width=0.7, show.legend = FALSE) +
+            geom_text(aes(label=Feature, x=0.4),
+                            size=3.5,
+                            position = position_stack(vjust = .5),
+                            family = `@f`,
+                            color = `@c`(txt)) +
+            geom_text(aes(label=scales::percent(round(..y..,2))),
+                            position = position_stack(vjust = .5),
+                            family = `@f`,
+                            color = `@c`(bg)) +
+            scale_fill_manual(values=`@c`(palette)(6) %>% rev) +
+            lims(x = c(0.,NA)) +
+            coord_flip()
+  
+## ---- end-of-i_importance

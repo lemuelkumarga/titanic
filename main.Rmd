@@ -22,7 +22,10 @@ read_chunk("main.R")
 
 Set for its maiden voyage in 1912, RMS Titanic was then considered unsinkable due to its robust structure. After picking up passengers in Southampton, Cherbourg and Queenstown, the ship set sail towards New York. It was on their way there that the Titanic met its calamitous fate, crashing into an Iceberg and rendering more than 50% of the passengers lost.
 
-There were many question marks concerning the events leading to and during the disaster. One of these was the evacuation process of the passengers. By analyzing personal details and disaster outcomes (survival/lost), we aim to <span class="hl">discover the various factors affecting passengers' survival likelihoods.</span> 
+There were many question marks concerning the events leading to and during the disaster. One of these was the evacuation process of the passengers. By analyzing personal details and disaster outcomes (survival/lost), we aim to:
+
+1. <span class="hl">Understand the various factors affecting passengers' survival likelihoods, </span> and
+2. <span class="hl">Predict a certain passenger's survival likelihood given his/her background.</span>
 
 To skip the methodology and proceed directly to the summary of results, click <a href="#summary-of-results">here</a>.
 
@@ -41,9 +44,7 @@ attached_pkg_str <- paste0("Attached Packages: ",paste(names(si[["otherPkgs"]]),
 cat(paste0(base_pkg_str,"\n",attached_pkg_str))
 ```
 
-## Exploration
-
-### About the Data
+## Data Overview
 
 We kick off by exploring the data that was provided:
 ```{r}
@@ -56,30 +57,155 @@ pander(cols_summary, caption='Titanic Passengers Data - For more info, please vi
 Based on the above table, we know that:
 
 * <span class="hl color-1-text">Names</span> are aggregated in the following format: <span class="hl color-2-text">Last_Name, Title 
-First_Name</span>.
-* <span class="hl color-1-text">Passenger class (Pclass) </span> levels are the equivalent of <span class="hl color-2-text">First Class (1), Business Class (2) and Economy Class (3)</span>.
-* <span class="hl color-1-text">Age</span> has missing data to be populated.
-* <span class="hl color-1-text">Cabin</span> data is sparse, and hence we may want to exclude this for the prediction model.
+First_Name</span>. This suggests that some feature extraction needs to be performed.
+* Columns such as <span class="hl color-1-text">Age</span>, <span class="hl color-1-text">Cabin</span> has missing data. This implies that we should either remove these columns, impute the data or choose a model that takes into account missing information.
 
-### Preliminary Insights
+## Feature Selection
+
+### Extracting the Features
+
+Some features, such as <span class="hl color-1-text">Pclass, Fare</span> and <span class="hl color-1-text">Gender</span>, have been nicely provided by the dataset. However, we could potentially unearth more features by pre-processing the data.
+
+#### Titles
+
+The <span class="hl">titles</span> of individuals are typically associated with social status. By extracting them from the <span class="hl">Name</span> column, we can potentially use them to predict survival likelihood.
+
+```{r, fig.asp=0.7}
+<<f_title>>
+
+title_plot
+```
+
+From the above chart, it seems that having a more distinguished status such as <span class="hl color-2-text">Master</span> and <span class="hl color-2-text">Rare Title</span> can increase your survivalhood. Hence, this feature should be included in the model.
+
+#### Family Size
+
+Interaction term with SibSp and ParentSize
+
+```{r, fig.asp=0.7}
+<<f_fam_size>>
+
+famsize_plot
+```
+
+#### Cabin Deck
+
+```{r, fig.asp=0.7}
+<<f_cabin_deck>>
+
+cabin_deck_plot
+```
+
+#### Cabin Number
+
+```{r, fig.asp=0.3}
+<<f_cabin_no>>
+
+cabin_number_plot
+```
+
+### Feature Summary
+
+```{r, fig.asp=1}
+<<features>>
+
+snapshot <- data_snapshot(features %>% mutate(Survived = Survived %>% factor), Survived)
+suppressMessages(for (p in snapshot) {
+  { p +
+  scale_fill_manual(name = "Status",
+                    values=c(`0`=`@c`(ltxt,0.5),`1`=`@c`(green)),
+                    labels=c(`0`="Died",`1`="Survived")) } %>% plot
+})
+
+```
+
+### Modeling Survival Likelihood
+
+#### Model Selection
+
+```{r}
+<<gam>>
+
+highest_idx <- which(sapply(1:length(m.gam), ..(g) %:=% { !is.null(m.gam[[g]]) })) %>% max
+f_list <- m.gam[[highest_idx]]$formula %>% as.character %>% {.[3] } %>% strsplit(" \\+ ") %>% unlist %>% { gsub(",[A-Za-z()0-9>=\\* -]*|s\\(","",.) }
+
+cat("List of Features in Order of Selection: \n", paste0(f_list,collapse=", "))
+```
+
+#### Performance
+
+##### Cross Validation
+
+```{r}
+<<cv>>
+
+cv_plot
+```
+
+##### Test Set
+
+```{r}
+<<p>>
+  
+cat("Optimal GAM Test Error Rate: ", scales::percent(0.77990),"\n",
+    "One SE GAM Test Error Rate: ", scales::percent(0.79425),"\n")
+```
+
+#### Interpretation
+
+##### Thresholds
+
+```{r}
+<<i_threshold>>
+
+threshold_plot
+```
+
+##### Feature Trends
+
+```{r, fig.asp=1.}
+<<i_features>>
+
+cont_plot
+```
+
+```{r, fig.asp=0.5}
+<<i_features_2>>
+
+discr_plot
+```
+
+##### Feature Importance
+
+```{r, fig.asp=0.2}
+<<i_importance>>
+
+imp_plot
+```
+
+blah blah blah
+
+
+## Summary of Results
+
+Using data from the demographics and outcomes of titanic passengers, we have identified a few crucial factors that determines a passenger's survivalhood. 
+
+These factors, ranked by importance, are:
+
+1. <span class="hl cyan-text">Passenger Class</span>: 1st and 2nd class passengers accrue additional benefits, such as better amenities and cabin size within the Titanic. Ironically, the benefit most crucial to them was probably the one not advertised: exclusive access to the lifeboats.
+2. <span class="hl blue-text">Fares Paid</span>: This is connected to the 1st factor. The higher the fares that passengers pay, the more benefits they accrue, hence the more premium they possess during a sinking disaster.
+3. <span class="hl purple-text">Title</span>: Someone with an esteemed title have more privileges than a lay individual on almost every occassion, including this life-or-death situation.
+4. <span class="hl red-text">Family Size</span>: Someone with dependents (whether children or a wife) has an advantage of getting into the lifeboats since they can "tag-along" with their dependents.
+5. <span class="hl orange-text">Age</span>: The younger the passenger, the less space he/she occupies, hence there are more opportunities for him/her to board the lifeboats.
+6. <span class="hl yellow-text">Sex</span>: During that era, females were prioritized over males as a form of gentlemanly behavior. This behavior seems to be translated during the sinking disaster, where females were given preference over men to board the lifeboats first.
 
 <div class="st">Insight 1: Wealthy individuals are more likely to survive.</div>
 
 Using passenger class as a proxy for wealth, we calculated the <a data-toggle="popover" title="Survival Likelihood" data-content="% of passengers in the group who survived
 .">survival likelihood</a> of each class.
-```{r, fig.asp=0.4}
-<<exp_income>>
-
-income_plot
-```
 
 The chart above shows that the more premium the class, the more likely passengers were to survive. One reason explaining this could be that 1st class passengers were first in line to access the lifeboats, while 3rd class passengers were left to fend for themselves.
 
-```{r, fig.asp=0.35}
-<<exp_fare>>
-
-fares_plot
-```
 
 Similarly, we also noticed this phenomenon in fares. Passengers who were paying more have a higher survival likelihood than others.
 
@@ -87,33 +213,15 @@ Similarly, we also noticed this phenomenon in fares. Passengers who were paying 
 
 The data provides us with a list of titles under the <span class="hl">Name</span> column. Each title is associated with a gender (with the exception of one), as shown below:
 
-```{r, fig.asp=0.32}
-<<exp_titles>>
-
-gender_plot
-```
-
 Other than <span class="hl color-1-text">Mr, Miss, Mrs and Master</span>, all other titles are not common to the average passenger. To navigate the small sample size, we will group all of these other titles under <span class="hl color-2-text">Rare Title</span>.
 
 With the following modifications, we can then assess the survival likelihood of each title and gender:
-
-```{r}
-<<exp_title_gender>>
-  
-title_plot
-```
 
 <span class="hl">All</span> females, regardless of their titles, have higher survival likelihoods than males. In addition, having a title other than Mrs, Miss or Mr, elevates the survival likelihood of the individual. One reason explaining this could be that females and esteemed individuals were given early access to escape the Titanic. 
 
 <div class="st">Insight 3: The younger the passenger, the more likely he/she will survive.</div>
 
 The chart below shows how survival likelihood changes with age.
-
-```{r, fig.asp=0.35}
-<<exp_age>>
-  
-age_plot
-```
 
 Among those passengers whose age were populated, we can see that younger individuals are more likely to survive. One possible explanation could be because babies and toddlers occupy less space (and hence easier to find seats within the lifeboats). 
 
@@ -124,12 +232,6 @@ However, older people, especially those more than 60 years old, are less likely 
 Typically, we would expect that the more family members, the more spaces the family unit would need in the lifeboat, hence reducing the survival probability of each member as a whole.
 
 However, contrary to expectations, the data shows that the larger the <a data-toggle="popover" title="Family Size" data-content="The number of family members on board the Titanic, including the passenger. Examples of family members include spouses, siblings, parents and children.">family size</a>, the more likely an individual will survive:
-
-```{r}
-<<exp_company>>
-  
-company_plot 
-```
 
 This counterintuitive relationship can be explained through 3 factors:
 
@@ -147,26 +249,15 @@ Passengers staying further away from the lifeboats will have more difficult time
 
 A more detailed deck plan can be found in the <a href="https://www.encyclopedia-titanica.org/titanic-deckplans/b-deck.html" target="_blank">Encyclopedia Titanica</a>. As shown from the deck plans, the letter of the cabin represents the floor of the room, while the odd and even numbers corresponds to the left and right side of Titanic respectively.
 
-```{r exp_cabin_decompose}
-```
 
 ##### Cabin Floors
 
-```{r}
-<<exp_cabin_floors>>
-  
-cabinLet_plot
-```
+
 
 From the chart above, we know that <span class="hl">Cabins B to E</span> has a higher likelihood of survival compared to other cabins. This implies that the position of cabins play a role in determining whether a passenger survive.
 
 ##### Cabin Numbers
 
-```{r, fig.asp=0.4}
-<<exp_cabin_number>>
-  
-cabinNumber_plot
-```
 
 It is pretty clear that those who stay in the odd rooms are more likely to survive than those in the even rooms.
 
@@ -174,20 +265,10 @@ In conclusion, cabin floors and cabin numbers, when available, can determine a p
 
 <div class="st">Insight 6: Port of embarkation has an impact on survivalhood, as they are correlated with Passenger class.</div>
 
-```{r, fig.asp=0.4}
-<<exp_port>>
-
-map
-```
 
 <br>
 The map above indicates that those who embarked at Cherbough are more likely to survive. This is a puzzling observation as where the passenger embarks should not have an impact of what is happening on the Titanic.
 
-```{r, fig.asp=0.45}
-<<exp_port_income>>
-
-embark_pclass_plot
-```
 
 However, by studying the demographics of the passengers embarking at each port, we discovered that a higher proportion of Cherbough are 1st class passengers. This would explain the confounding observation noted earlier.
 
@@ -219,31 +300,10 @@ FamilySize | Continuous | Insight 4
 #### Populating Age
 Before inputting the raw data into a model, we have to ensure that the data is in a well-defined state. One of the fixes we need to make is to populate any unidentified <span class="hl">Age</span> values.
 
-```{r, echo=FALSE}
-<<model_age_append>>
-
-<<model_age_vars>>
-```
 
 We will use the following variables as predictors of Age:
 
-* <span class="hl">Pclass</span>: 1st class members (`r round(age_by[['Pclass']][[1]])` years old on average) are generally older than 2nd (`r round(age_by[['Pclass']][[2]])`) or 3rd (`r round(age_by[['Pclass']][[3]])`) class members.
-
-* <span class="hl">Title</span>: Masters (`r round(age_by[['Title']][['Master']])` years old on average) and Misses (`r round(age_by[['Title']][['Miss']])`) tend to be younger than Mr (`r round(age_by[['Title']][['Mr']])`) and Mrs (`r round(age_by[['Title']][['Mrs']])`).
-
-* <span class="hl">ConfirmedAdult</span>: This is a new category created just to predict age. Assuming that there are no intergenerational families in Titanic (i.e. an individual having both parents and children), we know that having more than 2 parent-children relationships strongly implies an individual is a parent (since a child can have a maximum of 2 parent relationships). These individuals are what we call <span class="hl">ConfirmedAdults</span>. Such passengers are `r round(age_by[['ConfirmedAdult']][['1']] - age_by[['ConfirmedAdult']][['0']])` years older on average than the rest of the passengers.
-
-* <span class="hl">FamilySize</span>: Based on Insight 4, we know that a larger family size implies a higher probability of being a child. In fact, the correlation between age and family size is modest at `r round(cor(age_data$FamilySize, age_data$Age)*100)`%.
-
-<a data-toggle="popover" title="ANOVA Regression" data-content="A regression similar to the standard linear regression, with the added capability of having categorical values as independent variables.">ANOVA regression</a> will be used to predict Age based on the factors above. 
-
 Listed below is a summary of the regression.
-
-```{r}
-<<model_age_append>>
-
-<<model_age_anova>>
-```
 
 Due to our careful selection of variables, all of the coefficients are statistically significant with a 5% significance level. This suggests that the variables are all good predictors of Age.
 
@@ -257,25 +317,12 @@ After resolving the missing data, we can now create a process that takes in the 
 
 Below is an example of the data after cleansing:
 
-```{r}
-
-<<model_cleanse>>
-  
-pander(head(cleaned_set))
-
-```
-
 ### The Model
 
 Prior to constructing the random forest model, we will split the training set into two unequal groups, with 80% of the data for training and the other 20% for testing purposes. The larger partition is then used to construct a random forest model. 
 
 Listed below is a summary of the model.
 
-```{r}
-<<model_randomize>>
-  
-<<model_construct>>
-```
 
 #### Assessing Performance
 
@@ -285,17 +332,6 @@ We use three different indicators to test the accuracy of the model:
 2. <span class="hl">20% Testing Group</span>: The accuracy when used to predict the remaining 20% of the data not used in calibration,
 3. <span class="hl">Kaggle's Testing Set</span>: The accuracy when used to predict the test set provided by Kaggle.
 
-```{r}
-ooo_str <- paste0("Based on OOO: ",round((1 - median(rf_model$err.rate[,1]))*100,1),"% Accuracy Rate")
-
-<<model_internal_test>>
-int_str <- paste0("Based on 20% Testing Group: ",round((1 - cmp$err / cmp$size) * 100,1),"% Accuracy Rate")
-    
-<<model_external_test>>
-ext_str <- paste0("Based on Kaggle's Testing Set: 79.4% Accuracy Rate")
-
-cat(paste0(ooo_str,"\n",int_str,"\n",ext_str))
-```
 
 As shown above, the model managed to predict Kaggle's testing set relatively well, with a score below the 18th percentile in the <a href="https://www.kaggle.com/c/titanic/leaderboard" target="_blank">Leaderboard</a> (at time of submission). There is also only a difference of 2-4% between our internal (20% Testing Group) and external (Kaggle's Testing Set) performance, suggesting that the model is not overfitted. 
 
@@ -305,25 +341,7 @@ Since the model is robust and reliable, we can now derive some knowledge from th
 
 The chart below maps the mean decrease in accuracy for each feature in the model:
 
-```{r, fig.asp=0.3}
-<<model_factors>>
-  
-z_plot
-```
-
 Using a 1% significant level as the baseline, we conclude that all the factors are statistically significant. This means that for each of the factor, there is less than a 1% chance that the influence on survival likelihood is a result of randomness. 
 
 Moreover, the model also provides us a picture of which factors are more important than others. For example, characteristics associated with wealth (<span class="hl blue-text">Fare</span> and <span class="hl blue-text">Passenger Class</span>) play more important roles than the passengers' demographics (<span class="hl purple-text">Title</span>, <span class="hl orange-text">Age</span> and <span class="hl yellow-text">Gender</span>).
 
-## Summary of Results
-
-Using data from the demographics and outcomes of titanic passengers, we have identified a few crucial factors that determines a passenger's survivalhood. 
-
-These factors, ranked by importance, are:
-
-1. <span class="hl cyan-text">Passenger Class</span>: 1st and 2nd class passengers accrue additional benefits, such as better amenities and cabin size within the Titanic. Ironically, the benefit most crucial to them was probably the one not advertised: exclusive access to the lifeboats.
-2. <span class="hl blue-text">Fares Paid</span>: This is connected to the 1st factor. The higher the fares that passengers pay, the more benefits they accrue, hence the more premium they possess during a sinking disaster.
-3. <span class="hl purple-text">Title</span>: Someone with an esteemed title have more privileges than a lay individual on almost every occassion, including this life-or-death situation.
-4. <span class="hl red-text">Family Size</span>: Someone with dependents (whether children or a wife) has an advantage of getting into the lifeboats since they can "tag-along" with their dependents.
-5. <span class="hl orange-text">Age</span>: The younger the passenger, the less space he/she occupies, hence there are more opportunities for him/her to board the lifeboats.
-6. <span class="hl yellow-text">Sex</span>: During that era, females were prioritized over males as a form of gentlemanly behavior. This behavior seems to be translated during the sinking disaster, where females were given preference over men to board the lifeboats first.
