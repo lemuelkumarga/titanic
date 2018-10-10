@@ -408,7 +408,7 @@ snapshot <- data_snapshot(features %>% mutate(Survived = Survived %>% factor), S
 suppressMessages(for (p in snapshot) {
   { p +
   scale_fill_manual(name = "Status",
-                    values=c(`0`=`@c`(ltxt,0.5),`1`=`@c`(green)),
+                    values=c(`0`=`@c`(ltxt,0.5),`1`=`@c`(1)),
                     labels=c(`0`="Died",`1`="Survived")) } %>% plot
 })
 ```
@@ -610,14 +610,14 @@ save_predictions <- function(m.gam, id="opt") {
 save_predictions(opt.gam)
 save_predictions(onese.gam, "onese")
   
-cat("Null Classifier Error Rate: ", scales::percent(1.-0.62679),"\n",
-    "Optimal GAM Test Error Rate: ", scales::percent(1.-0.77990),"\n",
-    "One SE GAM Test Error Rate: ", scales::percent(1.-0.79425),"\n")
+cat(paste0("Null Classifier\tTest Error Rate: ", scales::percent(1.-0.62679),"\n",
+    "Optimal GAM\t\tTest Error Rate: ", scales::percent(1.-0.77990),"\n",
+    "One SE GAM\t\tTest Error Rate: ", scales::percent(1.-0.79425),"\n"))
 ```
 
-    ## Null Classifier Error Rate:  37.3% 
-    ##  Optimal GAM Test Error Rate:  22% 
-    ##  One SE GAM Test Error Rate:  20.6%
+    ## Null Classifier  Test Error Rate: 37.3%
+    ## Optimal GAM      Test Error Rate: 22%
+    ## One SE GAM       Test Error Rate: 20.6%
 
 #### Interpretation
 
