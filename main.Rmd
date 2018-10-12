@@ -216,7 +216,8 @@ for i in [1,10]:<br>
 &nbsp; (p_female, p_male) <- GET_HIDDEN_FEATURE(p)<br>
 &nbsp; DATA <- (x_1, x_2, ... , x_k, p_female, p_male)<br>
 &nbsp; MODEL <- GAM(DATA)<br>
-&nbsp; if (SSE(P, PREV_P) < 0.0001 ) TERMINATE<br>
+&nbsp; if ((P - PREV_P)^2 < 0.0001) TERMINATE<br>
+&nbsp; else PREV_P <- P<br>
 RETURN MODEL
 </code>
 

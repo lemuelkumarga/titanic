@@ -616,8 +616,8 @@ algorithm: <code style="background-color:var(--pri)"> <br> Initialize:
 Use 10 Iterations for Convergence<br> PREV\_P \<- 0<br> for i in
 \[1,10\]:<br>   P \<- PREDICT(MODEL)<br>   (p\_female, p\_male) \<-
 GET\_HIDDEN\_FEATURE(p)<br>   DATA \<- (x\_1, x\_2, … , x\_k, p\_female,
-p\_male)<br>   MODEL \<- GAM(DATA)<br>   if (SSE(P, PREV\_P) \< 0.0001 )
-TERMINATE<br> RETURN MODEL </code>
+p\_male)<br>   MODEL \<- GAM(DATA)<br>   if ((P - PREV\_P)^2 \< 0.0001)
+TERMINATE<br>   else PREV\_P \<- P<br> RETURN MODEL </code>
 
 ### Model Implementation
 
