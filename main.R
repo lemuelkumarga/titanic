@@ -482,8 +482,9 @@ cv_plot <- ggplot(res.cv %>% filter(MER != Inf & Threshold >= 0.25 & Threshold <
                       alpha = 1.,
                       color = `@c`(bg),
                       family = `@f`) +
-            scale_x_continuous(name = "Number of Features", breaks = 1:4 * 2,
-                               expand = c(0,0)) +
+            scale_x_continuous(name = "Number of Features (Surfaced + Hidden)", breaks = 1:4 * 2,
+                               expand = c(0,0),
+                               labels= (1:4 * 2) %|% " + 2") +
             scale_y_continuous(name = "Threshold", labels=scales::percent,
                                expand = c(0,0)) + 
             scale_alpha_continuous(name="CV Error Rate", range=c(0.05,1), 
@@ -599,17 +600,19 @@ imp_plot <- ggplot(imp_tbl, aes(fill=Feature, x=1, y=PctImpt)) +
             theme_lk(fmt_x = FALSE, fmt_y = FALSE) +
             geom_col(position = position_stack(vjust = .5), 
                      width=0.7, show.legend = FALSE) +
-            geom_text(aes(label=Feature, x=0.4),
+            geom_text(aes(label=Feature,x=0.4),
                           size=3.5,
                           position = position_stack(vjust = .5),
                           family = `@f`,
-                          color = `@c`(txt)) +
+                          color = `@c`(txt), 
+                          angle = 90,
+                          hjust = 1.) +
             geom_text(aes(label=scales::percent(round(..y..,2))),
                             position = position_stack(vjust = .5),
                             family = `@f`,
                             color = `@c`(bg)) +
             scale_fill_manual(values=`@c`(palette)(6) %>% rev) +
-            lims(x = c(0.,NA)) +
+            lims(x = c(-0.5,NA)) +
             coord_flip()
   
 ## ---- end-of-i_importance
