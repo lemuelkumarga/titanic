@@ -19,6 +19,7 @@ output_dir <- "output/"
 
 ## ---- data_comp
 training_set <- read.csv(paste0(data_dir, "train.csv"))
+test_set <- read.csv(data_dir %|% "test.csv")
 
 cols_summary <- data_overview(training_set)
 
@@ -227,26 +228,68 @@ cabin_number_plot <- training_set %>%
 ## ---- features
 
 preprocess_data <- function(data) {
-  data %>%
-    mutate(Title=feature_title(Name),
-           FamSize=feature_famsize(SibSp, Parch),
-           CabinDeck=feature_cabin_deck(Cabin),
-           CabinNo=feature_cabin_no(Cabin)) %>%
-    select(-PassengerId, -Name, -Ticket, -Cabin) %>%
-    # Substitute unknown continuous features with -1
-    mutate_if(is.numeric, 
-              ~ map(., ~ if (is.na(.)) { -1 } else {.}) %>% unlist) %>%
-    # Substitute unknown discrete features with "-"
-    mutate_if(~ !is.numeric(.),
-              ~ map(., ~ if (is.na(.) | . == "") { "-"} else {.}) %>% unlist) %>%
-    # Set Factors for Discrete Features
-    mutate_if(~ !is.numeric(.),
-              ~ factor(., levels=unique(c("-",.))))
+  
+  passengerIds <-data$PassengerId
+  data <- data %>%
+          mutate(Title=feature_title(Name),
+                 FamSize=feature_famsize(SibSp, Parch),
+                 CabinDeck=feature_cabin_deck(Cabin),
+                 CabinNo=feature_cabin_no(Cabin)) %>%
+          select(-Name, -Ticket, -Cabin) %>%
+          # Substitute unknown continuous features with -1
+          mutate_if(is.numeric, 
+                    ~ map(., ~ if (is.na(.)) { -1 } else {.}) %>% unlist) %>%
+          # Substitute unknown discrete features with "-"
+          mutate_if(~ !is.numeric(.),
+                    ~ map(., ~ if (is.na(.) | . == "") { "-"} else {.}) %>% unlist) %>%
+          # Set Factors for Discrete Features
+          mutate_if(~ !is.numeric(.),
+                    ~ factor(., levels=unique(c("-",.))))
+  rownames(data) <- passengerIds
+  data
 }
 
 features <- preprocess_data(training_set)
+test_features <- preprocess_data(test_set)
 
 ## ---- end-of-features
+
+## ---- fam_survivalhood
+
+lastName <- function(l) { as.character(sapply(l, ..(x) %:=% { (unlist(strsplit(x, ", "))[[1]]) })) }
+
+complete_dataset <- rbind(features %>% select(-Survived), test_features)
+
+feature_fam_survivalhood <- function(model) {
+  
+  # Calculate each family member's probability of survival
+  p_survival <- predict(model, complete_dataset, type="response")
+  indiv_survivalhood <- complete_dataset %>% 
+    cbind(FamID=c(training_set$Name,test_set$Name) %>% lastName) %>%
+    mutate(FamID= FamID %|% "_" %|% Pclass %|% "_" %|% Embarked) %>%
+    mutate(PSurvival = p_survival) %>% 
+    select(PassengerId, Sex, FamID, PSurvival)
+  
+  # Find the probability of the passenger's family members surviving (excluding the passenger him/herself),
+  # separated by gender
+  updated_dataset <- indiv_survivalhood %>%
+    select(PassengerIdBase=PassengerId, FamID) %>%
+    inner_join(indiv_survivalhood, by="FamID") %>%
+    mutate(FamPSurvived = ifelse(PassengerId == PassengerIdBase, NA, PSurvival)) %>%
+    select(PassengerId = PassengerIdBase, Sex, FamPSurvived) %>%
+    group_by(PassengerId, Sex) %>%
+    summarise(FamPSurvived = mean(FamPSurvived, na.rm =TRUE)) %>%
+    ungroup() %>%
+    mutate(Sex = "P" %|% Sex %|% "F") %>%
+    spread(key="Sex", value="FamPSurvived")
+  
+  
+  updated_dataset[is.na(updated_dataset)] <- -1
+  
+  updated_dataset
+}
+
+## ---- end-of-fam_survivalhood
 
 # MODELING SURVIVAL LIKELIHOOD ### ----
 
@@ -263,6 +306,12 @@ predict.mod_gam <- function(object, newdata, type="link", threshold=0.5, ...) {
     newdata[,"Survived"] <- rep(-999,nrow(newdata))
   }
   
+  # Append recursive features of the model
+  if (!is.null(object$rec_features)) {
+    newdata <- newdata %>%
+               inner_join(object$RecFeatureData %>% select(c("PassengerId",object$rec_features)), by="PassengerId")
+  }
+  
   newdata <- model.frame(gp$fake.formula, newdata)
   if (type == "class") {
     (predict.gam(object=object, newdata=newdata, type="response", ...) >= threshold) * 1
@@ -272,24 +321,31 @@ predict.mod_gam <- function(object, newdata, type="link", threshold=0.5, ...) {
 }
 
 mod.gam <- function(data) {
-  # 1. Specify List of Features
-  all_features <- data %>% select(-Survived)
-  cont_vars <- all_features %>% select_if(is.numeric) %>% colnames %>% 
-    map(~ "s(" %|% . %|% 
-          ", k=" %|% { (length(unique(data[,.])) >= 10) %?% -1 %:% length(unique(data[,.])) } %|% 
-          " ,by=(" %|% . %|%  " >= 0)*1)") %>% unlist
+  
+  all_features <- data %>% select(-Survived, -PassengerId)
   disc_vars <- all_features %>% select_if(~ !is.numeric(.)) %>% colnames
   
+  # 1. Handling Missing Values: We specify a by constraint for each smoothing spline to ensure that
+  # f(NA) = 0
+  cont_to_spline <- function(v, dt = data) {
+    map(v, ~ "s(" %|% . %|% 
+          ", k=" %|% { (length(unique(dt[,.])) >= 10) %?% -1 %:% length(unique(dt[,.]) %>% {.[. != -1]}) } %|% 
+          " ,by=(" %|% . %|%  " >= 0)*1)") %>% unlist
+  }
+  cont_vars <- all_features %>% select_if(is.numeric) %>% colnames %>% cont_to_spline(dt = data)
+    
+
+  
   # Helper Function to Build Modified GAM Model
-  build_gam(vars) %:=% {
+  build_gam(vars, dt=data) %:=% {
     all_vars <- vars %>% paste0(collapse=" + ")
-    m.gam <- gam("Survived ~ " %|% all_vars %>% as.formula, data=data, family="binomial")
+    m.gam <- gam("Survived ~ " %|% all_vars %>% as.formula, data=dt, family="binomial")
     class(m.gam) <- c("mod_gam",class(m.gam))
     if (max(summary(m.gam)$p.table[,2]) >= 10) { warning("High Standard Errors.") } 
     m.gam
   }  
   
-  # 2. Perform Forward Selection by comparing chi square statistic
+  # 2. Perform Forward Selection: Chi square statistic is the measure chosen
   cur_vars <- c()
   rem_vars <- c(cont_vars,disc_vars)
   last.gam <- build_gam(c("1"))
@@ -317,10 +373,48 @@ mod.gam <- function(data) {
     last.gam <- suppressWarnings(build_gam(cur_vars))
   }  
   
-  # 3. Return Model
+  
   lapply(1:length(c(cont_vars, disc_vars)), ..(i) %:=% {
     if (i > length(cur_vars)) { return(NULL) }
-    build_gam(cur_vars[1:i])
+    
+    # 3. Recursive Fitting: Use Other Family Member's Probabilities to sharpen the estimation
+    # of the passenger's probability
+    base_training <- data
+    base_model <- build_gam(cur_vars[1:i])
+    last_fam_survivalhood <- 0
+    tryCatch({
+      cat("Starting Recursive Feature Fitting for " %|% i %|% "-Feature...\n")
+      for (it in 1:10) {
+        # Get the Feature for all the dataset
+        fam_survivalhood <- feature_fam_survivalhood(base_model)
+        rec_features <- colnames(fam_survivalhood %>% select(-PassengerId))
+        
+        # Reset the Feature to the latest one
+        if (any(rec_features %in% colnames(base_training))) { 
+          base_training <- base_training %>% select_(.dots="-" %|% rec_features)
+        }
+        base_training <- base_training %>% inner_join(fam_survivalhood, by="PassengerId")
+        
+        # Build the model based on the latest feature
+        base_model <- build_gam(c(cur_vars[1:i],cont_to_spline(rec_features, dt=base_training)),dt = base_training)
+        base_model$rec_features <- rec_features
+        base_model$RecFeatureData <- fam_survivalhood
+        
+        # If the model has converged in terms of deviance, stop, otherwise continue iterating
+        cur_fam_survivalhood <- fam_survivalhood %>% unlist %>% as.numeric
+        improvement <- (cur_fam_survivalhood - last_fam_survivalhood) ^2 %>% mean
+        cat("\tIteration " %|% it %|% ": " %|% improvement %|% "\n")
+        if (abs(improvement) < 0.01^2) {
+          cat("\tAlgorithm has converged!\n")
+          break
+        } else {
+          last_fam_survivalhood <- cur_fam_survivalhood
+        }
+      }
+    }, error= ..(e) %:=% { print(e) })
+    
+    # 4. Return Model
+    return(base_model)
   })
 }
 
@@ -378,24 +472,13 @@ opt.n <- opt.row$N_Params
 opt.gam <- m.gam[[opt.n]]
 opt.gam$threshold <- opt.threshold
 
-se <- opt.row$SE %>% as.numeric
-res.cv[,"Min_SE"] <- res.cv[,"MER"] - opt.row$MER - se
-onese.row <- res.cv %>% filter(Min_SE <= 0) %>% arrange(N_Params, (Threshold-0.5)^2) %>% { .[1,] }
-onese.threshold <- onese.row$Threshold
-onese.n <- onese.row$N_Params
-onese.gam <- m.gam[[onese.n]]
-onese.gam$threshold <- onese.threshold
-
 cv_plot <- ggplot(res.cv %>% filter(MER != Inf & Threshold >= 0.25 & Threshold <= 0.75), 
                   aes(x=N_Params, y=Threshold)) +
             theme_lk() +
-            geom_tile(aes(alpha=ifelse(Threshold == opt.threshold & N_Params == opt.n, 99,
-                                       ifelse(Threshold == onese.threshold & N_Params == onese.n, 99, MER)),
-                          fill=ifelse(Threshold == opt.threshold & N_Params == opt.n, "Optimal",
-                                      ifelse(Threshold == onese.threshold & N_Params == onese.n, "One SE", NA)))) +
-            geom_text(data=res.cv %>% subset((Threshold == opt.threshold & N_Params == opt.n) | 
-                                               (Threshold == onese.threshold & N_Params == onese.n)),
-                      aes(label=ifelse(Threshold == opt.threshold & N_Params == opt.n, "Optimal", "One SE")),
+            geom_tile(aes(alpha=ifelse(Threshold == opt.threshold & N_Params == opt.n, 99,MER),
+                          fill=ifelse(Threshold == opt.threshold & N_Params == opt.n, "Optimal",NA))) +
+            geom_text(data=res.cv %>% subset((Threshold == opt.threshold & N_Params == opt.n)),
+                      aes(label="Optimal"),
                       alpha = 1.,
                       color = `@c`(bg),
                       family = `@f`) +
@@ -407,15 +490,13 @@ cv_plot <- ggplot(res.cv %>% filter(MER != Inf & Threshold >= 0.25 & Threshold <
                                    limits=c(NA,0.25), na.value=1,
                                    labels=scales::percent, 
                                    guide=guide_legend(override.aes=list(fill=`@c`(ltxt,0.8)))) +
-            scale_fill_manual(values=c("Optimal"=`@c`(green), "One SE"=`@c`(blue)), na.value=`@c`(txt,0.8),
+            scale_fill_manual(values=`@c`(green), na.value=`@c`(txt,0.8),
                               guide="none")
 
 ## ---- end-of-cv
 
 ## ---- p
 
-test_set <- read.csv(data_dir %|% "test.csv")
-test_features <- test_set %>% preprocess_data
 save_predictions <- function(m.gam, id="opt") {
   
   p_y <- predict(m.gam, test_features, type="class", threshold=m.gam$threshold)
@@ -426,19 +507,18 @@ save_predictions <- function(m.gam, id="opt") {
 }
 
 save_predictions(opt.gam)
-save_predictions(onese.gam, "onese")
 
 ## ---- end-of-p
 
 ## ---- i_threshold
 
-threshold_plot <- res.cv %>% filter(N_Params == onese.n) %>%
+threshold_plot <- res.cv %>% filter(N_Params == opt.n) %>%
                   {
                     ggplot(., aes(x=Threshold, y=MER)) +
                     theme_lk() +
-                    geom_point(aes(color=Threshold != onese.threshold,
-                                   shape = Threshold != onese.threshold,
-                                   size = Threshold != onese.threshold), 
+                    geom_point(aes(color=Threshold != opt.threshold,
+                                   shape = Threshold != opt.threshold,
+                                   size = Threshold != opt.threshold), 
                                show.legend=FALSE) +
                     scale_color_manual(values=c(`@c`(red),`@c`(ltxt,0.5))) +
                     scale_shape_manual(values=c(4,16)) +
@@ -452,12 +532,14 @@ threshold_plot <- res.cv %>% filter(N_Params == onese.n) %>%
 
 ## ---- i_features
 
-coeffs <- predict(onese.gam, features, type = "terms") %>% as.data.frame %>%
+coeffs <- predict(opt.gam, features, type = "terms") %>% as.data.frame %>%
           mutate(ID = rownames(.)) %>%
           gather("Feature","Val",-ID) %>%
           mutate(Feature = gsub(":[A-Za-z()>=0-9\\* ]*|\\)|s\\(","",Feature))
 
-x_vals <- features %>% mutate(ID = rownames(features)) %>%
+x_vals <- features %>% 
+          inner_join(opt.gam$RecFeatureData, by="PassengerId") %>%
+          mutate(ID = rownames(features)) %>%
           gather("Feature","X",-ID)
 
 x_f_raw <- coeffs %>%
@@ -518,10 +600,10 @@ imp_plot <- ggplot(imp_tbl, aes(fill=Feature, x=1, y=PctImpt)) +
             geom_col(position = position_stack(vjust = .5), 
                      width=0.7, show.legend = FALSE) +
             geom_text(aes(label=Feature, x=0.4),
-                            size=3.5,
-                            position = position_stack(vjust = .5),
-                            family = `@f`,
-                            color = `@c`(txt)) +
+                          size=3.5,
+                          position = position_stack(vjust = .5),
+                          family = `@f`,
+                          color = `@c`(txt)) +
             geom_text(aes(label=scales::percent(round(..y..,2))),
                             position = position_stack(vjust = .5),
                             family = `@f`,

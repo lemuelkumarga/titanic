@@ -114,6 +114,7 @@ We kick off by exploring the data that was provided:
 
 ``` r
 training_set <- read.csv(paste0(data_dir, "train.csv"))
+test_set <- read.csv(data_dir %|% "test.csv")
 
 cols_summary <- data_overview(training_set)
 
@@ -444,28 +445,33 @@ play dominant roles in estimating survival likelihood.
 
 ``` r
 preprocess_data <- function(data) {
-  data %>%
-    mutate(Title=feature_title(Name),
-           FamSize=feature_famsize(SibSp, Parch),
-           CabinDeck=feature_cabin_deck(Cabin),
-           CabinNo=feature_cabin_no(Cabin)) %>%
-    select(-PassengerId, -Name, -Ticket, -Cabin) %>%
-    # Substitute unknown continuous features with -1
-    mutate_if(is.numeric, 
-              ~ map(., ~ if (is.na(.)) { -1 } else {.}) %>% unlist) %>%
-    # Substitute unknown discrete features with "-"
-    mutate_if(~ !is.numeric(.),
-              ~ map(., ~ if (is.na(.) | . == "") { "-"} else {.}) %>% unlist) %>%
-    # Set Factors for Discrete Features
-    mutate_if(~ !is.numeric(.),
-              ~ factor(., levels=unique(c("-",.))))
+  
+  passengerIds <-data$PassengerId
+  data <- data %>%
+          mutate(Title=feature_title(Name),
+                 FamSize=feature_famsize(SibSp, Parch),
+                 CabinDeck=feature_cabin_deck(Cabin),
+                 CabinNo=feature_cabin_no(Cabin)) %>%
+          select(-Name, -Ticket, -Cabin) %>%
+          # Substitute unknown continuous features with -1
+          mutate_if(is.numeric, 
+                    ~ map(., ~ if (is.na(.)) { -1 } else {.}) %>% unlist) %>%
+          # Substitute unknown discrete features with "-"
+          mutate_if(~ !is.numeric(.),
+                    ~ map(., ~ if (is.na(.) | . == "") { "-"} else {.}) %>% unlist) %>%
+          # Set Factors for Discrete Features
+          mutate_if(~ !is.numeric(.),
+                    ~ factor(., levels=unique(c("-",.))))
+  rownames(data) <- passengerIds
+  data
 }
 
 features <- preprocess_data(training_set)
+test_features <- preprocess_data(test_set)
 
 
 suppressMessages({
-  snapshot <- data_snapshot(features %>% mutate(Survived = Survived %>% factor), Survived,
+  snapshot <- data_snapshot(features %>% select(-PassengerId) %>% mutate(Survived = Survived %>% factor), Survived,
                             cont_geom = geom_density(color=NA, alpha=0.5, bw="bcv"),
                             misc_layers = scale_fill_manual(name = "Status",
                                                             values=c(`0`=`@c`(ltxt,0.5),`1`=`@c`(1)),
@@ -517,7 +523,11 @@ average of \(Y\), <br> \(f_i\) is a smooth function of the feature
 In addition, we will also be making the following adjustments to the GAM
 model:
 
-1.  <a target="_blank" href="https://www.stat.ubc.ca/~rollin/teach/643w04/lec/node41.html"><span class="hl">Forward
+1.  <span class="hl">Missing Values</span>: All \(f_i(\)Missing\()\)
+    will have a value of \(0\). This ensures that missing factors will
+    not influence a passenger’s survival
+    prediction.
+2.  <a target="_blank" href="https://www.stat.ubc.ca/~rollin/teach/643w04/lec/node41.html"><span class="hl">Forward
     Selection</span></a>: Earlier on, we have chosen over 10 features
     for the model, some of which may be irrelevant. To exclude such
     features, we will fit each predictor into the model iteratively. At
@@ -525,12 +535,101 @@ model:
     determined via
     <a data-toggle="popover" title="Cross Validation" data-content="Cross validation is a process where the data is split into N parts. (N - 1) parts are used to generate the model, and the last one is used to test the model. This is done for a total of N times, so that each part will be a test set once. The prediction error from the test set is known as the CV Error Rate.">cross
     validation</a>.
-2.  <span class="hl">Missing Values</span>: All \(f_i(\)Missing\()\)
-    will have a value of \(0\). This ensures that missing factors will
-    not influence a passenger’s survival
-prediction.
 
-<!-- end list -->
+#### Embedding Survival Relationships
+
+One of the major issues with the above GAM model is the failure to take
+into account relationships between passengers. For instance, a mother’s
+survival status could be highly dependent on the child’s. To take into
+account these factors, we introduce two hidden features in the model:
+
+  - <span class="hl">PfemaleM</span> is the probability that a
+    passenger’s female family member will survive, and
+  - <span class="hl">PmaleM</span> is the probability that a passenger’s
+    male family member will survive.
+
+To estimate the two features, we first need a model that calculates the
+survival likelihood of each individual. Each individual’s family can
+then be identified by assuming that families have the same
+<span class="hl">Last Name</span>, <span class="hl">Passenger
+class</span> and <span class="hl">Port of Embarkation</span> . The
+survival likelihoods of family members are then averaged across
+<span class="hl">Sex</span> to obtain <span class="hl">PfemaleM</span>
+and
+<span class="hl">PmaleM</span>.
+
+``` r
+lastName <- function(l) { as.character(sapply(l, ..(x) %:=% { (unlist(strsplit(x, ", "))[[1]]) })) }
+
+complete_dataset <- rbind(features %>% select(-Survived), test_features)
+
+feature_fam_survivalhood <- function(model) {
+  
+  # Calculate each family member's probability of survival
+  p_survival <- predict(model, complete_dataset, type="response")
+  indiv_survivalhood <- complete_dataset %>% 
+    cbind(FamID=c(training_set$Name,test_set$Name) %>% lastName) %>%
+    mutate(FamID= FamID %|% "_" %|% Pclass %|% "_" %|% Embarked) %>%
+    mutate(PSurvival = p_survival) %>% 
+    select(PassengerId, Sex, FamID, PSurvival)
+  
+  # Find the probability of the passenger's family members surviving (excluding the passenger him/herself),
+  # separated by gender
+  updated_dataset <- indiv_survivalhood %>%
+    select(PassengerIdBase=PassengerId, FamID) %>%
+    inner_join(indiv_survivalhood, by="FamID") %>%
+    mutate(FamPSurvived = ifelse(PassengerId == PassengerIdBase, NA, PSurvival)) %>%
+    select(PassengerId = PassengerIdBase, Sex, FamPSurvived) %>%
+    group_by(PassengerId, Sex) %>%
+    summarise(FamPSurvived = mean(FamPSurvived, na.rm =TRUE)) %>%
+    ungroup() %>%
+    mutate(Sex = "P" %|% Sex %|% "F") %>%
+    spread(key="Sex", value="FamPSurvived")
+  
+  
+  updated_dataset[is.na(updated_dataset)] <- -1
+  
+  updated_dataset
+}
+```
+
+Assuming that survival likelihoods have been determined, the GAM formula
+now takes the
+form:
+
+\[Y = \ln(\frac{p}{1-p}) = \beta_0 + \sum_i f_i(x_i) + f_f(p_{fem}) + f_m(p_{male}) \]
+
+where <br> \(p_{fem}\) is the average survival likelihood of a female
+family member, <br> \(p_{male}\) is the average survival likelihood of a
+male family member, <br> and \(f_f, f_m\) are the smooth functions for
+both of the hidden features.
+
+One of the biggest challenges of generating this model is the
+<span class="hl">recursive effect</span>: Finding the hidden features
+requires a model to predict the survival likelihoods. However, to
+generate the model, the hidden features have to be first calculated.
+Fortunately, we can break this chain by assuming that the existence of
+an equilibrium point \(\hat{p}\)
+where:
+
+\[ \ln(\frac{\hat{p}}{1-\hat{p}}) =  Y - \beta_0 - \sum_i f_i(x_i) = f_f(p_{fem}(\hat{p})) + f_m(p_{male}(\hat{p})) \]
+
+Assuming convergence towards equilibrium, \(\hat{p}\) can be determined
+via the following algorithm:
+
+<code style="background-color:var(--pri)"> <br> Initialize: <br> DATA :=
+(x\_1, x\_2, …, x\_k) <br> MODEL := GAM(DATA) <br> <br> \# Use 10
+Iterations for Convergence<br> PREV\_P \<- 0<br> for i in \[1,10\]:<br>
+  P \<- PREDICT(MODEL)<br>   (p\_female, p\_male) \<-
+GET\_HIDDEN\_FEATURE(p)<br>   DATA \<- (x\_1, x\_2, … , x\_k, p\_female,
+p\_male)<br>   MODEL \<- GAM(DATA)<br>   if (SSE(P, PREV\_P) \< 0.0001 )
+TERMINATE<br>
+
+RETURN MODEL </code>
+
+The above algorithm, as well as the missing value and forward selection
+adjustments, have been implemented in the code
+below.
 
 ``` r
 predict.mod_gam <- function(object, newdata, type="link", threshold=0.5, ...) {
@@ -544,6 +643,12 @@ predict.mod_gam <- function(object, newdata, type="link", threshold=0.5, ...) {
     newdata[,"Survived"] <- rep(-999,nrow(newdata))
   }
   
+  # Append recursive features of the model
+  if (!is.null(object$rec_features)) {
+    newdata <- newdata %>%
+               inner_join(object$RecFeatureData %>% select(c("PassengerId",object$rec_features)), by="PassengerId")
+  }
+  
   newdata <- model.frame(gp$fake.formula, newdata)
   if (type == "class") {
     (predict.gam(object=object, newdata=newdata, type="response", ...) >= threshold) * 1
@@ -553,24 +658,31 @@ predict.mod_gam <- function(object, newdata, type="link", threshold=0.5, ...) {
 }
 
 mod.gam <- function(data) {
-  # 1. Specify List of Features
-  all_features <- data %>% select(-Survived)
-  cont_vars <- all_features %>% select_if(is.numeric) %>% colnames %>% 
-    map(~ "s(" %|% . %|% 
-          ", k=" %|% { (length(unique(data[,.])) >= 10) %?% -1 %:% length(unique(data[,.])) } %|% 
-          " ,by=(" %|% . %|%  " >= 0)*1)") %>% unlist
+  
+  all_features <- data %>% select(-Survived, -PassengerId)
   disc_vars <- all_features %>% select_if(~ !is.numeric(.)) %>% colnames
   
+  # 1. Handling Missing Values: We specify a by constraint for each smoothing spline to ensure that
+  # f(NA) = 0
+  cont_to_spline <- function(v, dt = data) {
+    map(v, ~ "s(" %|% . %|% 
+          ", k=" %|% { (length(unique(dt[,.])) >= 10) %?% -1 %:% length(unique(dt[,.]) %>% {.[. != -1]}) } %|% 
+          " ,by=(" %|% . %|%  " >= 0)*1)") %>% unlist
+  }
+  cont_vars <- all_features %>% select_if(is.numeric) %>% colnames %>% cont_to_spline(dt = data)
+    
+
+  
   # Helper Function to Build Modified GAM Model
-  build_gam(vars) %:=% {
+  build_gam(vars, dt=data) %:=% {
     all_vars <- vars %>% paste0(collapse=" + ")
-    m.gam <- gam("Survived ~ " %|% all_vars %>% as.formula, data=data, family="binomial")
+    m.gam <- gam("Survived ~ " %|% all_vars %>% as.formula, data=dt, family="binomial")
     class(m.gam) <- c("mod_gam",class(m.gam))
     if (max(summary(m.gam)$p.table[,2]) >= 10) { warning("High Standard Errors.") } 
     m.gam
   }  
   
-  # 2. Perform Forward Selection by comparing chi square statistic
+  # 2. Perform Forward Selection: Chi square statistic is the measure chosen
   cur_vars <- c()
   rem_vars <- c(cont_vars,disc_vars)
   last.gam <- build_gam(c("1"))
@@ -598,10 +710,48 @@ mod.gam <- function(data) {
     last.gam <- suppressWarnings(build_gam(cur_vars))
   }  
   
-  # 3. Return Model
+  
   lapply(1:length(c(cont_vars, disc_vars)), ..(i) %:=% {
     if (i > length(cur_vars)) { return(NULL) }
-    build_gam(cur_vars[1:i])
+    
+    # 3. Recursive Fitting: Use Other Family Member's Probabilities to sharpen the estimation
+    # of the passenger's probability
+    base_training <- data
+    base_model <- build_gam(cur_vars[1:i])
+    last_fam_survivalhood <- 0
+    tryCatch({
+      cat("Starting Recursive Feature Fitting for " %|% i %|% "-Feature...\n")
+      for (it in 1:10) {
+        # Get the Feature for all the dataset
+        fam_survivalhood <- feature_fam_survivalhood(base_model)
+        rec_features <- colnames(fam_survivalhood %>% select(-PassengerId))
+        
+        # Reset the Feature to the latest one
+        if (any(rec_features %in% colnames(base_training))) { 
+          base_training <- base_training %>% select_(.dots="-" %|% rec_features)
+        }
+        base_training <- base_training %>% inner_join(fam_survivalhood, by="PassengerId")
+        
+        # Build the model based on the latest feature
+        base_model <- build_gam(c(cur_vars[1:i],cont_to_spline(rec_features, dt=base_training)),dt = base_training)
+        base_model$rec_features <- rec_features
+        base_model$RecFeatureData <- fam_survivalhood
+        
+        # If the model has converged in terms of deviance, stop, otherwise continue iterating
+        cur_fam_survivalhood <- fam_survivalhood %>% unlist %>% as.numeric
+        improvement <- (cur_fam_survivalhood - last_fam_survivalhood) ^2 %>% mean
+        cat("\tIteration " %|% it %|% ": " %|% improvement %|% "\n")
+        if (abs(improvement) < 0.01^2) {
+          cat("\tAlgorithm has converged!\n")
+          break
+        } else {
+          last_fam_survivalhood <- cur_fam_survivalhood
+        }
+      }
+    }, error= ..(e) %:=% { print(e) })
+    
+    # 4. Return Model
+    return(base_model)
   })
 }
 
@@ -614,7 +764,7 @@ cat("List of Features in Order of Selection: \n", paste0(f_list,collapse=", "))
 ```
 
     ## List of Features in Order of Selection: 
-    ##  Sex, Pclass, Title, SibSp, Parch, Age, CabinNo, FamSize, Fare, CabinDeck
+    ##  Sex, Pclass, Title, SibSp, Parch, Age, CabinNo, FamSize, Fare, CabinDeck, PfemaleF, PmaleF
 
 Listed above are features of the model, sorted by the order in which
 they were selected. For instance, <span class="hl">Sex</span> was chosen
@@ -629,7 +779,7 @@ To ensure the model is accurate, we need to find the optimal values for
 these two hyper-parameters:
 
   - <span class="hl">Number of Features</span>: The number of features
-    used in prediction, and
+    (excluding hidden) used in prediction, and
   - <span class="hl">Threshold</span>: The boundary that determines if a
     passenger is tagged as a survivor. For instance if a passenger has a
     45% probability of surviving, the model may tag him/her as alive if
@@ -686,24 +836,13 @@ opt.n <- opt.row$N_Params
 opt.gam <- m.gam[[opt.n]]
 opt.gam$threshold <- opt.threshold
 
-se <- opt.row$SE %>% as.numeric
-res.cv[,"Min_SE"] <- res.cv[,"MER"] - opt.row$MER - se
-onese.row <- res.cv %>% filter(Min_SE <= 0) %>% arrange(N_Params, (Threshold-0.5)^2) %>% { .[1,] }
-onese.threshold <- onese.row$Threshold
-onese.n <- onese.row$N_Params
-onese.gam <- m.gam[[onese.n]]
-onese.gam$threshold <- onese.threshold
-
 cv_plot <- ggplot(res.cv %>% filter(MER != Inf & Threshold >= 0.25 & Threshold <= 0.75), 
                   aes(x=N_Params, y=Threshold)) +
             theme_lk() +
-            geom_tile(aes(alpha=ifelse(Threshold == opt.threshold & N_Params == opt.n, 99,
-                                       ifelse(Threshold == onese.threshold & N_Params == onese.n, 99, MER)),
-                          fill=ifelse(Threshold == opt.threshold & N_Params == opt.n, "Optimal",
-                                      ifelse(Threshold == onese.threshold & N_Params == onese.n, "One SE", NA)))) +
-            geom_text(data=res.cv %>% subset((Threshold == opt.threshold & N_Params == opt.n) | 
-                                               (Threshold == onese.threshold & N_Params == onese.n)),
-                      aes(label=ifelse(Threshold == opt.threshold & N_Params == opt.n, "Optimal", "One SE")),
+            geom_tile(aes(alpha=ifelse(Threshold == opt.threshold & N_Params == opt.n, 99,MER),
+                          fill=ifelse(Threshold == opt.threshold & N_Params == opt.n, "Optimal",NA))) +
+            geom_text(data=res.cv %>% subset((Threshold == opt.threshold & N_Params == opt.n)),
+                      aes(label="Optimal"),
                       alpha = 1.,
                       color = `@c`(bg),
                       family = `@f`) +
@@ -715,23 +854,18 @@ cv_plot <- ggplot(res.cv %>% filter(MER != Inf & Threshold >= 0.25 & Threshold <
                                    limits=c(NA,0.25), na.value=1,
                                    labels=scales::percent, 
                                    guide=guide_legend(override.aes=list(fill=`@c`(ltxt,0.8)))) +
-            scale_fill_manual(values=c("Optimal"=`@c`(green), "One SE"=`@c`(blue)), na.value=`@c`(txt,0.8),
+            scale_fill_manual(values=`@c`(green), na.value=`@c`(txt,0.8),
                               guide="none")
 
 cv_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-11-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-12-1.png" style="display: block; margin: auto;" />
 
-Based on the CV error rate, the optimal model is one with 8 features and
-60% threshold. Other than that, we have also chosen a simpler model of 6
-features and 55% threshold using the
-<a target="_blank" href="https://web.stanford.edu/class/stats202/content/lec11-cond.pdf">One
-SE Rule</a>.
+Based on the CV error rate, the optimal model is one with 4 features and
+55% threshold.
 
 ``` r
-test_set <- read.csv(data_dir %|% "test.csv")
-test_features <- test_set %>% preprocess_data
 save_predictions <- function(m.gam, id="opt") {
   
   p_y <- predict(m.gam, test_features, type="class", threshold=m.gam$threshold)
@@ -742,39 +876,31 @@ save_predictions <- function(m.gam, id="opt") {
 }
 
 save_predictions(opt.gam)
-save_predictions(onese.gam, "onese")
   
 cat(paste0("Null Classifier\tTest Error Rate: ", scales::percent(1.-0.62679),"\n",
-    "Optimal GAM\t\tTest Error Rate: ", scales::percent(1.-0.77990),"\n",
-    "One SE GAM\t\tTest Error Rate: ", scales::percent(1.-0.79425),"\n"))
+    "Optimal GAM\t\tTest Error Rate: ", scales::percent(1.-0.79904),"\n"))
 ```
 
     ## Null Classifier  Test Error Rate: 37.3%
-    ## Optimal GAM      Test Error Rate: 22%
-    ## One SE GAM       Test Error Rate: 20.6%
+    ## Optimal GAM      Test Error Rate: 20.1%
 
-Using Kaggle’s test set, both models have significantly higher
-predictive power over the
+Using Kaggle’s test set, the model have significantly higher predictive
+power over the
 <a data-toggle="popover" title="Null Classifier" data-content="A null classifier tags any passenger as died.">null
-classifier</a>. The One SE model has the best performance, with a score
-below the 18th percentile in the
+classifier</a>, with a score near the 15th percentile in the
 <a href="https://www.kaggle.com/c/titanic/leaderboard" target="_blank">Leaderboard</a>
-(at time of submission). The optimal model has a slightly higher error
-rate, which could be due to randomness or variance/overfitting error.
+(at time of submission).
 
 #### Interpretation
 
-For this chapter, we will be using the best performing model,
-<span class="hl">One SE GAM</span>, as the reference.
-
 ``` r
-threshold_plot <- res.cv %>% filter(N_Params == onese.n) %>%
+threshold_plot <- res.cv %>% filter(N_Params == opt.n) %>%
                   {
                     ggplot(., aes(x=Threshold, y=MER)) +
                     theme_lk() +
-                    geom_point(aes(color=Threshold != onese.threshold,
-                                   shape = Threshold != onese.threshold,
-                                   size = Threshold != onese.threshold), 
+                    geom_point(aes(color=Threshold != opt.threshold,
+                                   shape = Threshold != opt.threshold,
+                                   size = Threshold != opt.threshold), 
                                show.legend=FALSE) +
                     scale_color_manual(values=c(`@c`(red),`@c`(ltxt,0.5))) +
                     scale_shape_manual(values=c(4,16)) +
@@ -787,9 +913,9 @@ threshold_plot <- res.cv %>% filter(N_Params == onese.n) %>%
 threshold_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-13-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-14-1.png" style="display: block; margin: auto;" />
 
-The above chart shows how a 6-feature model performs as we adjust the
+The above chart shows how a 4-feature model performs as we adjust the
 threshold. Other than the fact that the most optimal threshold is 55%,
 we also see that the curve remains relatively flat from 25% to 75%. This
 suggests that the model is relatively <span class="hl">pure</span>. In
@@ -799,12 +925,14 @@ surviving, rather than a toss up situation where a passenger has a
 rate.
 
 ``` r
-coeffs <- predict(onese.gam, features, type = "terms") %>% as.data.frame %>%
+coeffs <- predict(opt.gam, features, type = "terms") %>% as.data.frame %>%
           mutate(ID = rownames(.)) %>%
           gather("Feature","Val",-ID) %>%
           mutate(Feature = gsub(":[A-Za-z()>=0-9\\* ]*|\\)|s\\(","",Feature))
 
-x_vals <- features %>% mutate(ID = rownames(features)) %>%
+x_vals <- features %>% 
+          inner_join(opt.gam$RecFeatureData, by="PassengerId") %>%
+          mutate(ID = rownames(features)) %>%
           gather("Feature","X",-ID)
 
 x_f_raw <- coeffs %>%
@@ -834,7 +962,7 @@ cont_plot <- ggplot(cont_tbl, aes(x=X, y=Val)) +
 cont_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-14-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-15-1.png" style="display: block; margin: auto;" />
 
 The plots above show the function \(f_i\) for each continuous feature.
 All these 4 plots suggest a close to linear relationship for \(f_i\).
@@ -857,7 +985,7 @@ discr_plot <- ggplot(discr_tbl, aes(x=X, y=Val)) +
 discr_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-15-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-16-1.png" style="display: block; margin: auto;" />
 
 Similarly, the plots above show the equivalent for discrete features. As
 before, we can deduce that females and passengers with distinguished
@@ -881,10 +1009,10 @@ imp_plot <- ggplot(imp_tbl, aes(fill=Feature, x=1, y=PctImpt)) +
             geom_col(position = position_stack(vjust = .5), 
                      width=0.7, show.legend = FALSE) +
             geom_text(aes(label=Feature, x=0.4),
-                            size=3.5,
-                            position = position_stack(vjust = .5),
-                            family = `@f`,
-                            color = `@c`(txt)) +
+                          size=3.5,
+                          position = position_stack(vjust = .5),
+                          family = `@f`,
+                          color = `@c`(txt)) +
             geom_text(aes(label=scales::percent(round(..y..,2))),
                             position = position_stack(vjust = .5),
                             family = `@f`,
@@ -896,7 +1024,7 @@ imp_plot <- ggplot(imp_tbl, aes(fill=Feature, x=1, y=PctImpt)) +
 imp_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-16-1.png" style="display: block; margin: auto;" />
+<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-17-1.png" style="display: block; margin: auto;" />
 
 The chart above shows the strength of each feature relative to one
 another. As can be seen, both <span class="hl yellow-text">Sex</span>
