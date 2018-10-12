@@ -751,13 +751,13 @@ mod.gam <- function(data) {
 m.gam <- cache("m_gam", list(), ..() %:=% { mod.gam(features) })
 
 highest_idx <- which(sapply(1:length(m.gam), ..(g) %:=% { !is.null(m.gam[[g]]) })) %>% max
-f_list <- m.gam[[highest_idx]]$formula %>% as.character %>% {.[3] } %>% strsplit(" \\+ ") %>% unlist %>% { gsub(",[A-Za-z()0-9>=\\* -]*|s\\(","",.) }
+f_list <- m.gam[[highest_idx]]$formula %>% as.character %>% {.[3] } %>% strsplit(" \\+ ") %>% unlist %>% { gsub(",[A-Za-z()0-9>=\\* -]*|s\\(","",.) } %>% { .[!(. %in% c("PmaleF","PfemaleF"))] }
 
 cat("List of Features in Order of Selection: \n", paste0(f_list,collapse=", "))
 ```
 
     ## List of Features in Order of Selection: 
-    ##  Sex, Pclass, Title, SibSp, Parch, Age, CabinNo, FamSize, Fare, CabinDeck, PfemaleF, PmaleF
+    ##  Sex, Pclass, Title, SibSp, Parch, Age, CabinNo, FamSize, Fare, CabinDeck
 
 Listed above are features of the model, sorted by the order they were
 selected. For instance, <span class="hl">Sex</span> was chosen first,

@@ -228,7 +228,7 @@ The Adjusted GAM is implemented using the code below.
 <<gam>>
 
 highest_idx <- which(sapply(1:length(m.gam), ..(g) %:=% { !is.null(m.gam[[g]]) })) %>% max
-f_list <- m.gam[[highest_idx]]$formula %>% as.character %>% {.[3] } %>% strsplit(" \\+ ") %>% unlist %>% { gsub(",[A-Za-z()0-9>=\\* -]*|s\\(","",.) }
+f_list <- m.gam[[highest_idx]]$formula %>% as.character %>% {.[3] } %>% strsplit(" \\+ ") %>% unlist %>% { gsub(",[A-Za-z()0-9>=\\* -]*|s\\(","",.) } %>% { .[!(. %in% c("PmaleF","PfemaleF"))] }
 
 cat("List of Features in Order of Selection: \n", paste0(f_list,collapse=", "))
 ```

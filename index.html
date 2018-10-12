@@ -792,11 +792,11 @@ mod.gam &lt;- function(data) {
 m.gam &lt;- cache(&quot;m_gam&quot;, list(), ..() %:=% { mod.gam(features) })
 
 highest_idx &lt;- which(sapply(1:length(m.gam), ..(g) %:=% { !is.null(m.gam[[g]]) })) %&gt;% max
-f_list &lt;- m.gam[[highest_idx]]$formula %&gt;% as.character %&gt;% {.[3] } %&gt;% strsplit(&quot; \\+ &quot;) %&gt;% unlist %&gt;% { gsub(&quot;,[A-Za-z()0-9&gt;=\\* -]*|s\\(&quot;,&quot;&quot;,.) }
+f_list &lt;- m.gam[[highest_idx]]$formula %&gt;% as.character %&gt;% {.[3] } %&gt;% strsplit(&quot; \\+ &quot;) %&gt;% unlist %&gt;% { gsub(&quot;,[A-Za-z()0-9&gt;=\\* -]*|s\\(&quot;,&quot;&quot;,.) } %&gt;% { .[!(. %in% c(&quot;PmaleF&quot;,&quot;PfemaleF&quot;))] }
 
 cat(&quot;List of Features in Order of Selection: \n&quot;, paste0(f_list,collapse=&quot;, &quot;))</code></pre>
 <pre><code>## List of Features in Order of Selection: 
-##  Sex, Pclass, Title, SibSp, Parch, Age, CabinNo, FamSize, Fare, CabinDeck, PfemaleF, PmaleF</code></pre>
+##  Sex, Pclass, Title, SibSp, Parch, Age, CabinNo, FamSize, Fare, CabinDeck</code></pre>
 <p>Listed above are features of the model, sorted by the order they were selected. For instance, <span class="hl">Sex</span> was chosen first, followed by <span class="hl">Pclass</span> and <span class="hl">Title</span>. This strengthens our hypothesis that both <span class="hl">Sex</span> and <span class="hl">Pclass</span> are strong signals for survivability.</p>
 </section>
 <section id="performance" class="level3">
