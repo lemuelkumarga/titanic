@@ -151,9 +151,9 @@ plot(snapshot$cont_plot)
 plot(snapshot$disc_plot)
 ```
 
-### Modeling Survival Likelihood
+## Modeling Survival Likelihood
 
-#### Model Selection
+### Model Selection
 
 After finalizing our list of features, we now have to choose the most appropriate model for this analysis. Based on our objectives, the model must be:
 
@@ -176,7 +176,7 @@ In addition, we will also be making the following adjustments to the GAM model:
 1. <span class="hl">Missing Values</span>: All \(f_i(\)Missing\()\) will have a value of \(0\). This ensures that missing factors will not influence a passenger's survival prediction.
 2. <a target="_blank" href="https://www.stat.ubc.ca/~rollin/teach/643w04/lec/node41.html"><span class="hl">Forward Selection</span></a>: Earlier on, we have chosen over 10 features for the model, some of which may be irrelevant. To exclude such features, we will fit each predictor into the model iteratively. At the end, the number of features to be used for prediction will be determined via <a data-toggle="popover" title="Cross Validation" data-content="Cross validation is a process where the data is split into N parts. (N - 1) parts are used to generate the model, and the last one is used to test the model. This is done for a total of N times, so that each part will be a test set once. The prediction error from the test set is known as the CV Error Rate.">cross validation</a>.
 
-#### Embedding Survival Relationships
+### Embedding Survival Relationships
 
 One of the major issues with GAM is the failure to encode relationships amongst passengers. For instance, a mother's survival status could highly depend on the child's. To account for these factors, we introduce two hidden features in the model: 
 
@@ -220,7 +220,7 @@ for i in [1,10]:<br>
 RETURN MODEL
 </code>
 
-#### Model Implementation
+### Model Implementation
 
 The Adjusted GAM is implemented using the code below.
 
@@ -235,7 +235,7 @@ cat("List of Features in Order of Selection: \n", paste0(f_list,collapse=", "))
 
 Listed above are features of the model, sorted by the order they were selected. For instance, <span class="hl">Sex</span> was chosen first, followed by <span class="hl">Pclass</span> and <span class="hl">Title</span>. This strengthens our hypothesis that both <span class="hl">Sex</span> and <span class="hl">Pclass</span> are strong signals for survivability.
 
-#### Performance
+### Performance
 
 To ensure the model is accurate, we need to find the optimal values for these two hyper-parameters:
 
@@ -257,11 +257,11 @@ cat(paste0("Null Classifier\tTest Error Rate: ", scales::percent(1.-0.62679),"\n
     "Optimal GAM\t\tTest Error Rate: ", scales::percent(1.-0.79904),"\n"))
 ```
 
-Using Kaggle's test set, the model has significantly higher predictive power over the <a data-toggle="popover" title="Null Classifier" data-content="A null classifier tags any passenger as died.">null classifier</a>. In fact, it is scored near the 15th percentile* of <a href="https://www.kaggle.com/c/titanic/leaderboard" target="_blank">Kaggle's Leaderboard</a>! 
+Using Kaggle's test set, the model has significantly higher predictive power over the <a data-toggle="popover" title="Null Classifier" data-content="A null classifier tags any passenger as died.">null classifier</a>. In fact, it is ranked near the 15th percentile* of <a href="https://www.kaggle.com/c/titanic/leaderboard" target="_blank">Kaggle's Leaderboard</a>! 
 
 <span style="font-size: 0.8em">*at time of submission</span>
 
-#### Interpretation
+### Interpretation
 
 
 ```{r}

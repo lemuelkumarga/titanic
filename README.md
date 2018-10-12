@@ -490,9 +490,9 @@ plot(snapshot$disc_plot)
 
 <img src="/Users/lemuel/Documents/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-9-1.png" style="display: block; margin: auto;" />
 
-### Modeling Survival Likelihood
+## Modeling Survival Likelihood
 
-#### Model Selection
+### Model Selection
 
 After finalizing our list of features, we now have to choose the most
 appropriate model for this analysis. Based on our objectives, the model
@@ -536,7 +536,7 @@ model:
     <a data-toggle="popover" title="Cross Validation" data-content="Cross validation is a process where the data is split into N parts. (N - 1) parts are used to generate the model, and the last one is used to test the model. This is done for a total of N times, so that each part will be a test set once. The prediction error from the test set is known as the CV Error Rate.">cross
     validation</a>.
 
-#### Embedding Survival Relationships
+### Embedding Survival Relationships
 
 One of the major issues with GAM is the failure to encode relationships
 amongst passengers. For instance, a mother’s survival status could
@@ -619,7 +619,7 @@ GET\_HIDDEN\_FEATURE(p)<br>   DATA \<- (x\_1, x\_2, … , x\_k, p\_female,
 p\_male)<br>   MODEL \<- GAM(DATA)<br>   if (SSE(P, PREV\_P) \< 0.0001 )
 TERMINATE<br> RETURN MODEL </code>
 
-#### Model Implementation
+### Model Implementation
 
 The Adjusted GAM is implemented using the code
 below.
@@ -766,7 +766,7 @@ followed by <span class="hl">Pclass</span> and
 <span class="hl">Sex</span> and <span class="hl">Pclass</span> are
 strong signals for survivability.
 
-#### Performance
+### Performance
 
 To ensure the model is accurate, we need to find the optimal values for
 these two hyper-parameters:
@@ -881,13 +881,13 @@ cat(paste0("Null Classifier\tTest Error Rate: ", scales::percent(1.-0.62679),"\n
 Using Kaggle’s test set, the model has significantly higher predictive
 power over the
 <a data-toggle="popover" title="Null Classifier" data-content="A null classifier tags any passenger as died.">null
-classifier</a>. In fact, it is scored near the 15th percentile\* of
+classifier</a>. In fact, it is ranked near the 15th percentile\* of
 <a href="https://www.kaggle.com/c/titanic/leaderboard" target="_blank">Kaggle’s
 Leaderboard</a>\!
 
 <span style="font-size: 0.8em">\*at time of submission</span>
 
-#### Interpretation
+### Interpretation
 
 ``` r
 threshold_plot <- res.cv %>% filter(N_Params == opt.n) %>%
