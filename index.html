@@ -623,15 +623,14 @@ plot(snapshot$cont_plot)</code></pre>
 <li><span class="hl">PfemaleM</span>: The probability that a passenger’s female family member will survive, and</li>
 <li><span class="hl">PmaleM</span>: The probability that a passenger’s male family member will survive.</li>
 </ul>
-<p>To estimate the two features, we first need a model that calculates the survival likelihood of every individual. Each individual’s family can then be identified through his/her <span class="hl">last name</span>, <span class="hl">passenger class</span> and <span class="hl">port of embarkation</span>. The survival likelihoods of family members are then averaged across <span class="hl">Sex</span> to obtain <span class="hl">PfemaleM</span> and <span class="hl">PmaleM</span> respectively.</p>
+<p>To estimate the two features, we first need the survival likelihood of every individual. Each individual’s family can then be identified through his/her <span class="hl">last name</span>, <span class="hl">passenger class</span> and <span class="hl">port of embarkation</span>. The survival likelihoods of family members are then averaged across <span class="hl">Sex</span> to obtain <span class="hl">PfemaleM</span> and <span class="hl">PmaleM</span> respectively.</p>
 <pre class="r"><code>lastName &lt;- function(l) { as.character(sapply(l, ..(x) %:=% { (unlist(strsplit(x, &quot;, &quot;))[[1]]) })) }
 
 complete_dataset &lt;- rbind(features %&gt;% select(-Survived), test_features)
 
-feature_fam_survivalhood &lt;- function(model) {
+feature_fam_survivalhood &lt;- function(p_survival) {
   
   # Calculate each family member&#39;s probability of survival
-  p_survival &lt;- predict(model, complete_dataset, type=&quot;response&quot;)
   indiv_survivalhood &lt;- complete_dataset %&gt;% 
     cbind(FamID=c(training_set$Name,test_set$Name) %&gt;% lastName) %&gt;%
     mutate(FamID= FamID %|% &quot;_&quot; %|% Pclass %|% &quot;_&quot; %|% Embarked) %&gt;%
@@ -651,7 +650,6 @@ feature_fam_survivalhood &lt;- function(model) {
     mutate(Sex = &quot;P&quot; %|% Sex %|% &quot;F&quot;) %&gt;%
     spread(key=&quot;Sex&quot;, value=&quot;FamPSurvived&quot;)
   
-  
   updated_dataset[is.na(updated_dataset)] &lt;- -1
   
   updated_dataset
@@ -659,9 +657,9 @@ feature_fam_survivalhood &lt;- function(model) {
 <p>Assuming the existence of survival likelihoods, the GAM model can be generated with the formula:</p>
 <p><span class="math display">\[Y = \ln(\frac{p}{1-p}) = \beta_0 + \sum_i f_i(x_i) + f_f(p_{fem}) + f_m(p_{male}) \]</span></p>
 <p>where <br> <span class="math inline">\(p_{fem}\)</span> is the survival likelihood of a female family member, <br> <span class="math inline">\(p_{male}\)</span> is the survival likelihood of a male family member, <br> and <span class="math inline">\(f_f, f_m\)</span> are the smooth functions for both.</p>
-<p>The biggest challenge in generating this model is <span class="hl">recursion</span>. The hidden features require a model, which in turn requires the hidden features. Fortunately, we can break this chain by assuming that the existence of an equilibrium <span class="math inline">\(\hat{p}\)</span> where:</p>
+<p>The biggest challenge in generating this model is <span class="hl">recursion</span>. The hidden features require survival likelihoods from the model, which in turn requires the hidden features. Fortunately, we can break this chain by assuming that the existence of an equilibrium <span class="math inline">\(\hat{p}\)</span> where:</p>
 <p><span class="math display">\[ \ln(\frac{\hat{p}}{1-\hat{p}}) =  Y - \beta_0 - \sum_i f_i(x_i) = f_f(p_{fem}(\hat{p})) + f_m(p_{male}(\hat{p})) \]</span></p>
-<p>Assuming convergence, <span class="math inline">\(\hat{p}\)</span> can be determined via the following algorithm: <code style="background-color:var(--pri)"> <br> Initialize: <br> DATA := (x_1, x_2, …, x_k) <br> MODEL := GAM(DATA) <br> <br> # Use 10 Iterations for Convergence<br> PREV_P &lt;- 0<br> for i in [1,10]:<br>   P &lt;- PREDICT(MODEL)<br>   (p_female, p_male) &lt;- GET_HIDDEN_FEATURE(p)<br>   DATA &lt;- (x_1, x_2, … , x_k, p_female, p_male)<br>   MODEL &lt;- GAM(DATA)<br>   if (SUM{(P - PREV_P)^2} &lt; 0.0001) BREAK<br>   else PREV_P &lt;- P<br> RETURN MODEL </code></p>
+<p>Assuming convergence, <span class="math inline">\(\hat{p}\)</span> can be determined via the following algorithm: <code style="background-color:var(--pri)"> <br> Initialize: <br> DATA := (x_1, x_2, …, x_k) <br> MODEL := GAM(DATA) <br> PREV_P := PREDICT(MODEL) <br> <br> # Use 10 Iterations for Convergence<br> for i in [1,10]:<br>   (p_female, p_male) &lt;- GET_HIDDEN_FEATURE(PREV_P)<br>   DATA &lt;- (x_1, x_2, … , x_k, p_female, p_male)<br>   MODEL &lt;- GAM(DATA)<br>   P &lt;- PREDICT(MODEL)<br>   if (SUM{(P - PREV_P)^2} &lt; 0.0001) BREAK<br>   else PREV_P &lt;- P<br> RETURN MODEL </code></p>
 </section>
 <section id="model-implementation" class="level3">
 <h3>Model Implementation</h3>
@@ -752,13 +750,15 @@ mod.gam &lt;- function(data) {
     # of the passenger&#39;s probability
     base_training &lt;- data
     base_model &lt;- build_gam(cur_vars[1:i])
-    last_fam_survivalhood &lt;- 0
+    last_p &lt;- predict(base_model, complete_dataset, type=&quot;response&quot;)
+
     tryCatch({
       cat(&quot;Starting Recursive Feature Fitting for &quot; %|% i %|% &quot;-Feature...\n&quot;)
       for (it in 1:10) {
+        
         # Get the Feature for all the dataset
-        fam_survivalhood &lt;- feature_fam_survivalhood(base_model)
-        rec_features &lt;- colnames(fam_survivalhood %&gt;% select(-PassengerId))
+        fam_survivalhood &lt;- feature_fam_survivalhood(last_p)
+        rec_features &lt;- colnames(fam_survivalhood %&gt;% select(-PassengerId)) 
         
         # Reset the Feature to the latest one
         if (any(rec_features %in% colnames(base_training))) { 
@@ -770,16 +770,17 @@ mod.gam &lt;- function(data) {
         base_model &lt;- build_gam(c(cur_vars[1:i],cont_to_spline(rec_features, dt=base_training)),dt = base_training)
         base_model$rec_features &lt;- rec_features
         base_model$RecFeatureData &lt;- fam_survivalhood
-        
+  
+        p_survival &lt;- predict(base_model, complete_dataset, type=&quot;response&quot;)
+     
         # If the model has converged in terms of deviance, stop, otherwise continue iterating
-        cur_fam_survivalhood &lt;- fam_survivalhood %&gt;% unlist %&gt;% as.numeric
-        improvement &lt;- (cur_fam_survivalhood - last_fam_survivalhood) ^2 %&gt;% mean
+        improvement &lt;- ((p_survival - last_p)^ 2 %&gt;% mean) * 10^4
         cat(&quot;\tIteration &quot; %|% it %|% &quot;: &quot; %|% improvement %|% &quot;\n&quot;)
-        if (abs(improvement) &lt; 0.01^2) {
+        if (abs(improvement) &lt;= 1) {
           cat(&quot;\tAlgorithm has converged!\n&quot;)
           break
         } else {
-          last_fam_survivalhood &lt;- cur_fam_survivalhood
+          last_p &lt;- p_survival
         }
       }
     }, error= ..(e) %:=% { print(e) })
@@ -856,25 +857,25 @@ opt.gam$threshold &lt;- opt.threshold
 
 cv_plot &lt;- ggplot(res.cv %&gt;% filter(MER != Inf &amp; Threshold &gt;= 0.25 &amp; Threshold &lt;= 0.75), 
                   aes(x=N_Params, y=Threshold)) +
-            theme_lk() +
-            geom_tile(aes(alpha=ifelse(Threshold == opt.threshold &amp; N_Params == opt.n, 99,MER),
-                          fill=ifelse(Threshold == opt.threshold &amp; N_Params == opt.n, &quot;Optimal&quot;,NA))) +
-            geom_text(data=res.cv %&gt;% subset((Threshold == opt.threshold &amp; N_Params == opt.n)),
-                      aes(label=&quot;Optimal&quot;),
-                      alpha = 1.,
-                      color = `@c`(bg),
-                      family = `@f`) +
-            scale_x_continuous(name = &quot;Number of Features (Surfaced + Hidden)&quot;, breaks = 1:4 * 2,
-                               expand = c(0,0),
-                               labels= (1:4 * 2) %|% &quot; + 2&quot;) +
-            scale_y_continuous(name = &quot;Threshold&quot;, labels=scales::percent,
-                               expand = c(0,0)) + 
-            scale_alpha_continuous(name=&quot;CV Error Rate&quot;, range=c(0.05,1), 
-                                   limits=c(NA,0.25), na.value=1,
-                                   labels=scales::percent, 
-                                   guide=guide_legend(override.aes=list(fill=`@c`(ltxt,0.8)))) +
-            scale_fill_manual(values=`@c`(green), na.value=`@c`(txt,0.8),
-                              guide=&quot;none&quot;)
+          theme_lk() +
+          geom_tile(aes(alpha=ifelse(Threshold == opt.threshold &amp; N_Params == opt.n, 99,MER),
+                        fill=ifelse(Threshold == opt.threshold &amp; N_Params == opt.n, &quot;Optimal&quot;,NA))) +
+          geom_text(data=res.cv %&gt;% subset((Threshold == opt.threshold &amp; N_Params == opt.n)),
+                    aes(label=&quot;Optimal&quot;),
+                    alpha = 1.,
+                    color = `@c`(bg),
+                    family = `@f`) +
+          scale_x_continuous(name = &quot;Number of Features (Surfaced + Hidden)&quot;, breaks = 1:4 * 2,
+                             expand = c(0,0),
+                             labels= (1:4 * 2) %|% &quot; + 2&quot;) +
+          scale_y_continuous(name = &quot;Threshold&quot;, labels=scales::percent,
+                             expand = c(0,0)) + 
+          scale_alpha_continuous(name=&quot;CV Error Rate&quot;, range=c(0.05,1), 
+                                 limits=c(NA,0.25), na.value=1,
+                                 labels=scales::percent, 
+                                 guide=guide_legend(override.aes=list(fill=`@c`(ltxt,0.8)))) +
+          scale_fill_manual(values=`@c`(green), na.value=`@c`(txt,0.8),
+                            guide=&quot;none&quot;)
 
 cv_plot</code></pre>
 <p><img src="index_files/figure-html/unnamed-chunk-12-1.png" width="672" style="display: block; margin: auto;" /></p>

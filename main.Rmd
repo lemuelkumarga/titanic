@@ -183,7 +183,7 @@ One of the major issues with GAM is the failure to encode relationships amongst 
 * <span class="hl">PfemaleM</span>: The probability that a passenger's female family member will survive, and
 * <span class="hl">PmaleM</span>: The probability that a passenger's male family member will survive.
 
-To estimate the two features, we first need a model that calculates the survival likelihood of every individual. Each individual's family can then be identified through his/her <span class="hl">last name</span>, <span class="hl">passenger class</span> and <span class="hl">port of embarkation</span>. The survival likelihoods of family members are then averaged across <span class="hl">Sex</span> to obtain <span class="hl">PfemaleM</span> and <span class="hl">PmaleM</span> respectively.
+To estimate the two features, we first need the survival likelihood of every individual. Each individual's family can then be identified through his/her <span class="hl">last name</span>, <span class="hl">passenger class</span> and <span class="hl">port of embarkation</span>. The survival likelihoods of family members are then averaged across <span class="hl">Sex</span> to obtain <span class="hl">PfemaleM</span> and <span class="hl">PmaleM</span> respectively.
 
 ```{r}
 <<fam_survivalhood>>
@@ -199,7 +199,7 @@ where <br>
 \(p_{male}\) is the survival likelihood of a male family member, <br> and
 \(f_f, f_m\) are the smooth functions for both.
 
-The biggest challenge in generating this model is <span class="hl">recursion</span>. The hidden features require a model, which in turn requires the hidden features. Fortunately, we can break this chain by assuming that the existence of an equilibrium \(\hat{p}\) where:
+The biggest challenge in generating this model is <span class="hl">recursion</span>. The hidden features require survival likelihoods from the model, which in turn requires the hidden features. Fortunately, we can break this chain by assuming that the existence of an equilibrium \(\hat{p}\) where:
 
 \[ \ln(\frac{\hat{p}}{1-\hat{p}}) =  Y - \beta_0 - \sum_i f_i(x_i) = f_f(p_{fem}(\hat{p})) + f_m(p_{male}(\hat{p})) \]
 
@@ -208,14 +208,14 @@ Assuming convergence, \(\hat{p}\) can be determined via the following algorithm:
 Initialize: <br>
 DATA := (x_1, x_2, ..., x_k) <br>
 MODEL := GAM(DATA) <br>
+PREV_P := PREDICT(MODEL) <br>
 <br>
 \# Use 10 Iterations for Convergence<br>
-PREV_P <- 0<br>
 for i in [1,10]:<br>
-&nbsp; P <- PREDICT(MODEL)<br>
-&nbsp; (p_female, p_male) <- GET_HIDDEN_FEATURE(p)<br>
+&nbsp; (p_female, p_male) <- GET_HIDDEN_FEATURE(PREV_P)<br>
 &nbsp; DATA <- (x_1, x_2, ... , x_k, p_female, p_male)<br>
 &nbsp; MODEL <- GAM(DATA)<br>
+&nbsp; P <- PREDICT(MODEL)<br>
 &nbsp; if (SUM\{(P - PREV_P)^2\} < 0.0001) BREAK<br>
 &nbsp; else PREV_P <- P<br>
 RETURN MODEL

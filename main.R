@@ -260,10 +260,9 @@ lastName <- function(l) { as.character(sapply(l, ..(x) %:=% { (unlist(strsplit(x
 
 complete_dataset <- rbind(features %>% select(-Survived), test_features)
 
-feature_fam_survivalhood <- function(model) {
+feature_fam_survivalhood <- function(p_survival) {
   
   # Calculate each family member's probability of survival
-  p_survival <- predict(model, complete_dataset, type="response")
   indiv_survivalhood <- complete_dataset %>% 
     cbind(FamID=c(training_set$Name,test_set$Name) %>% lastName) %>%
     mutate(FamID= FamID %|% "_" %|% Pclass %|% "_" %|% Embarked) %>%
@@ -282,7 +281,6 @@ feature_fam_survivalhood <- function(model) {
     ungroup() %>%
     mutate(Sex = "P" %|% Sex %|% "F") %>%
     spread(key="Sex", value="FamPSurvived")
-  
   
   updated_dataset[is.na(updated_dataset)] <- -1
   
@@ -381,13 +379,15 @@ mod.gam <- function(data) {
     # of the passenger's probability
     base_training <- data
     base_model <- build_gam(cur_vars[1:i])
-    last_fam_survivalhood <- 0
+    last_p <- predict(base_model, complete_dataset, type="response")
+
     tryCatch({
       cat("Starting Recursive Feature Fitting for " %|% i %|% "-Feature...\n")
       for (it in 1:10) {
+        
         # Get the Feature for all the dataset
-        fam_survivalhood <- feature_fam_survivalhood(base_model)
-        rec_features <- colnames(fam_survivalhood %>% select(-PassengerId))
+        fam_survivalhood <- feature_fam_survivalhood(last_p)
+        rec_features <- colnames(fam_survivalhood %>% select(-PassengerId)) 
         
         # Reset the Feature to the latest one
         if (any(rec_features %in% colnames(base_training))) { 
@@ -399,16 +399,17 @@ mod.gam <- function(data) {
         base_model <- build_gam(c(cur_vars[1:i],cont_to_spline(rec_features, dt=base_training)),dt = base_training)
         base_model$rec_features <- rec_features
         base_model$RecFeatureData <- fam_survivalhood
-        
+  
+        p_survival <- predict(base_model, complete_dataset, type="response")
+     
         # If the model has converged in terms of deviance, stop, otherwise continue iterating
-        cur_fam_survivalhood <- fam_survivalhood %>% unlist %>% as.numeric
-        improvement <- (cur_fam_survivalhood - last_fam_survivalhood) ^2 %>% mean
+        improvement <- ((p_survival - last_p)^ 2 %>% mean) * 10^4
         cat("\tIteration " %|% it %|% ": " %|% improvement %|% "\n")
-        if (abs(improvement) < 0.01^2) {
+        if (abs(improvement) <= 1) {
           cat("\tAlgorithm has converged!\n")
           break
         } else {
-          last_fam_survivalhood <- cur_fam_survivalhood
+          last_p <- p_survival
         }
       }
     }, error= ..(e) %:=% { print(e) })
@@ -474,25 +475,25 @@ opt.gam$threshold <- opt.threshold
 
 cv_plot <- ggplot(res.cv %>% filter(MER != Inf & Threshold >= 0.25 & Threshold <= 0.75), 
                   aes(x=N_Params, y=Threshold)) +
-            theme_lk() +
-            geom_tile(aes(alpha=ifelse(Threshold == opt.threshold & N_Params == opt.n, 99,MER),
-                          fill=ifelse(Threshold == opt.threshold & N_Params == opt.n, "Optimal",NA))) +
-            geom_text(data=res.cv %>% subset((Threshold == opt.threshold & N_Params == opt.n)),
-                      aes(label="Optimal"),
-                      alpha = 1.,
-                      color = `@c`(bg),
-                      family = `@f`) +
-            scale_x_continuous(name = "Number of Features (Surfaced + Hidden)", breaks = 1:4 * 2,
-                               expand = c(0,0),
-                               labels= (1:4 * 2) %|% " + 2") +
-            scale_y_continuous(name = "Threshold", labels=scales::percent,
-                               expand = c(0,0)) + 
-            scale_alpha_continuous(name="CV Error Rate", range=c(0.05,1), 
-                                   limits=c(NA,0.25), na.value=1,
-                                   labels=scales::percent, 
-                                   guide=guide_legend(override.aes=list(fill=`@c`(ltxt,0.8)))) +
-            scale_fill_manual(values=`@c`(green), na.value=`@c`(txt,0.8),
-                              guide="none")
+          theme_lk() +
+          geom_tile(aes(alpha=ifelse(Threshold == opt.threshold & N_Params == opt.n, 99,MER),
+                        fill=ifelse(Threshold == opt.threshold & N_Params == opt.n, "Optimal",NA))) +
+          geom_text(data=res.cv %>% subset((Threshold == opt.threshold & N_Params == opt.n)),
+                    aes(label="Optimal"),
+                    alpha = 1.,
+                    color = `@c`(bg),
+                    family = `@f`) +
+          scale_x_continuous(name = "Number of Features (Surfaced + Hidden)", breaks = 1:4 * 2,
+                             expand = c(0,0),
+                             labels= (1:4 * 2) %|% " + 2") +
+          scale_y_continuous(name = "Threshold", labels=scales::percent,
+                             expand = c(0,0)) + 
+          scale_alpha_continuous(name="CV Error Rate", range=c(0.05,1), 
+                                 limits=c(NA,0.25), na.value=1,
+                                 labels=scales::percent, 
+                                 guide=guide_legend(override.aes=list(fill=`@c`(ltxt,0.8)))) +
+          scale_fill_manual(values=`@c`(green), na.value=`@c`(txt,0.8),
+                            guide="none")
 
 ## ---- end-of-cv
 
