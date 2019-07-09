@@ -126,7 +126,7 @@ pander(cols_summary, caption='Titanic Passengers Data - For more info, please vi
 | PassengerId | INTEGER   | 1 // 2 // 3 // 4 // 5                                                                                                                                                                | 100%      |
 | Survived    | INTEGER   | 0 // 1                                                                                                                                                                               | 100%      |
 | Pclass      | INTEGER   | 3 // 1 // 2                                                                                                                                                                          | 100%      |
-| Name        | CHARACTER | Braund, Mr. Owen Harris // Cumings, Mrs. John Bradley (Florence Briggs Thayer) // Heikkinen, Miss. Laina // Futrelle, Mrs. Jacques Heath (Lily May Peel) // Allen, Mr. William Henry | 100%      |
+| Name        | CHARACTER | Braund, Mr. Owen Harris // Cumings, Mrs. John Bradley (Florence Briggs Thayer) // Heikkinen, Miss. Laina // Futrelle, Mrs. Jacques Heath (Lily May Peel) // Allen, Mr. William Henry | 100%      |
 | Sex         | CHARACTER | male // female                                                                                                                                                                       | 100%      |
 | Age         | NUMERIC   | 22 // 38 // 26 // 35 // 54                                                                                                                                                           | 80%       |
 | SibSp       | INTEGER   | 1 // 0 // 3 // 4 // 2                                                                                                                                                                | 100%      |
@@ -251,7 +251,7 @@ feature_title <- function(Name) { ifelse(prefix(Name) %in% common_titles,
 title_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
 
 The chart above confirms our suspicion, as those with more distinguished
 status, such as <span class="hl color-2-text">Master</span> and
@@ -292,7 +292,7 @@ famsize_plot <- training_set %>%
 famsize_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-5-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-5-1.png" style="display: block; margin: auto;" />
 
 Interestingly, we notice that those with intermediate family sizes are
 more likely to survive. This could be due to the presence of children.
@@ -352,7 +352,7 @@ cabin_deck_plot <- training_set %>%
 cabin_deck_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
 
 As expected, those in Cabin B to F have higher chances of surviving than
 those in the highest and lowest floors.
@@ -429,7 +429,7 @@ cabin_number_plot <- training_set %>%
 cabin_number_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
 
 From the chart, it seems that those on the right side are more likely to
 survive, confirming our previous hypothesis.
@@ -480,7 +480,7 @@ suppressMessages({
 plot(snapshot$cont_plot)
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-8-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-8-1.png" style="display: block; margin: auto;" />
 
 #### Categorical Features
 
@@ -488,7 +488,7 @@ plot(snapshot$cont_plot)
 plot(snapshot$disc_plot)
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-9-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-9-1.png" style="display: block; margin: auto;" />
 
 ## Modeling Survival Likelihood
 
@@ -607,7 +607,7 @@ Fortunately, we can break this chain by assuming that the existence of
 an equilibrium \(\hat{p}\)
 where:
 
-\[ \ln(\frac{\hat{p}}{1-\hat{p}}) =  Y - \beta_0 - \sum_i f_i(x_i) = f_f(p_{fem}(\hat{p})) + f_m(p_{male}(\hat{p})) \]
+\[ \ln(\frac{\hat{p}}{1-\hat{p}}) - \beta_0 - \sum_i f_i(x_i) = f_f(p_{fem}(\hat{p})) + f_m(p_{male}(\hat{p})) \]
 
 Assuming convergence, \(\hat{p}\) can be determined via the following
 algorithm: <code style="background-color:var(--pri)"> <br> Initialize:
@@ -857,7 +857,7 @@ cv_plot <- ggplot(res.cv %>% filter(MER != Inf & Threshold >= 0.25 & Threshold <
 cv_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-12-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-12-1.png" style="display: block; margin: auto;" />
 
 Based on the CV error rate, the optimal model is one with 4 + 2 features
 and 55% threshold.
@@ -912,7 +912,7 @@ threshold_plot <- res.cv %>% filter(N_Params == opt.n) %>%
 threshold_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-14-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-14-1.png" style="display: block; margin: auto;" />
 
 The above chart shows how a 4+2-feature model performs as we adjust the
 threshold. Other than the fact that the most optimal threshold is 55%,
@@ -961,7 +961,7 @@ cont_plot <- ggplot(cont_tbl, aes(x=X, y=Val)) +
 cont_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-15-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-15-1.png" style="display: block; margin: auto;" />
 
 The plots above show the function \(f_i\) for each continuous feature.
 All 4 plots suggest a close to linear relationship for \(f_i\). This
@@ -984,7 +984,7 @@ discr_plot <- ggplot(discr_tbl, aes(x=X, y=Val)) +
 discr_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-16-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-16-1.png" style="display: block; margin: auto;" />
 
 Similarly, the plots above show the equivalent for discrete features. As
 before, we can deduce that females and passengers with distinguished
@@ -1025,7 +1025,7 @@ imp_plot <- ggplot(imp_tbl, aes(fill=Feature, x=1, y=PctImpt)) +
 imp_plot
 ```
 
-<img src="/home/lemuel/Documents/github/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-17-1.png" style="display: block; margin: auto;" />
+<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-17-1.png" style="display: block; margin: auto;" />
 
 The chart above shows the strength of each feature relative to one
 another. As can be seen, both <span class="hl yellow-text">Sex</span>

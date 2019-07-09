@@ -201,7 +201,7 @@ where <br>
 
 The biggest challenge in generating this model is <span class="hl">recursion</span>. The hidden features require survival likelihoods from the model, which in turn requires the hidden features. Fortunately, we can break this chain by assuming that the existence of an equilibrium \(\hat{p}\) where:
 
-\[ \ln(\frac{\hat{p}}{1-\hat{p}}) =  Y - \beta_0 - \sum_i f_i(x_i) = f_f(p_{fem}(\hat{p})) + f_m(p_{male}(\hat{p})) \]
+\[ \ln(\frac{\hat{p}}{1-\hat{p}}) - \beta_0 - \sum_i f_i(x_i) = f_f(p_{fem}(\hat{p})) + f_m(p_{male}(\hat{p})) \]
 
 Assuming convergence, \(\hat{p}\) can be determined via the following algorithm:
 <code style="background-color:var(--pri)"> <br>

@@ -189,13 +189,13 @@ test_set &lt;- read.csv(data_dir %|% &quot;test.csv&quot;)
 cols_summary &lt;- data_overview(training_set)
 
 pander(cols_summary, caption=&#39;Titanic Passengers Data - For more info, please visit &lt;a href=&quot;https://www.kaggle.com/c/titanic/data&quot; target=&quot;_blank&quot;&gt;Kaggle&lt;/a&gt;&#39;)</code></pre>
-<div class="table-responsive"><table style="width:96%;">
+<div class="table-responsive"><table style="width:97%;">
 <caption>Titanic Passengers Data - For more info, please visit <a href="https://www.kaggle.com/c/titanic/data" target="_blank">Kaggle</a> <br></caption>
 <colgroup>
 <col style="width: 19%" />
 <col style="width: 16%" />
 <col style="width: 44%" />
-<col style="width: 15%" />
+<col style="width: 16%" />
 </colgroup>
 <thead>
 <tr class="header">
@@ -227,7 +227,7 @@ pander(cols_summary, caption=&#39;Titanic Passengers Data - For more info, pleas
 <tr class="even">
 <td style="text-align: left;">Name</td>
 <td style="text-align: left;">CHARACTER</td>
-<td style="text-align: left;">Braund, Mr. Owen Harris // Cumings, Mrs. John Bradley (Florence Briggs Thayer) // Heikkinen, Miss. Laina // Futrelle, Mrs. Jacques Heath (Lily May Peel) // Allen, Mr. William Henry</td>
+<td style="text-align: left;">Braund, Mr. Owen Harris // Cumings, Mrs. John Bradley (Florence Briggs Thayer) // Heikkinen, Miss. Laina // Futrelle, Mrs. Jacques Heath (Lily May Peel) // Allen, Mr. William Henry</td>
 <td style="text-align: left;">100%</td>
 </tr>
 <tr class="odd">
@@ -654,7 +654,7 @@ feature_fam_survivalhood &lt;- function(p_survival) {
 <p><span class="math display">\[Y = \ln(\frac{p}{1-p}) = \beta_0 + \sum_i f_i(x_i) + f_f(p_{fem}) + f_m(p_{male}) \]</span></p>
 <p>where <br> <span class="math inline">\(p_{fem}\)</span> is the survival likelihood of a female family member, <br> <span class="math inline">\(p_{male}\)</span> is the survival likelihood of a male family member, <br> and <span class="math inline">\(f_f, f_m\)</span> are the smooth functions for both.</p>
 <p>The biggest challenge in generating this model is <span class="hl">recursion</span>. The hidden features require survival likelihoods from the model, which in turn requires the hidden features. Fortunately, we can break this chain by assuming that the existence of an equilibrium <span class="math inline">\(\hat{p}\)</span> where:</p>
-<p><span class="math display">\[ \ln(\frac{\hat{p}}{1-\hat{p}}) =  Y - \beta_0 - \sum_i f_i(x_i) = f_f(p_{fem}(\hat{p})) + f_m(p_{male}(\hat{p})) \]</span></p>
+<p><span class="math display">\[ \ln(\frac{\hat{p}}{1-\hat{p}}) - \beta_0 - \sum_i f_i(x_i) = f_f(p_{fem}(\hat{p})) + f_m(p_{male}(\hat{p})) \]</span></p>
 <p>Assuming convergence, <span class="math inline">\(\hat{p}\)</span> can be determined via the following algorithm: <code style="background-color:var(--pri)"> <br> Initialize: <br> DATA := (x_1, x_2, …, x_k) <br> MODEL := GAM(DATA) <br> PREV_P := PREDICT(MODEL) <br> <br> # Use 10 Iterations for Convergence<br> for i in [1,10]:<br>   (p_female, p_male) &lt;- GET_HIDDEN_FEATURE(PREV_P)<br>   DATA &lt;- (x_1, x_2, … , x_k, p_female, p_male)<br>   MODEL &lt;- GAM(DATA)<br>   P &lt;- PREDICT(MODEL)<br>   if (SUM{(P - PREV_P)^2} &lt; 0.0001) BREAK<br>   else PREV_P &lt;- P<br> RETURN MODEL </code></p>
 </section>
 <section id="model-implementation" class="level3">
