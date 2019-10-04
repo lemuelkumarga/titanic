@@ -7,6 +7,7 @@
 <meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
 <meta name="author" content="Lemuel Kumarga" />
@@ -72,14 +73,12 @@ h6 {
 }
 </style>
 
-<link rel="stylesheet" href="shared/css/defaults.css" />
-<link rel="stylesheet" href="../../shared/css/definitions.css" />
-<link rel="stylesheet" href="../../shared/css/general.css" />
-<link rel="stylesheet" href="shared/css/Rmd.css" />
+<link rel="stylesheet" href="shared/css/defaults.css" type="text/css" />
+<link rel="stylesheet" href="../../shared/css/definitions.css" type="text/css" />
+<link rel="stylesheet" href="../../shared/css/general.css" type="text/css" />
+<link rel="stylesheet" href="shared/css/Rmd.css" type="text/css" />
 
-</head>
 
-<body>
 
 <style type = "text/css">
 .main-container {
@@ -93,38 +92,93 @@ code {
 }
 img {
   max-width:100%;
-  height: auto;
 }
 .tabbed-pane {
   padding-top: 12px;
 }
+.html-widget {
+  margin-bottom: 20px;
+}
 button.code-folding-btn:focus {
   outline: none;
+}
+summary {
+  display: list-item;
 }
 </style>
 
 
 
-<div class="container-fluid main-container">
-
 <!-- tabsets -->
-<script>
-$(document).ready(function () {
-  window.buildTabsets("TOC");
-});
-</script>
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
 
 <!-- code folding -->
 <style type="text/css">
 .code-folding-btn { margin-bottom: 4px; }
 </style>
-<script>
-$(document).ready(function () {
-  window.initializeCodeFolding("hide" === "show");
-});
-</script>
 
 
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
 
 
 
@@ -142,24 +196,24 @@ $(document).ready(function () {
 
 
 <h1 class="title toc-ignore">Estimating Survival Rate of Titanic Passengers</h1>
-<h4 class="author"><em><span class="meta">Lemuel Kumarga</span></em></h4>
-<h4 class="date"><em><span class="meta">Feb 2018 (Revised on Oct 2018)</span></em></h4>
+<h4 class="author"><span class="meta">Lemuel Kumarga</span></h4>
+<h4 class="date"><span class="meta">Feb 2018 (Revised on Oct 2018)</span></h4>
 
 </div>
 
 
-<section id="problem-description" class="level2">
+<div id="problem-description" class="section level2">
 <h2>Problem Description</h2>
 <p>Set for its maiden voyage in 1912, RMS Titanic was then considered unsinkable due to its robust structure. After picking up passengers in Southampton, Cherbourg and Queenstown, the ship set sail towards New York. It was on their way there that Titanic met its calamitous fate, crashing into an Iceberg and rendering more than 50% of the passengers lost.</p>
 <p>There were many question marks concerning the events leading to and during the disaster. One of which was who survived and why. Fortunately, details of all passengers, along with their survival status were recorded. By analyzing these records, we can potentially answer the question by:</p>
-<ol type="1">
+<ol style="list-style-type: decimal">
 <li><span class="hl">Creating a prediction model to assess a passenger’s <a data-toggle="popover" title="Survival Likelihood" data-content="The passenger's probability of surviving">survival likelihood</a> (Who)</span>, and</li>
 <li><span class="hl">Understanding the factors causing a passenger to live (Why)</span>.</li>
 </ol>
 <p>To skip the methodology and proceed directly to the summary of results, click <a href="#summary-of-results">here</a>.</p>
 <p><span style="color:var(--font-color-50)">FYI: This problem was posed as an introductory challenge in <a href="https://www.kaggle.com/c/titanic" target="_blank">Kaggle</a>. The passengers are divided into two groups, one for training and the other for testing. The former contains both the passengers’ personal details and outcomes, while the latter only contains personal informaion. The aim of the project is to develop a robust model through the training set, and predict the survival of passengers in the testing set.</span></p>
-</section>
-<section id="preliminaries" class="level2">
+</div>
+<div id="preliminaries" class="section level2">
 <h2>Preliminaries</h2>
 <p>First load the necessary packages for this exercise.</p>
 <pre class="r"><code># Load default settings for R Markdown -- see file for more details
@@ -169,6 +223,7 @@ source(&quot;shared/helper.R&quot;)
 
 options(stringsAsFactors = FALSE)
 load_or_install.packages(&quot;purrr&quot;,&quot;mgcv&quot;,&quot;DMwR&quot;)
+# Set default decimal points for percentage
 
 data_dir &lt;- &quot;data/&quot;
 output_dir &lt;- &quot;output/&quot;
@@ -179,8 +234,8 @@ attached_pkg_str &lt;- paste0(&quot;Attached Packages: &quot;,paste(names(si[[&q
 cat(paste0(base_pkg_str,&quot;\n&quot;,attached_pkg_str))</code></pre>
 <pre><code>## Base Packages: grid, stats, graphics, grDevices, utils, datasets, methods, base
 ## Attached Packages: DMwR, lattice, mgcv, nlme, purrr, tidyr, pander, ggplot2, rlang, dplyr, knitr</code></pre>
-</section>
-<section id="data-overview" class="level2">
+</div>
+<div id="data-overview" class="section level2">
 <h2>Data Overview</h2>
 <p>We kick off by exploring the data that was provided:</p>
 <pre class="r"><code>training_set &lt;- read.csv(paste0(data_dir, &quot;train.csv&quot;))
@@ -192,91 +247,91 @@ pander(cols_summary, caption=&#39;Titanic Passengers Data - For more info, pleas
 <div class="table-responsive"><table style="width:97%;">
 <caption>Titanic Passengers Data - For more info, please visit <a href="https://www.kaggle.com/c/titanic/data" target="_blank">Kaggle</a> <br></caption>
 <colgroup>
-<col style="width: 19%" />
-<col style="width: 16%" />
-<col style="width: 44%" />
-<col style="width: 16%" />
+<col width="19%" />
+<col width="16%" />
+<col width="44%" />
+<col width="16%" />
 </colgroup>
 <thead>
 <tr class="header">
-<th style="text-align: left;">ColumnNames</th>
-<th style="text-align: left;">Type</th>
-<th style="text-align: left;">Examples</th>
-<th style="text-align: left;">PctFilled</th>
+<th align="left">ColumnNames</th>
+<th align="left">Type</th>
+<th align="left">Examples</th>
+<th align="left">PctFilled</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">PassengerId</td>
-<td style="text-align: left;">INTEGER</td>
-<td style="text-align: left;">1 // 2 // 3 // 4 // 5</td>
-<td style="text-align: left;">100%</td>
+<td align="left">PassengerId</td>
+<td align="left">INTEGER</td>
+<td align="left">1 // 2 // 3 // 4 // 5</td>
+<td align="left">100%</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Survived</td>
-<td style="text-align: left;">INTEGER</td>
-<td style="text-align: left;">0 // 1</td>
-<td style="text-align: left;">100%</td>
+<td align="left">Survived</td>
+<td align="left">INTEGER</td>
+<td align="left">0 // 1</td>
+<td align="left">100%</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Pclass</td>
-<td style="text-align: left;">INTEGER</td>
-<td style="text-align: left;">3 // 1 // 2</td>
-<td style="text-align: left;">100%</td>
+<td align="left">Pclass</td>
+<td align="left">INTEGER</td>
+<td align="left">3 // 1 // 2</td>
+<td align="left">100%</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Name</td>
-<td style="text-align: left;">CHARACTER</td>
-<td style="text-align: left;">Braund, Mr. Owen Harris // Cumings, Mrs. John Bradley (Florence Briggs Thayer) // Heikkinen, Miss. Laina // Futrelle, Mrs. Jacques Heath (Lily May Peel) // Allen, Mr. William Henry</td>
-<td style="text-align: left;">100%</td>
+<td align="left">Name</td>
+<td align="left">CHARACTER</td>
+<td align="left">Braund, Mr. Owen Harris // Cumings, Mrs. John Bradley (Florence Briggs Thayer) // Heikkinen, Miss. Laina // Futrelle, Mrs. Jacques Heath (Lily May Peel) // Allen, Mr. William Henry</td>
+<td align="left">100%</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Sex</td>
-<td style="text-align: left;">CHARACTER</td>
-<td style="text-align: left;">male // female</td>
-<td style="text-align: left;">100%</td>
+<td align="left">Sex</td>
+<td align="left">CHARACTER</td>
+<td align="left">male // female</td>
+<td align="left">100%</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Age</td>
-<td style="text-align: left;">NUMERIC</td>
-<td style="text-align: left;">22 // 38 // 26 // 35 // 54</td>
-<td style="text-align: left;">80%</td>
+<td align="left">Age</td>
+<td align="left">NUMERIC</td>
+<td align="left">22 // 38 // 26 // 35 // 54</td>
+<td align="left">80%</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">SibSp</td>
-<td style="text-align: left;">INTEGER</td>
-<td style="text-align: left;">1 // 0 // 3 // 4 // 2</td>
-<td style="text-align: left;">100%</td>
+<td align="left">SibSp</td>
+<td align="left">INTEGER</td>
+<td align="left">1 // 0 // 3 // 4 // 2</td>
+<td align="left">100%</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Parch</td>
-<td style="text-align: left;">INTEGER</td>
-<td style="text-align: left;">0 // 1 // 2 // 5 // 3</td>
-<td style="text-align: left;">100%</td>
+<td align="left">Parch</td>
+<td align="left">INTEGER</td>
+<td align="left">0 // 1 // 2 // 5 // 3</td>
+<td align="left">100%</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Ticket</td>
-<td style="text-align: left;">CHARACTER</td>
-<td style="text-align: left;">A/5 21171 // PC 17599 // STON/O2. 3101282 // 113803 // 373450</td>
-<td style="text-align: left;">100%</td>
+<td align="left">Ticket</td>
+<td align="left">CHARACTER</td>
+<td align="left">A/5 21171 // PC 17599 // STON/O2. 3101282 // 113803 // 373450</td>
+<td align="left">100%</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Fare</td>
-<td style="text-align: left;">NUMERIC</td>
-<td style="text-align: left;">7.25 // 71.2833 // 7.925 // 53.1 // 8.05</td>
-<td style="text-align: left;">100%</td>
+<td align="left">Fare</td>
+<td align="left">NUMERIC</td>
+<td align="left">7.25 // 71.2833 // 7.925 // 53.1 // 8.05</td>
+<td align="left">100%</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Cabin</td>
-<td style="text-align: left;">CHARACTER</td>
-<td style="text-align: left;">C85 // C123 // E46 // G6 // C103</td>
-<td style="text-align: left;">22%</td>
+<td align="left">Cabin</td>
+<td align="left">CHARACTER</td>
+<td align="left">C85 // C123 // E46 // G6 // C103</td>
+<td align="left">22%</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Embarked</td>
-<td style="text-align: left;">CHARACTER</td>
-<td style="text-align: left;">S // C // Q</td>
-<td style="text-align: left;">99%</td>
+<td align="left">Embarked</td>
+<td align="left">CHARACTER</td>
+<td align="left">S // C // Q</td>
+<td align="left">99%</td>
 </tr>
 </tbody>
 </table></div>
@@ -285,8 +340,8 @@ pander(cols_summary, caption=&#39;Titanic Passengers Data - For more info, pleas
 <li><span class="hl color-1-text">Names</span> are aggregated in the following format: <span class="hl color-2-text">Last_Name, Title First_Name</span>. This suggests that some information needs to be extracted from certain columns.</li>
 <li>Columns such as <span class="hl color-1-text">Age</span> and <span class="hl color-1-text">Cabin</span> have missing data. This implies that we should either remove these columns, impute the data or build a model that handles missing information.</li>
 </ul>
-</section>
-<section id="feature-selection" class="level2">
+</div>
+<div id="feature-selection" class="section level2">
 <h2>Feature Selection</h2>
 <p>The first step in creating a prediction model is to brainstorm possible factors, otherwise known as <span class="hl">features</span>, influencing survival likelihood.</p>
 <p>Some features have been nicely provided by the dataset, such as:</p>
@@ -337,7 +392,7 @@ pander(cols_summary, caption=&#39;Titanic Passengers Data - For more info, pleas
 </tbody>
 </table></div>
 <p>In addition to these base factors, we could also extract <span class="hl">derived features</span> which are further described below.</p>
-<section id="titles" class="level4">
+<div id="titles" class="section level4">
 <h4>Titles</h4>
 <p>The <span class="hl">Title</span> of an individual is typically associated with his/her social status. We should expect those with higher titles to be given preference to lifeboats, and hence having higher survival likelihoods.</p>
 <pre class="r"><code>prefix &lt;- function(l) { as.character(sapply(l, ..(x) %:=% { unlist(strsplit(unlist(strsplit(x, &quot;, &quot;))[2],&quot;\\. &quot;))[1] })) }
@@ -383,13 +438,13 @@ title_plot &lt;- training_set %&gt;%
                             fill = (.$SurvivalRate - .$BaselineRate &gt;= 0) %?% `@c`(green) %:% `@c`(red),
                             position = position_nudge(x=+0.2)) + 
                   geom_text(data=subset(.,SurvivalRate - BaselineRate &gt;= 0),
-                            aes(label = &quot;+&quot; %|% scales::percent(SurvivalRate - BaselineRate),
+                            aes(label = &quot;+&quot; %|% scales::percent(SurvivalRate - BaselineRate,1),
                                 y = SurvivalRate + 0.02),
                             nudge_x = 0.2,
                             family = `@f`,
                             color = `@c`(green)) +
                   geom_text(data=subset(.,SurvivalRate - BaselineRate &lt; 0),
-                            aes(label = scales::percent(SurvivalRate - BaselineRate),
+                            aes(label = scales::percent(SurvivalRate - BaselineRate,1),
                                 y = SurvivalRate - 0.02),
                             nudge_x = 0.2,
                             family = `@f`,
@@ -399,7 +454,7 @@ title_plot &lt;- training_set %&gt;%
                                                &quot;Female&quot; =`@c`(red),
                                                &quot;Mixed&quot; = `@c`(purple))) +
                   scale_y_continuous(name=&quot;Survival Likelihood&quot;, 
-                                     labels=scales::percent,
+                                     labels=scales::percent_format(1),
                                      expand=c(0,0,0.02,0))
               }
 
@@ -409,8 +464,8 @@ feature_title &lt;- function(Name) { ifelse(prefix(Name) %in% common_titles,
 title_plot</code></pre>
 <p><img src="index_files/figure-html/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" /></p>
 <p>The chart above confirms our suspicion, as those with more distinguished status, such as <span class="hl color-2-text">Master</span> and <span class="hl color-2-text">Rare Title</span>, are more likely to survive.</p>
-</section>
-<section id="family-size" class="level4">
+</div>
+<div id="family-size" class="section level4">
 <h4>Family Size</h4>
 <p>The <span class="hl">FamSize</span> of an individual is the amount of family members on board (including the passenger). It is an <a data-toggle="popover" title="Interaction Term" data-content="A feature that is a derivation from other features.">interaction term</a> from <span class="hl">SibSp</span> and <span class="hl">Parch</span>, and defined as <span class="math inline">\(FamSize = 1 + SibSp + Parch\)</span>. Assuming that everyone in the family has to stay together, we should expect those with larger family sizes to have higher likelihoods of dying.</p>
 <pre class="r"><code>feature_famsize &lt;- function(Sibsp, Parch) { pmap(list(x=Sibsp, y=Parch), ..(x,y) %:=%  { x + y + 1 }) %&gt;% as.integer }
@@ -434,8 +489,8 @@ famsize_plot &lt;- training_set %&gt;%
 famsize_plot</code></pre>
 <p><img src="index_files/figure-html/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" /></p>
 <p>Interestingly, we notice that those with intermediate family sizes are more likely to survive. This could be due to the presence of children. In other words, if you have a child, you are more likely to be given a space in the lifeboat, as opposed to those who are by themselves.</p>
-</section>
-<section id="cabin-deck" class="level4">
+</div>
+<div id="cabin-deck" class="section level4">
 <h4>Cabin Deck</h4>
 <p>The <span class="hl">CabinDeck</span> refers to the floor where an individual is staying. Based on <a target="_blank" href="https://www.dummies.com/education/history/titanic-facts-the-layout-of-the-ship/"> external sources</a>, Deck A corresponds to the highest floor (Promenade), while Deck G the lowest floor (Engine Room). Assuming that everyone was at his/her room during the time of crash, we should expect those nearest to the bridge to have an advantage in boarding the lifeboats.</p>
 <pre class="r"><code>deck_to_index &lt;- c(&quot;A&quot;=1,&quot;B&quot;=2,&quot;C&quot;=3,&quot;D&quot;=4,&quot;E&quot;=5,&quot;F&quot;=6,&quot;G&quot;=7)
@@ -479,8 +534,8 @@ cabin_deck_plot &lt;- training_set %&gt;%
 cabin_deck_plot</code></pre>
 <p><img src="index_files/figure-html/unnamed-chunk-6-1.png" width="672" style="display: block; margin: auto;" /></p>
 <p>As expected, those in Cabin B to F have higher chances of surviving than those in the highest and lowest floors.</p>
-</section>
-<section id="cabin-number" class="level4">
+</div>
+<div id="cabin-number" class="section level4">
 <h4>Cabin Number</h4>
 <p>The <span class="hl">CabinNo</span> of an individual corresponds to the side that an individual stays in (left/right of the boat). According to <a href="https://www.encyclopedia-titanica.org/titanic-deckplans/b-deck.html" target="_blank">Encyclopedia Titanica</a>, even numbers are situated on the left side, while odd numbers are on the right side. Depending on where the damage was, passengers staying on the unaffected side may be more likely to stay alive during the impact.</p>
 <pre class="r"><code>feature_cabin_no &lt;- function(Cabin) {
@@ -544,11 +599,11 @@ cabin_number_plot &lt;- training_set %&gt;%
 cabin_number_plot</code></pre>
 <p><img src="index_files/figure-html/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /></p>
 <p>From the chart, it seems that those on the right side are more likely to survive, confirming our previous hypothesis.</p>
-</section>
-<section id="feature-summary" class="level3">
+</div>
+<div id="feature-summary" class="section level3">
 <h3>Feature Summary</h3>
 <p>To summarise, all of the features, along with their relationship to survival status, are shown below. Based on observation, it seems that both <span class="hl">Sex</span> and <span class="hl">Pclass</span> will play dominant roles in estimating survival likelihood.</p>
-<section id="continuous-features" class="level4">
+<div id="continuous-features" class="section level4">
 <h4>Continuous Features</h4>
 <pre class="r"><code>preprocess_data &lt;- function(data) {
   
@@ -585,20 +640,20 @@ suppressMessages({
 })
 plot(snapshot$cont_plot)</code></pre>
 <p><img src="index_files/figure-html/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
-</section>
-<section id="categorical-features" class="level4">
+</div>
+<div id="categorical-features" class="section level4">
 <h4>Categorical Features</h4>
 <pre class="r"><code>plot(snapshot$disc_plot)</code></pre>
 <p><img src="index_files/figure-html/unnamed-chunk-9-1.png" width="672" style="display: block; margin: auto;" /></p>
-</section>
-</section>
-</section>
-<section id="modeling-survival-likelihood" class="level2">
+</div>
+</div>
+</div>
+<div id="modeling-survival-likelihood" class="section level2">
 <h2>Modeling Survival Likelihood</h2>
-<section id="model-selection" class="level3">
+<div id="model-selection" class="section level3">
 <h3>Model Selection</h3>
 <p>After finalizing our list of features, we now have to choose the most appropriate model for this analysis. Based on our objectives, the model must be:</p>
-<ol type="1">
+<ol style="list-style-type: decimal">
 <li><span class="hl">Predictive</span>: The model should predict survival likelihood accurately. This criteria excludes more simple models, such as Linear Regression, which is known to have high biases.</li>
 <li><span class="hl">Interpretable</span>: The model should explain the relationships between features and survival status. This prevents us from selecting less interpretable models such as Random Forests, Gradient Boosting Trees or SVMs.</li>
 <li><span class="hl">Robust</span>: The model should manage missing values effectively.</li>
@@ -607,12 +662,12 @@ plot(snapshot$cont_plot)</code></pre>
 <p><span class="math display">\[Y = \ln(\frac{p}{1-p}) = \beta_0 + \sum_i f_i(x_i) \]</span></p>
 <p>where <br> <span class="math inline">\(p\)</span> is the survival likelihood, <br> <span class="math inline">\(\beta_0\)</span> is the average of <span class="math inline">\(Y\)</span>, <br> <span class="math inline">\(f_i\)</span> is a smooth function of the feature <span class="math inline">\(i\)</span>, and <br> <span class="math inline">\(x_i\)</span> is the value of feature <span class="math inline">\(i\)</span>.</p>
 <p>In addition, we will also be making the following adjustments to the GAM model:</p>
-<ol type="1">
+<ol style="list-style-type: decimal">
 <li><span class="hl">Missing Values</span>: All <span class="math inline">\(f_i(\)</span>Missing<span class="math inline">\()\)</span> will have a value of <span class="math inline">\(0\)</span>. This ensures that missing factors will not influence a passenger’s survival prediction.</li>
 <li><a target="_blank" href="https://www.stat.ubc.ca/~rollin/teach/643w04/lec/node41.html"><span class="hl">Forward Selection</span></a>: Earlier on, we have chosen over 10 features for the model, some of which may be irrelevant. To exclude such features, we will fit each predictor into the model iteratively. At the end, the number of features to be used for prediction will be determined via <a data-toggle="popover" title="Cross Validation" data-content="Cross validation is a process where the data is split into N parts. (N - 1) parts are used to generate the model, and the last one is used to test the model. This is done for a total of N times, so that each part will be a test set once. The prediction error from the test set is known as the CV Error Rate.">cross validation</a>.</li>
 </ol>
-</section>
-<section id="embedding-survival-relationships" class="level3">
+</div>
+<div id="embedding-survival-relationships" class="section level3">
 <h3>Embedding Survival Relationships</h3>
 <p>One of the major issues with GAM is the failure to encode relationships amongst passengers. For instance, a mother’s survival status could highly depend on the child’s. To account for these factors, we introduce two hidden features in the model:</p>
 <ul>
@@ -656,8 +711,8 @@ feature_fam_survivalhood &lt;- function(p_survival) {
 <p>The biggest challenge in generating this model is <span class="hl">recursion</span>. The hidden features require survival likelihoods from the model, which in turn requires the hidden features. Fortunately, we can break this chain by assuming that the existence of an equilibrium <span class="math inline">\(\hat{p}\)</span> where:</p>
 <p><span class="math display">\[ \ln(\frac{\hat{p}}{1-\hat{p}}) - \beta_0 - \sum_i f_i(x_i) = f_f(p_{fem}(\hat{p})) + f_m(p_{male}(\hat{p})) \]</span></p>
 <p>Assuming convergence, <span class="math inline">\(\hat{p}\)</span> can be determined via the following algorithm: <code style="background-color:var(--pri)"> <br> Initialize: <br> DATA := (x_1, x_2, …, x_k) <br> MODEL := GAM(DATA) <br> PREV_P := PREDICT(MODEL) <br> <br> # Use 10 Iterations for Convergence<br> for i in [1,10]:<br>   (p_female, p_male) &lt;- GET_HIDDEN_FEATURE(PREV_P)<br>   DATA &lt;- (x_1, x_2, … , x_k, p_female, p_male)<br>   MODEL &lt;- GAM(DATA)<br>   P &lt;- PREDICT(MODEL)<br>   if (SUM{(P - PREV_P)^2} &lt; 0.0001) BREAK<br>   else PREV_P &lt;- P<br> RETURN MODEL </code></p>
-</section>
-<section id="model-implementation" class="level3">
+</div>
+<div id="model-implementation" class="section level3">
 <h3>Model Implementation</h3>
 <p>The Adjusted GAM is implemented using the code below.</p>
 <pre class="r"><code>predict.mod_gam &lt;- function(object, newdata, type=&quot;link&quot;, threshold=0.5, ...) {
@@ -795,8 +850,8 @@ cat(&quot;List of Features in Order of Selection: \n&quot;, paste0(f_list,collap
 <pre><code>## List of Features in Order of Selection: 
 ##  Sex, Pclass, Title, SibSp, Parch, Age, CabinNo, FamSize, Fare, CabinDeck</code></pre>
 <p>Listed above are features of the model, sorted by the order they were selected. For instance, <span class="hl">Sex</span> was chosen first, followed by <span class="hl">Pclass</span> and <span class="hl">Title</span>. This strengthens our hypothesis that both <span class="hl">Sex</span> and <span class="hl">Pclass</span> are strong signals for survivability.</p>
-</section>
-<section id="performance" class="level3">
+</div>
+<div id="performance" class="section level3">
 <h3>Performance</h3>
 <p>To ensure the model is accurate, we need to find the optimal values for these two hyper-parameters:</p>
 <ul>
@@ -864,11 +919,11 @@ cv_plot &lt;- ggplot(res.cv %&gt;% filter(MER != Inf &amp; Threshold &gt;= 0.25 
           scale_x_continuous(name = &quot;Number of Features (Surfaced + Hidden)&quot;, breaks = 1:4 * 2,
                              expand = c(0,0),
                              labels= (1:4 * 2) %|% &quot; + 2&quot;) +
-          scale_y_continuous(name = &quot;Threshold&quot;, labels=scales::percent,
+          scale_y_continuous(name = &quot;Threshold&quot;, labels=scales::percent_format(1),
                              expand = c(0,0)) + 
           scale_alpha_continuous(name=&quot;CV Error Rate&quot;, range=c(0.05,1), 
                                  limits=c(NA,0.25), na.value=1,
-                                 labels=scales::percent, 
+                                 labels=scales::percent_format(1), 
                                  guide=guide_legend(override.aes=list(fill=`@c`(ltxt,0.8)))) +
           scale_fill_manual(values=`@c`(green), na.value=`@c`(txt,0.8),
                             guide=&quot;none&quot;)
@@ -893,8 +948,8 @@ cat(paste0(&quot;Null Classifier\tTest Error Rate: &quot;, scales::percent(1.-0.
 ## Optimal GAM      Test Error Rate: 20.1%</code></pre>
 <p>Using Kaggle’s test set, the model has significantly higher predictive power over the <a data-toggle="popover" title="Null Classifier" data-content="A null classifier tags any passenger as died.">null classifier</a>. In fact, it is ranked near the 15th percentile* of <a href="https://www.kaggle.com/c/titanic/leaderboard" target="_blank">Kaggle’s Leaderboard</a>!</p>
 <p><span style="font-size: 0.8em">*at time of submission</span></p>
-</section>
-<section id="interpretation" class="level3">
+</div>
+<div id="interpretation" class="section level3">
 <h3>Interpretation</h3>
 <pre class="r"><code>threshold_plot &lt;- res.cv %&gt;% filter(N_Params == opt.n) %&gt;%
                   {
@@ -908,8 +963,8 @@ cat(paste0(&quot;Null Classifier\tTest Error Rate: &quot;, scales::percent(1.-0.
                     scale_shape_manual(values=c(4,16)) +
                     scale_size_manual(values=c(5,3)) +
                     geom_smooth(color=`@c`(1), fill=`@c`(ltxt,0.2), method=&#39;loess&#39;) +
-                    scale_x_continuous(labels=scales::percent) + 
-                    scale_y_continuous(name=&quot;CV Error Rate&quot;, labels=scales::percent)
+                    scale_x_continuous(labels=scales::percent_format(1)) + 
+                    scale_y_continuous(name=&quot;CV Error Rate&quot;, labels=scales::percent_format(1))
                   }
 
 threshold_plot</code></pre>
@@ -989,7 +1044,7 @@ imp_plot &lt;- ggplot(imp_tbl, aes(fill=Feature, x=1, y=PctImpt)) +
                           color = `@c`(txt), 
                           angle = 90,
                           hjust = 1.) +
-            geom_text(aes(label=scales::percent(round(..y..,2))),
+            geom_text(aes(label=scales::percent_format(1)(round(..y..,2))),
                             position = position_stack(vjust = .5),
                             family = `@f`,
                             color = `@c`(bg)) +
@@ -1000,19 +1055,19 @@ imp_plot &lt;- ggplot(imp_tbl, aes(fill=Feature, x=1, y=PctImpt)) +
 imp_plot</code></pre>
 <p><img src="index_files/figure-html/unnamed-chunk-17-1.png" width="672" style="display: block; margin: auto;" /></p>
 <p>The chart above shows the strength of each feature relative to one another. As can be seen, both <span class="hl yellow-text">Sex</span> and <span class="hl orange-text">Pclass</span> contribute over 60% to the prediction! This confirms our hypothesis that both <span class="hl yellow-text">Sex</span> and <span class="hl orange-text">Pclass</span> are important factors of survivability.</p>
-</section>
-</section>
-<section id="summary-of-results" class="level2">
+</div>
+</div>
+<div id="summary-of-results" class="section level2">
 <h2>Summary of Results</h2>
 <p>Using data from the demographics and outcomes of titanic passengers, we have created a prediction model that performs near the 15th percentile of <a href="https://www.kaggle.com/c/titanic/leaderboard" target="_blank">Kaggle’s Leaderboard</a>. In addition, we have also identified the factors that determine each passenger’s survival status. These factors, ranked by importance, are:</p>
-<ol type="1">
+<ol style="list-style-type: decimal">
 <li><span class="hl yellow-text">Sex</span>: Females are more likely to survive than males.</li>
 <li><span class="hl orange-text">Passenger Class</span>: Premium passengers accrue additional benefits, including preferential access to the lifeboats.</li>
 <li><span class="hl red-text">Title</span>: Someone with an esteemed title have more privileges than a lay individual.</li>
 <li><span class="hl blue-text">Survivalhood of Family Members</span>: A passenger’s survival likelihood is influenced by those with him/her.</li>
 <li><span class="hl cyan-text">No. of Siblings</span>: The higher the number of siblings, the more likely one will die.</li>
 </ol>
-</section>
+</div>
 
 
 
@@ -1031,6 +1086,28 @@ $(document).ready(function () {
 
 
 </script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>

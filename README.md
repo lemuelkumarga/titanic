@@ -95,6 +95,7 @@ source("shared/helper.R")
 
 options(stringsAsFactors = FALSE)
 load_or_install.packages("purrr","mgcv","DMwR")
+# Set default decimal points for percentage
 
 data_dir <- "data/"
 output_dir <- "output/"
@@ -106,7 +107,7 @@ cat(paste0(base_pkg_str,"\n",attached_pkg_str))
 ```
 
     ## Base Packages: grid, stats, graphics, grDevices, utils, datasets, methods, base
-    ## Attached Packages: bindrcpp, DMwR, lattice, mgcv, nlme, purrr, tidyr, pander, ggplot2, rlang, dplyr, knitr
+    ## Attached Packages: DMwR, lattice, mgcv, nlme, purrr, tidyr, pander, ggplot2, rlang, dplyr, knitr
 
 ## Data Overview
 
@@ -225,13 +226,13 @@ title_plot <- training_set %>%
                             fill = (.$SurvivalRate - .$BaselineRate >= 0) %?% `@c`(green) %:% `@c`(red),
                             position = position_nudge(x=+0.2)) + 
                   geom_text(data=subset(.,SurvivalRate - BaselineRate >= 0),
-                            aes(label = "+" %|% scales::percent(SurvivalRate - BaselineRate),
+                            aes(label = "+" %|% scales::percent(SurvivalRate - BaselineRate,1),
                                 y = SurvivalRate + 0.02),
                             nudge_x = 0.2,
                             family = `@f`,
                             color = `@c`(green)) +
                   geom_text(data=subset(.,SurvivalRate - BaselineRate < 0),
-                            aes(label = scales::percent(SurvivalRate - BaselineRate),
+                            aes(label = scales::percent(SurvivalRate - BaselineRate,1),
                                 y = SurvivalRate - 0.02),
                             nudge_x = 0.2,
                             family = `@f`,
@@ -241,7 +242,7 @@ title_plot <- training_set %>%
                                                "Female" =`@c`(red),
                                                "Mixed" = `@c`(purple))) +
                   scale_y_continuous(name="Survival Likelihood", 
-                                     labels=scales::percent,
+                                     labels=scales::percent_format(1),
                                      expand=c(0,0,0.02,0))
               }
 
@@ -845,11 +846,11 @@ cv_plot <- ggplot(res.cv %>% filter(MER != Inf & Threshold >= 0.25 & Threshold <
           scale_x_continuous(name = "Number of Features (Surfaced + Hidden)", breaks = 1:4 * 2,
                              expand = c(0,0),
                              labels= (1:4 * 2) %|% " + 2") +
-          scale_y_continuous(name = "Threshold", labels=scales::percent,
+          scale_y_continuous(name = "Threshold", labels=scales::percent_format(1),
                              expand = c(0,0)) + 
           scale_alpha_continuous(name="CV Error Rate", range=c(0.05,1), 
                                  limits=c(NA,0.25), na.value=1,
-                                 labels=scales::percent, 
+                                 labels=scales::percent_format(1), 
                                  guide=guide_legend(override.aes=list(fill=`@c`(ltxt,0.8)))) +
           scale_fill_manual(values=`@c`(green), na.value=`@c`(txt,0.8),
                             guide="none")
@@ -905,8 +906,8 @@ threshold_plot <- res.cv %>% filter(N_Params == opt.n) %>%
                     scale_shape_manual(values=c(4,16)) +
                     scale_size_manual(values=c(5,3)) +
                     geom_smooth(color=`@c`(1), fill=`@c`(ltxt,0.2), method='loess') +
-                    scale_x_continuous(labels=scales::percent) + 
-                    scale_y_continuous(name="CV Error Rate", labels=scales::percent)
+                    scale_x_continuous(labels=scales::percent_format(1)) + 
+                    scale_y_continuous(name="CV Error Rate", labels=scales::percent_format(1))
                   }
 
 threshold_plot
@@ -1014,7 +1015,7 @@ imp_plot <- ggplot(imp_tbl, aes(fill=Feature, x=1, y=PctImpt)) +
                           color = `@c`(txt), 
                           angle = 90,
                           hjust = 1.) +
-            geom_text(aes(label=scales::percent(round(..y..,2))),
+            geom_text(aes(label=scales::percent_format(1)(round(..y..,2))),
                             position = position_stack(vjust = .5),
                             family = `@f`,
                             color = `@c`(bg)) +
