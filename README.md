@@ -49,6 +49,26 @@ Estimating Survival Rate of Titanic Passengers
 <span class="meta">Lemuel Kumarga</span>
 <span class="meta">Feb 2018 (Revised on Oct 2018)</span>
 
+- [Problem Description](#problem-description)
+- [Preliminaries](#preliminaries)
+- [Data Overview](#data-overview)
+- [Feature Selection](#feature-selection)
+  - [Titles](#titles)
+  - [Family Size](#family-size)
+  - [Cabin Deck](#cabin-deck)
+  - [Cabin Number](#cabin-number)
+  - [Feature Summary](#feature-summary)
+    - [Continuous Features](#continuous-features)
+    - [Categorical Features](#categorical-features)
+- [Modeling Survival Likelihood](#modeling-survival-likelihood)
+  - [Model Selection](#model-selection)
+  - [Embedding Survival
+    Relationships](#embedding-survival-relationships)
+  - [Model Implementation](#model-implementation)
+  - [Performance](#performance)
+  - [Interpretation](#interpretation)
+- [Summary of Results](#summary-of-results)
+
 ## Problem Description
 
 Set for its maiden voyage in 1912, RMS Titanic was then considered
@@ -94,7 +114,7 @@ source("shared/defaults.R")
 source("shared/helper.R")
 
 options(stringsAsFactors = FALSE)
-load_or_install.packages("purrr","mgcv","DMwR")
+load_or_install.packages("purrr","mgcv")
 # Set default decimal points for percentage
 
 data_dir <- "data/"
@@ -106,8 +126,8 @@ attached_pkg_str <- paste0("Attached Packages: ",paste(names(si[["otherPkgs"]]),
 cat(paste0(base_pkg_str,"\n",attached_pkg_str))
 ```
 
-    ## Base Packages: grid, stats, graphics, grDevices, utils, datasets, methods, base
-    ## Attached Packages: DMwR, lattice, mgcv, nlme, purrr, tidyr, pander, ggplot2, rlang, dplyr, knitr
+    ## Base Packages: stats, graphics, grDevices, utils, datasets, methods, base
+    ## Attached Packages: mgcv, nlme, purrr, tidyr, pander, ggplot2, rlang, dplyr, knitr
 
 ## Data Overview
 
@@ -122,20 +142,20 @@ cols_summary <- data_overview(training_set)
 pander(cols_summary, caption='Titanic Passengers Data - For more info, please visit <a href="https://www.kaggle.com/c/titanic/data" target="_blank">Kaggle</a>')
 ```
 
-| ColumnNames | Type      | Examples                                                                                                                                                                             | PctFilled |
-| :---------- | :-------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------- |
-| PassengerId | INTEGER   | 1 // 2 // 3 // 4 // 5                                                                                                                                                                | 100%      |
-| Survived    | INTEGER   | 0 // 1                                                                                                                                                                               | 100%      |
-| Pclass      | INTEGER   | 3 // 1 // 2                                                                                                                                                                          | 100%      |
-| Name        | CHARACTER | Braund, Mr. Owen Harris // Cumings, Mrs. John Bradley (Florence Briggs Thayer) // Heikkinen, Miss. Laina // Futrelle, Mrs. Jacques Heath (Lily May Peel) // Allen, Mr. William Henry | 100%      |
-| Sex         | CHARACTER | male // female                                                                                                                                                                       | 100%      |
-| Age         | NUMERIC   | 22 // 38 // 26 // 35 // 54                                                                                                                                                           | 80%       |
-| SibSp       | INTEGER   | 1 // 0 // 3 // 4 // 2                                                                                                                                                                | 100%      |
-| Parch       | INTEGER   | 0 // 1 // 2 // 5 // 3                                                                                                                                                                | 100%      |
-| Ticket      | CHARACTER | A/5 21171 // PC 17599 // STON/O2. 3101282 // 113803 // 373450                                                                                                                        | 100%      |
-| Fare        | NUMERIC   | 7.25 // 71.2833 // 7.925 // 53.1 // 8.05                                                                                                                                             | 100%      |
-| Cabin       | CHARACTER | C85 // C123 // E46 // G6 // C103                                                                                                                                                     | 22%       |
-| Embarked    | CHARACTER | S // C // Q                                                                                                                                                                          | 99%       |
+| ColumnNames | Type | Examples | PctFilled |
+|:---|:---|:---|:---|
+| PassengerId | INTEGER | 1 // 2 // 3 // 4 // 5 | 100% |
+| Survived | INTEGER | 0 // 1 | 100% |
+| Pclass | INTEGER | 3 // 1 // 2 | 100% |
+| Name | CHARACTER | Braund, Mr. Owen Harris // Cumings, Mrs. John Bradley (Florence Briggs Thayer) // Heikkinen, Miss. Laina // Futrelle, Mrs. Jacques Heath (Lily May Peel) // Allen, Mr. William Henry | 100% |
+| Sex | CHARACTER | male // female | 100% |
+| Age | NUMERIC | 22 // 38 // 26 // 35 // 54 | 80% |
+| SibSp | INTEGER | 1 // 0 // 3 // 4 // 2 | 100% |
+| Parch | INTEGER | 0 // 1 // 2 // 5 // 3 | 100% |
+| Ticket | CHARACTER | A/5 21171 // PC 17599 // STON/O2. 3101282 // 113803 // 373450 | 100% |
+| Fare | NUMERIC | 7.25 // 71.2833 // 7.925 // 53.1 // 8.05 | 100% |
+| Cabin | CHARACTER | C85 // C123 // E46 // G6 // C103 | 22% |
+| Embarked | CHARACTER | S // C // Q | 99% |
 
 Titanic Passengers Data - For more info, please visit
 <a href="https://www.kaggle.com/c/titanic/data" target="_blank">Kaggle</a>
@@ -143,14 +163,14 @@ Titanic Passengers Data - For more info, please visit
 
 Based on the above table, we know that:
 
-  - <span class="hl color-1-text">Names</span> are aggregated in the
-    following format: <span class="hl color-2-text">Last\_Name, Title
-    First\_Name</span>. This suggests that some information needs to be
-    extracted from certain columns.
-  - Columns such as <span class="hl color-1-text">Age</span> and
-    <span class="hl color-1-text">Cabin</span> have missing data. This
-    implies that we should either remove these columns, impute the data
-    or build a model that handles missing information.
+- <span class="hl color-1-text">Names</span> are aggregated in the
+  following format: <span class="hl color-2-text">Last_Name, Title
+  First_Name</span>. This suggests that some information needs to be
+  extracted from certain columns.
+- Columns such as <span class="hl color-1-text">Age</span> and
+  <span class="hl color-1-text">Cabin</span> have missing data. This
+  implies that we should either remove these columns, impute the data or
+  build a model that handles missing information.
 
 ## Feature Selection
 
@@ -161,7 +181,7 @@ influencing survival likelihood.
 Some features have been nicely provided by the dataset, such as:
 
 | Feature  | Variable Type | Description                         |
-| -------- | ------------- | ----------------------------------- |
+|----------|---------------|-------------------------------------|
 | Pclass   | Continuous    | Ticket Class                        |
 | Sex      | Categorical   | Gender                              |
 | Age      | Continuous    | Passenger’s Age                     |
@@ -179,8 +199,7 @@ below.
 The <span class="hl">Title</span> of an individual is typically
 associated with his/her social status. We should expect those with
 higher titles to be given preference to lifeboats, and hence having
-higher survival
-likelihoods.
+higher survival likelihoods.
 
 ``` r
 prefix <- function(l) { as.character(sapply(l, ..(x) %:=% { unlist(strsplit(unlist(strsplit(x, ", "))[2],"\\. "))[1] })) }
@@ -252,7 +271,7 @@ feature_title <- function(Name) { ifelse(prefix(Name) %in% common_titles,
 title_plot
 ```
 
-<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
+<img src="C:/Users/lemue/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-4-1.png" alt="" style="display: block; margin: auto;" />
 
 The chart above confirms our suspicion, as those with more distinguished
 status, such as <span class="hl color-2-text">Master</span> and
@@ -266,10 +285,9 @@ family members on board (including the passenger). It is an
 <a data-toggle="popover" title="Interaction Term" data-content="A feature that is a derivation from other features.">interaction
 term</a> from <span class="hl">SibSp</span> and
 <span class="hl">Parch</span>, and defined as
-\(FamSize = 1 + SibSp + Parch\). Assuming that everyone in the family
-has to stay together, we should expect those with larger family sizes to
-have higher likelihoods of
-dying.
+$FamSize = 1 + SibSp + Parch$. Assuming that everyone in the family has
+to stay together, we should expect those with larger family sizes to
+have higher likelihoods of dying.
 
 ``` r
 feature_famsize <- function(Sibsp, Parch) { pmap(list(x=Sibsp, y=Parch), ..(x,y) %:=%  { x + y + 1 }) %>% as.integer }
@@ -293,7 +311,7 @@ famsize_plot <- training_set %>%
 famsize_plot
 ```
 
-<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-5-1.png" style="display: block; margin: auto;" />
+<img src="C:/Users/lemue/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-5-1.png" alt="" style="display: block; margin: auto;" />
 
 Interestingly, we notice that those with intermediate family sizes are
 more likely to survive. This could be due to the presence of children.
@@ -353,7 +371,7 @@ cabin_deck_plot <- training_set %>%
 cabin_deck_plot
 ```
 
-<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
+<img src="C:/Users/lemue/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-6-1.png" alt="" style="display: block; margin: auto;" />
 
 As expected, those in Cabin B to F have higher chances of surviving than
 those in the highest and lowest floors.
@@ -397,7 +415,7 @@ cabin_number_plot <- training_set %>%
                           theme_lk() +
                           theme(plot.margin = unit(c(0,0,0,-40),'pt'),
                                 legend.position = c(1.,0.05),
-                                legend.box.just = c(0.5,0.5),
+                                legend.box.just = "center",
                                 axis.line.x = element_line(colour=NA),
                                 axis.ticks.x = element_line(colour=NA),
                                 axis.title.x = element_blank(),
@@ -430,7 +448,7 @@ cabin_number_plot <- training_set %>%
 cabin_number_plot
 ```
 
-<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
+<img src="C:/Users/lemue/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-7-1.png" alt="" style="display: block; margin: auto;" />
 
 From the chart, it seems that those on the right side are more likely to
 survive, confirming our previous hypothesis.
@@ -481,7 +499,7 @@ suppressMessages({
 plot(snapshot$cont_plot)
 ```
 
-<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-8-1.png" style="display: block; margin: auto;" />
+<img src="C:/Users/lemue/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-8-1.png" alt="" style="display: block; margin: auto;" />
 
 #### Categorical Features
 
@@ -489,7 +507,7 @@ plot(snapshot$cont_plot)
 plot(snapshot$disc_plot)
 ```
 
-<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-9-1.png" style="display: block; margin: auto;" />
+<img src="C:/Users/lemue/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-9-1.png" alt="" style="display: block; margin: auto;" />
 
 ## Modeling Survival Likelihood
 
@@ -515,19 +533,18 @@ Due to these criterias, the
 Additive Model (GAM)</a> will be used as our base. In particular, a GAM
 has the form:
 
-\[Y = \ln(\frac{p}{1-p}) = \beta_0 + \sum_i f_i(x_i) \]
+$$Y = \ln(\frac{p}{1-p}) = \beta_0 + \sum_i f_i(x_i) $$
 
-where <br> \(p\) is the survival likelihood, <br> \(\beta_0\) is the
-average of \(Y\), <br> \(f_i\) is a smooth function of the feature
-\(i\), and <br> \(x_i\) is the value of feature \(i\).
+where <br> $p$ is the survival likelihood, <br> $\beta_0$ is the average
+of $Y$, <br> $f_i$ is a smooth function of the feature $i$, and <br>
+$x_i$ is the value of feature $i$.
 
 In addition, we will also be making the following adjustments to the GAM
 model:
 
-1.  <span class="hl">Missing Values</span>: All \(f_i(\)Missing\()\)
-    will have a value of \(0\). This ensures that missing factors will
-    not influence a passenger’s survival
-    prediction.
+1.  <span class="hl">Missing Values</span>: All $f_i($Missing$)$ will
+    have a value of $0$. This ensures that missing factors will not
+    influence a passenger’s survival prediction.
 2.  <a target="_blank" href="https://www.stat.ubc.ca/~rollin/teach/643w04/lec/node41.html"><span class="hl">Forward
     Selection</span></a>: Earlier on, we have chosen over 10 features
     for the model, some of which may be irrelevant. To exclude such
@@ -544,10 +561,10 @@ amongst passengers. For instance, a mother’s survival status could
 highly depend on the child’s. To account for these factors, we introduce
 two hidden features in the model:
 
-  - <span class="hl">PfemaleM</span>: The probability that a passenger’s
-    female family member will survive, and
-  - <span class="hl">PmaleM</span>: The probability that a passenger’s
-    male family member will survive.
+- <span class="hl">PfemaleM</span>: The probability that a passenger’s
+  female family member will survive, and
+- <span class="hl">PmaleM</span>: The probability that a passenger’s
+  male family member will survive.
 
 To estimate the two features, we first need the survival likelihood of
 every individual. Each individual’s family can then be identified
@@ -592,38 +609,34 @@ feature_fam_survivalhood <- function(p_survival) {
 ```
 
 Assuming the existence of survival likelihoods, the GAM model can be
-generated with the
-formula:
+generated with the formula:
 
-\[Y = \ln(\frac{p}{1-p}) = \beta_0 + \sum_i f_i(x_i) + f_f(p_{fem}) + f_m(p_{male}) \]
+$$Y = \ln(\frac{p}{1-p}) = \beta_0 + \sum_i f_i(x_i) + f_f(p_{fem}) + f_m(p_{male}) $$
 
-where <br> \(p_{fem}\) is the survival likelihood of a female family
-member, <br> \(p_{male}\) is the survival likelihood of a male family
-member, <br> and \(f_f, f_m\) are the smooth functions for both.
+where <br> $p_{fem}$ is the survival likelihood of a female family
+member, <br> $p_{male}$ is the survival likelihood of a male family
+member, <br> and $f_f, f_m$ are the smooth functions for both.
 
 The biggest challenge in generating this model is
 <span class="hl">recursion</span>. The hidden features require survival
 likelihoods from the model, which in turn requires the hidden features.
 Fortunately, we can break this chain by assuming that the existence of
-an equilibrium \(\hat{p}\)
-where:
+an equilibrium $\hat{p}$ where:
 
-\[ \ln(\frac{\hat{p}}{1-\hat{p}}) - \beta_0 - \sum_i f_i(x_i) = f_f(p_{fem}(\hat{p})) + f_m(p_{male}(\hat{p})) \]
+$$ \ln(\frac{\hat{p}}{1-\hat{p}}) - \beta_0 - \sum_i f_i(x_i) = f_f(p_{fem}(\hat{p})) + f_m(p_{male}(\hat{p})) $$
 
-Assuming convergence, \(\hat{p}\) can be determined via the following
+Assuming convergence, $\hat{p}$ can be determined via the following
 algorithm: <code style="background-color:var(--pri)"> <br> Initialize:
-<br> DATA := (x\_1, x\_2, …, x\_k) <br> MODEL := GAM(DATA) <br> PREV\_P
-:= PREDICT(MODEL) <br> <br> \# Use 10 Iterations for Convergence<br> for
-i in \[1,10\]:<br>   (p\_female, p\_male) \<-
-GET\_HIDDEN\_FEATURE(PREV\_P)<br>   DATA \<- (x\_1, x\_2, … , x\_k,
-p\_female, p\_male)<br>   MODEL \<- GAM(DATA)<br>   P \<-
-PREDICT(MODEL)<br>   if (SUM{(P - PREV\_P)^2} \< 0.0001) BREAK<br>  
-else PREV\_P \<- P<br> RETURN MODEL </code>
+<br> DATA := (x_1, x_2, …, x_k) <br> MODEL := GAM(DATA) <br> PREV_P :=
+PREDICT(MODEL) <br> <br> \# Use 10 Iterations for Convergence<br> for i
+in \[1,10\]:<br>   (p_female, p_male) \<- GET_HIDDEN_FEATURE(PREV_P)<br>
+  DATA \<- (x_1, x_2, … , x_k, p_female, p_male)<br>   MODEL \<-
+GAM(DATA)<br>   P \<- PREDICT(MODEL)<br>   if (SUM{(P - PREV_P)^2} \<
+0.0001) BREAK<br>   else PREV_P \<- P<br> RETURN MODEL </code>
 
 ### Model Implementation
 
-The Adjusted GAM is implemented using the code
-below.
+The Adjusted GAM is implemented using the code below.
 
 ``` r
 predict.mod_gam <- function(object, newdata, type="link", threshold=0.5, ...) {
@@ -724,7 +737,7 @@ mod.gam <- function(data) {
         
         # Reset the Feature to the latest one
         if (any(rec_features %in% colnames(base_training))) { 
-          base_training <- base_training %>% select_(.dots="-" %|% rec_features)
+          base_training <- base_training %>% select(-all_of(rec_features))
         }
         base_training <- base_training %>% inner_join(fam_survivalhood, by="PassengerId")
         
@@ -775,14 +788,12 @@ strong signals for survivability.
 To ensure the model is accurate, we need to find the optimal values for
 these two hyper-parameters:
 
-  - <span class="hl">Number of Features</span>: The number of features
-    used in prediction, and
-  - <span class="hl">Threshold</span>: The boundary that determines if a
-    passenger is tagged as a survivor. For instance if a passenger has a
-    45% probability of surviving, the model may tag him/her as alive if
-    the threshold is 30%, but dead if the threshold is 50%.
-
-<!-- end list -->
+- <span class="hl">Number of Features</span>: The number of features
+  used in prediction, and
+- <span class="hl">Threshold</span>: The boundary that determines if a
+  passenger is tagged as a survivor. For instance if a passenger has a
+  45% probability of surviving, the model may tag him/her as alive if
+  the threshold is 30%, but dead if the threshold is 50%.
 
 ``` r
 # Create Cross Validation Function
@@ -858,7 +869,7 @@ cv_plot <- ggplot(res.cv %>% filter(MER != Inf & Threshold >= 0.25 & Threshold <
 cv_plot
 ```
 
-<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-12-1.png" style="display: block; margin: auto;" />
+<img src="C:/Users/lemue/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-12-1.png" alt="" style="display: block; margin: auto;" />
 
 Based on the CV error rate, the optimal model is one with 4 + 2 features
 and 55% threshold.
@@ -879,15 +890,15 @@ cat(paste0("Null Classifier\tTest Error Rate: ", scales::percent(1.-0.62679),"\n
     "Optimal GAM\t\tTest Error Rate: ", scales::percent(1.-0.79904),"\n"))
 ```
 
-    ## Null Classifier  Test Error Rate: 37.3%
-    ## Optimal GAM      Test Error Rate: 20.1%
+    ## Null Classifier  Test Error Rate: 37%
+    ## Optimal GAM      Test Error Rate: 20%
 
 Using Kaggle’s test set, the model has significantly higher predictive
 power over the
 <a data-toggle="popover" title="Null Classifier" data-content="A null classifier tags any passenger as died.">null
 classifier</a>. In fact, it is ranked near the 15th percentile\* of
 <a href="https://www.kaggle.com/c/titanic/leaderboard" target="_blank">Kaggle’s
-Leaderboard</a>\!
+Leaderboard</a>!
 
 <span style="font-size: 0.8em">\*at time of submission</span>
 
@@ -913,7 +924,9 @@ threshold_plot <- res.cv %>% filter(N_Params == opt.n) %>%
 threshold_plot
 ```
 
-<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-14-1.png" style="display: block; margin: auto;" />
+    ## `geom_smooth()` using formula = 'y ~ x'
+
+<img src="C:/Users/lemue/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-14-1.png" alt="" style="display: block; margin: auto;" />
 
 The above chart shows how a 4+2-feature model performs as we adjust the
 threshold. Other than the fact that the most optimal threshold is 55%,
@@ -921,8 +934,7 @@ we also see that the curve remains relatively flat from 25% to 75%. This
 suggests that the model is relatively <span class="hl">pure</span>. In
 other words, it is more likely to predict a high/low likelihood of
 surviving, rather than a toss up situation where a passenger has a
-51%-49% survival-death
-rate.
+51%-49% survival-death rate.
 
 ``` r
 coeffs <- predict(opt.gam, features, type = "terms") %>% as.data.frame %>%
@@ -945,7 +957,16 @@ x_f_tbl <- x_f_raw %>%
            summarise(CohortSize=n()) %>%
            ungroup() %>%
            arrange(Feature, X)
+```
 
+    ## `summarise()` has regrouped the output.
+    ## ℹ Summaries were computed grouped by Feature, X, and Val.
+    ## ℹ Output is grouped by Feature and X.
+    ## ℹ Use `summarise(.groups = "drop_last")` to silence this message.
+    ## ℹ Use `summarise(.by = c(Feature, X, Val))` for per-operation grouping
+    ##   (`?dplyr::dplyr_by`) instead.
+
+``` r
 cont_tbl <- x_f_tbl %>%
             filter(grepl("[0-9\\.]+",X)) %>%
             mutate(X = X %>% as.numeric)
@@ -962,12 +983,14 @@ cont_plot <- ggplot(cont_tbl, aes(x=X, y=Val)) +
 cont_plot
 ```
 
-<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-15-1.png" style="display: block; margin: auto;" />
+    ## `geom_smooth()` using formula = 'y ~ x'
 
-The plots above show the function \(f_i\) for each continuous feature.
-All 4 plots suggest a close to linear relationship for \(f_i\). This
-implies that linear models might perform relatively well too. It is also
-worth noting that having 1 or 2 siblings does not affect survivalhood
+<img src="C:/Users/lemue/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-15-1.png" alt="" style="display: block; margin: auto;" />
+
+The plots above show the function $f_i$ for each continuous feature. All
+4 plots suggest a close to linear relationship for $f_i$. This implies
+that linear models might perform relatively well too. It is also worth
+noting that having 1 or 2 siblings does not affect survivalhood
 significantly, but any more than that does.
 
 ``` r
@@ -985,7 +1008,7 @@ discr_plot <- ggplot(discr_tbl, aes(x=X, y=Val)) +
 discr_plot
 ```
 
-<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-16-1.png" style="display: block; margin: auto;" />
+<img src="C:/Users/lemue/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-16-1.png" alt="" style="display: block; margin: auto;" />
 
 Similarly, the plots above show the equivalent for discrete features. As
 before, we can deduce that females and passengers with distinguished
@@ -1026,12 +1049,12 @@ imp_plot <- ggplot(imp_tbl, aes(fill=Feature, x=1, y=PctImpt)) +
 imp_plot
 ```
 
-<img src="/Users/lemuel/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-17-1.png" style="display: block; margin: auto;" />
+<img src="C:/Users/lemue/GitHub/Portfolios/titanic/README_files/figure-gfm/unnamed-chunk-17-1.png" alt="" style="display: block; margin: auto;" />
 
 The chart above shows the strength of each feature relative to one
 another. As can be seen, both <span class="hl yellow-text">Sex</span>
 and <span class="hl orange-text">Pclass</span> contribute over 60% to
-the prediction\! This confirms our hypothesis that both
+the prediction! This confirms our hypothesis that both
 <span class="hl yellow-text">Sex</span> and
 <span class="hl orange-text">Pclass</span> are important factors of
 survivability.

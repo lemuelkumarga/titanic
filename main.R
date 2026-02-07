@@ -8,7 +8,7 @@ source("shared/defaults.R")
 source("shared/helper.R")
 
 options(stringsAsFactors = FALSE)
-load_or_install.packages("purrr","mgcv","DMwR")
+load_or_install.packages("purrr","mgcv")
 # Set default decimal points for percentage
 
 data_dir <- "data/"
@@ -194,7 +194,7 @@ cabin_number_plot <- training_set %>%
                           theme_lk() +
                           theme(plot.margin = unit(c(0,0,0,-40),'pt'),
                                 legend.position = c(1.,0.05),
-                                legend.box.just = c(0.5,0.5),
+                                legend.box.just = "center",
                                 axis.line.x = element_line(colour=NA),
                                 axis.ticks.x = element_line(colour=NA),
                                 axis.title.x = element_blank(),
@@ -392,7 +392,7 @@ mod.gam <- function(data) {
         
         # Reset the Feature to the latest one
         if (any(rec_features %in% colnames(base_training))) { 
-          base_training <- base_training %>% select_(.dots="-" %|% rec_features)
+          base_training <- base_training %>% select(-all_of(rec_features))
         }
         base_training <- base_training %>% inner_join(fam_survivalhood, by="PassengerId")
         
